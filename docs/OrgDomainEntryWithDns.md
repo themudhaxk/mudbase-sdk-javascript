@@ -1,6 +1,6 @@
 # OrgDomainEntryWithDns
 
-Full allowed-domain row (admin and legacy): includes **`dnsTxtHost`** / **`dnsTxtValue`**, optional Cloudflare SaaS hints (`cloudflareEdge`), staff-published step-3 TXT (`platformDnsVerification` on the manual path), and unified **`dnsRecords`** when the API builds a checklist. **`routingCnameTarget`** mirrors Fly **`dns_requirements.cname`** when ACME has provisioned, else env fallback. Internal `cloudflareCustomHostname` is not returned; use `cloudflareEdge`. Fly ACME requires **`CUSTOM_DOMAIN_FLY_ACME_ENABLED`** plus **`FLY_API_TOKEN`** and app slug; Cloudflare SSL-for-SaaS and Fly ACME cannot both be enabled on the same deployment. Org-facing routes return the compact **`OrgDomainEntryOrgConsole`** shape instead (no raw `verificationToken` or duplicate TXT keys).
+Full allowed-domain row (admin and legacy): includes **`dnsTxtHost`** / **`dnsTxtValue`**, optional edge SSL hints (`edge`), staff-published step-3 TXT (`platformDnsVerification` on the manual path), and unified **`dnsRecords`** when the API builds a checklist. **`routingCnameTarget`** mirrors Fly **`dns_requirements.cname`** when ACME has provisioned, else env fallback. Internal edge custom-hostname state is not returned; use `edge`. Fly ACME requires **`CUSTOM_DOMAIN_FLY_ACME_ENABLED`** plus **`FLY_API_TOKEN`** and app slug; edge SSL (SSL-for-SaaS) and Fly ACME cannot both be enabled on the same deployment. Org-facing routes return the compact **`OrgDomainEntryOrgConsole`** shape instead (no raw `verificationToken` or duplicate TXT keys).
 
 ## Properties
 
@@ -18,7 +18,7 @@ Name | Type | Description | Notes
 **lastVerifiedAt** | **string** |  | [optional] [default to undefined]
 **dnsTxtHost** | **string** | FQDN for the TXT record (e.g. _mudbase-verify.example.com) | [optional] [default to undefined]
 **dnsTxtValue** | **string** | Exact TXT string value (mudbase-domain-verification&#x3D;&lt;token&gt;) | [optional] [default to undefined]
-**cloudflareEdge** | [**OrgCloudflareEdgeHints**](OrgCloudflareEdgeHints.md) |  | [optional] [default to undefined]
+**edge** | [**OrgEdgeHints**](OrgEdgeHints.md) |  | [optional] [default to undefined]
 **platformActivationPending** | **boolean** | True while Mudbase TXT passed but custom host not yet active (includes CNAME and platform DNS pipeline). | [optional] [default to undefined]
 **customDomainLiveForApiTraffic** | **boolean** |  | [optional] [default to undefined]
 **customDomainVerificationStep** | **number** | Console wizard step 1–3; null when active/verified. | [optional] [default to undefined]
@@ -48,7 +48,7 @@ const instance: OrgDomainEntryWithDns = {
     lastVerifiedAt,
     dnsTxtHost,
     dnsTxtValue,
-    cloudflareEdge,
+    edge,
     platformActivationPending,
     customDomainLiveForApiTraffic,
     customDomainVerificationStep,

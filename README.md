@@ -60,25 +60,6 @@ Class | Method | HTTP request | Description
 *AddOnsApi* | [**apiAddonsGet**](docs/AddOnsApi.md#apiaddonsget) | **GET** /api/addons | List the add-on catalog
 *AddOnsApi* | [**apiProjectsProjectIdAddonsAddonInvokePost**](docs/AddOnsApi.md#apiprojectsprojectidaddonsaddoninvokepost) | **POST** /api/projects/{projectId}/addons/{addon}/invoke | Invoke an add-on for a project
 *AddOnsApi* | [**apiProjectsProjectIdAddonsJobsIdGet**](docs/AddOnsApi.md#apiprojectsprojectidaddonsjobsidget) | **GET** /api/projects/{projectId}/addons/jobs/{id} | Get an add-on job status
-*AdminApi* | [**getAdminAuditEvents**](docs/AdminApi.md#getadminauditevents) | **GET** /api/admin/audit/events | List audit log events
-*AdminApi* | [**getDashboardOrganizationDetail**](docs/AdminApi.md#getdashboardorganizationdetail) | **GET** /api/admin/dashboard/organizations/{orgId} | Get organization detail with projects and users (Admin)
-*AdminApi* | [**getDashboardOrganizations**](docs/AdminApi.md#getdashboardorganizations) | **GET** /api/admin/dashboard/organizations | List all organizations (Admin)
-*AdminApi* | [**platformAdminActivateOrgCustomDomain**](docs/AdminApi.md#platformadminactivateorgcustomdomain) | **POST** /api/admin/orgs/{orgId}/domains/{hostname}/activate | Mark custom domain live (legacy / non-Fly / manual completion)
-*AdminApi* | [**platformAdminApproveOrgCustomDomainCname**](docs/AdminApi.md#platformadminapproveorgcustomdomaincname) | **POST** /api/admin/orgs/{orgId}/domains/{hostname}/approve-cname | Approve routing CNAME (legacy / non-automated pipeline)
-*AdminApi* | [**platformAdminCreateBillingCheckoutLink**](docs/AdminApi.md#platformadmincreatebillingcheckoutlink) | **POST** /api/admin/orgs/{orgId}/billing/checkout-link | Create checkout link for org (platform admin)
-*AdminApi* | [**platformAdminCreateBillingSubscriptionLink**](docs/AdminApi.md#platformadmincreatebillingsubscriptionlink) | **POST** /api/admin/orgs/{orgId}/billing/subscription-link | Create subscription (payment plan) checkout link for org (platform admin)
-*AdminApi* | [**platformAdminCustomDomainAddon**](docs/AdminApi.md#platformadmincustomdomainaddon) | **POST** /api/admin/orgs/{orgId}/custom-domain-addon | Enable/disable Growth/Scale custom domain add-on (JWT admin)
-*AdminApi* | [**platformAdminDetachMember**](docs/AdminApi.md#platformadmindetachmember) | **POST** /api/admin/orgs/{orgId}/members/{userId}/detach | Detach user from organization (platform admin)
-*AdminApi* | [**platformAdminDomainDnsRecheckBatch**](docs/AdminApi.md#platformadmindomaindnsrecheckbatch) | **POST** /api/admin/domain-dns/recheck-batch | Batch custom-domain DNS recheck (JWT admin)
-*AdminApi* | [**platformAdminGetSecurityEvents**](docs/AdminApi.md#platformadmingetsecurityevents) | **GET** /api/admin/security/events | List in-memory security events (platform admin)
-*AdminApi* | [**platformAdminPatchMemberRole**](docs/AdminApi.md#platformadminpatchmemberrole) | **PATCH** /api/admin/orgs/{orgId}/members/{userId}/role | Set org member role (platform admin)
-*AdminApi* | [**platformAdminPatchOrgBillingContract**](docs/AdminApi.md#platformadminpatchorgbillingcontract) | **PATCH** /api/admin/orgs/{orgId}/billing-contract | Patch staff billing contract metadata (platform admin)
-*AdminApi* | [**platformAdminPatchOrgCustomDomainPlatformDnsVerification**](docs/AdminApi.md#platformadminpatchorgcustomdomainplatformdnsverification) | **PATCH** /api/admin/orgs/{orgId}/domains/{hostname}/platform-dns-verification | Publish platform DNS verification record for the customer (non-Fly / legacy)
-*AdminApi* | [**platformAdminPatchOrgLimits**](docs/AdminApi.md#platformadminpatchorglimits) | **PATCH** /api/admin/orgs/{orgId}/limits | Patch per-org limit overrides
-*AdminApi* | [**platformAdminPatchOrgPlan**](docs/AdminApi.md#platformadminpatchorgplan) | **PATCH** /api/admin/orgs/{orgId}/plan | Set organization billing plan (platform admin)
-*AdminApi* | [**platformAdminPatchOrgStatus**](docs/AdminApi.md#platformadminpatchorgstatus) | **PATCH** /api/admin/orgs/{orgId}/status | Set organization active flag and platform notes (platform admin)
-*AdminApi* | [**platformAdminPatchProject**](docs/AdminApi.md#platformadminpatchproject) | **PATCH** /api/admin/orgs/{orgId}/projects/{projectId} | Patch project (platform admin)
-*AdminApi* | [**platformAdminProvisionEnterprise**](docs/AdminApi.md#platformadminprovisionenterprise) | **POST** /api/admin/orgs/{orgId}/provision-enterprise | Provision enterprise dedicated endpoints (JWT admin)
 *AuthenticationApi* | [**acceptInvite**](docs/AuthenticationApi.md#acceptinvite) | **POST** /api/auth/accept-invite | Accept organization invitation
 *AuthenticationApi* | [**confirmLocalPasswordResetWithOtp**](docs/AuthenticationApi.md#confirmlocalpasswordresetwithotp) | **POST** /api/auth/local/password-reset/confirm | Confirm password reset with OTP (project-based)
 *AuthenticationApi* | [**convertAnonymousAccount**](docs/AuthenticationApi.md#convertanonymousaccount) | **POST** /api/auth/anonymous/convert | Convert anonymous account to full account
@@ -134,7 +115,6 @@ Class | Method | HTTP request | Description
 *BillingApi* | [**getSubscriptionTierById**](docs/BillingApi.md#getsubscriptiontierbyid) | **GET** /api/billing/plans/{planId} | Get one subscription tier by id
 *BillingApi* | [**getSubscriptionTiers**](docs/BillingApi.md#getsubscriptiontiers) | **GET** /api/billing/plans | Get subscription tiers (org-level BaaS plans)
 *BillingApi* | [**getSubscriptions**](docs/BillingApi.md#getsubscriptions) | **GET** /api/billing/projects/{projectId}/subscriptions | Get subscriptions
-*BillingApi* | [**handleFlutterwaveWebhook**](docs/BillingApi.md#handleflutterwavewebhook) | **POST** /api/billing/webhooks/flutterwave | Payment gateway webhook
 *BillingApi* | [**initializeOrgPlanCheckout**](docs/BillingApi.md#initializeorgplancheckout) | **POST** /api/billing/org/checkout | Initialize org-level BaaS plan payment (Starter, Growth, Scale)
 *BillingApi* | [**initializePayment**](docs/BillingApi.md#initializepayment) | **POST** /api/orgs/{orgId}/payment-processing/initialize-payment | Initialize fiat payment with split (org subaccount + platform fee)
 *BillingApi* | [**initializePaymentForProject**](docs/BillingApi.md#initializepaymentforproject) | **POST** /api/projects/{projectId}/payment-processing/initialize-payment | Initialize fiat payment (project-scoped)
@@ -147,8 +127,6 @@ Class | Method | HTTP request | Description
 *BucketsApi* | [**getBucket**](docs/BucketsApi.md#getbucket) | **GET** /api/bucket/projects/{projectId}/buckets/{bucketId} | Get bucket details
 *BucketsApi* | [**listBuckets**](docs/BucketsApi.md#listbuckets) | **GET** /api/bucket/projects/{projectId}/buckets | List buckets in a project
 *BucketsApi* | [**updateBucket**](docs/BucketsApi.md#updatebucket) | **PATCH** /api/bucket/projects/{projectId}/buckets/{bucketId} | Update bucket
-*BugAnalysisApi* | [**startBugAnalysisScan**](docs/BugAnalysisApi.md#startbuganalysisscan) | **POST** /api/bug-analysis/scan | Start bug analysis scan (org-level)
-*BugAnalysisApi* | [**startBugAnalysisScanByProject**](docs/BugAnalysisApi.md#startbuganalysisscanbyproject) | **POST** /api/bug-analysis/scan/{projectId} | Start bug analysis scan (project-scoped)
 *ChatApi* | [**addParticipant**](docs/ChatApi.md#addparticipant) | **POST** /api/chat/projects/{projectId}/chats/{chatId}/participants | Add participant to chat
 *ChatApi* | [**addReaction**](docs/ChatApi.md#addreaction) | **POST** /api/chat/projects/{projectId}/chats/{chatId}/messages/{messageId}/reactions | Add reaction to message
 *ChatApi* | [**createChat**](docs/ChatApi.md#createchat) | **POST** /api/chat/projects/{projectId}/chats | Create new chat
@@ -191,6 +169,8 @@ Class | Method | HTTP request | Description
 *EmailApi* | [**upsertProjectEmailTemplate**](docs/EmailApi.md#upsertprojectemailtemplate) | **PUT** /api/projects/{projectId}/email/templates/{name} | Upsert project email template (HTML sanitized; variables must cover {{placeholders}})
 *EmailApi* | [**verifyProjectEmailSmtpDomain**](docs/EmailApi.md#verifyprojectemailsmtpdomain) | **POST** /api/projects/{projectId}/email/smtp/verify-domain | Check DNS (MX + SPF) for sending domain
 *FilesApi* | [**apiFilesDownloadFileIdGet**](docs/FilesApi.md#apifilesdownloadfileidget) | **GET** /api/files/download/{fileId} | Get a download URL for a file
+*FilesApi* | [**apiFilesLogoRedirectGet**](docs/FilesApi.md#apifileslogoredirectget) | **GET** /api/files/logo-redirect | Redirect to an org/project logo\&#39;s content
+*FilesApi* | [**apiFilesPublicFileIdGet**](docs/FilesApi.md#apifilespublicfileidget) | **GET** /api/files/public/{fileId} | Redirect to a public file\&#39;s content
 *FilesApi* | [**confirmDirectUpload**](docs/FilesApi.md#confirmdirectupload) | **POST** /api/files/upload/confirm | Confirm direct upload (scan + finalize metadata)
 *FilesApi* | [**deleteFile**](docs/FilesApi.md#deletefile) | **DELETE** /api/bucket/projects/{projectId}/buckets/{bucketId}/files/{fileId} | Delete file
 *FilesApi* | [**downloadBucketFile**](docs/FilesApi.md#downloadbucketfile) | **GET** /api/bucket/files/{fileId}/download | Download file from bucket
@@ -229,20 +209,28 @@ Class | Method | HTTP request | Description
 *IntegrationsApi* | [**importIntegration**](docs/IntegrationsApi.md#importintegration) | **POST** /api/integrations/projects/{projectId}/integrations/import | Import integration
 *IntegrationsApi* | [**testIntegration**](docs/IntegrationsApi.md#testintegration) | **POST** /api/integrations/projects/{projectId}/integrations/{integrationId}/test | Test integration
 *IntegrationsApi* | [**updateIntegration**](docs/IntegrationsApi.md#updateintegration) | **PATCH** /api/integrations/projects/{projectId}/integrations/{integrationId} | Update integration
+*KYCApi* | [**apiKycEventsGet**](docs/KYCApi.md#apikyceventsget) | **GET** /api/kyc/events | List recent compliance webhook deliveries
 *KYCApi* | [**apiKycSessionsPost**](docs/KYCApi.md#apikycsessionspost) | **POST** /api/kyc/sessions | Start a platform KYC session
 *KYCApi* | [**apiKycStatusGet**](docs/KYCApi.md#apikycstatusget) | **GET** /api/kyc/status | Get the organization\&#39;s platform KYC status
 *KYCApi* | [**apiKycVerificationsIdGet**](docs/KYCApi.md#apikycverificationsidget) | **GET** /api/kyc/verifications/{id} | Get a single KYC verification record
 *KYCApi* | [**apiKycWebhookConfigGet**](docs/KYCApi.md#apikycwebhookconfigget) | **GET** /api/kyc/webhook-config | Get white-label KYC webhook config
 *KYCApi* | [**apiKycWebhookConfigPut**](docs/KYCApi.md#apikycwebhookconfigput) | **PUT** /api/kyc/webhook-config | Set white-label KYC webhook config
+*KYCApi* | [**apiKycWebhookConfigTestPost**](docs/KYCApi.md#apikycwebhookconfigtestpost) | **POST** /api/kyc/webhook-config/test | Send a signed test event to the configured webhook endpoint
+*KYCApi* | [**apiKycWorkflowsGet**](docs/KYCApi.md#apikycworkflowsget) | **GET** /api/kyc/workflows | List available verification workflows
+*KYCApi* | [**apiProjectsProjectIdKybSessionsPost**](docs/KYCApi.md#apiprojectsprojectidkybsessionspost) | **POST** /api/projects/{projectId}/kyb/sessions | Start a business verification (KYB) session for one of your business customers
+*MCPApi* | [**mcpConfigGet**](docs/MCPApi.md#mcpconfigget) | **GET** /mcp/config | MCP connection status for the current org
 *MessagingApi* | [**getMessageHistory**](docs/MessagingApi.md#getmessagehistory) | **GET** /api/messaging/projects/{projectId}/messaging/history | Get message history
 *MessagingApi* | [**getMessageStats**](docs/MessagingApi.md#getmessagestats) | **GET** /api/messaging/projects/{projectId}/messaging/stats | Get message statistics
-*MessagingApi* | [**getProjectFcmConfig**](docs/MessagingApi.md#getprojectfcmconfig) | **GET** /api/messaging/projects/{projectId}/messaging/push-config | Get BYO FCM configuration (masked)
+*MessagingApi* | [**getProjectFcmConfig**](docs/MessagingApi.md#getprojectfcmconfig) | **GET** /api/messaging/projects/{projectId}/messaging/push-config | Get bring-your-own push credentials status (masked)
 *MessagingApi* | [**getProjectSmsByo**](docs/MessagingApi.md#getprojectsmsbyo) | **GET** /api/messaging/projects/{projectId}/messaging/sms-provider | Get BYO SMS provider configuration (masked)
-*MessagingApi* | [**patchProjectFcmConfig**](docs/MessagingApi.md#patchprojectfcmconfig) | **PATCH** /api/messaging/projects/{projectId}/messaging/push-config | Set or clear per-project FCM service account
+*MessagingApi* | [**listDeviceTokens**](docs/MessagingApi.md#listdevicetokens) | **GET** /api/messaging/projects/{projectId}/messaging/devices | List registered device tokens
+*MessagingApi* | [**patchProjectFcmConfig**](docs/MessagingApi.md#patchprojectfcmconfig) | **PATCH** /api/messaging/projects/{projectId}/messaging/push-config | Set or clear your own push service account (optional)
 *MessagingApi* | [**patchProjectSmsByo**](docs/MessagingApi.md#patchprojectsmsbyo) | **PATCH** /api/messaging/projects/{projectId}/messaging/sms-provider | Update BYO SMS provider credentials
+*MessagingApi* | [**registerDeviceToken**](docs/MessagingApi.md#registerdevicetoken) | **POST** /api/messaging/projects/{projectId}/messaging/devices | Register a device push token
 *MessagingApi* | [**sendEmail**](docs/MessagingApi.md#sendemail) | **POST** /api/messaging/projects/{projectId}/messaging/email | Send email
 *MessagingApi* | [**sendPushNotification**](docs/MessagingApi.md#sendpushnotification) | **POST** /api/messaging/projects/{projectId}/messaging/push | Send push notification
 *MessagingApi* | [**sendSMS**](docs/MessagingApi.md#sendsms) | **POST** /api/messaging/projects/{projectId}/messaging/sms | Send SMS
+*MessagingApi* | [**unregisterDeviceToken**](docs/MessagingApi.md#unregisterdevicetoken) | **DELETE** /api/messaging/projects/{projectId}/messaging/devices | Unregister a device push token
 *MonitoringApi* | [**createMonitoringAlert**](docs/MonitoringApi.md#createmonitoringalert) | **POST** /api/monitoring/alerts | Create monitoring alert
 *MonitoringApi* | [**getMonitoringAnalytics**](docs/MonitoringApi.md#getmonitoringanalytics) | **GET** /api/monitoring/analytics | Get usage analytics (time series)
 *MonitoringApi* | [**getMonitoringErrors**](docs/MonitoringApi.md#getmonitoringerrors) | **GET** /api/monitoring/errors | Get error logs
@@ -250,7 +238,6 @@ Class | Method | HTTP request | Description
 *MonitoringApi* | [**getMonitoringLogs**](docs/MonitoringApi.md#getmonitoringlogs) | **GET** /api/monitoring/logs | Get audit logs
 *MonitoringApi* | [**getMonitoringPerformance**](docs/MonitoringApi.md#getmonitoringperformance) | **GET** /api/monitoring/performance | Get performance metrics
 *MonitoringApi* | [**getMonitoringQueueMetrics**](docs/MonitoringApi.md#getmonitoringqueuemetrics) | **GET** /api/monitoring/queue-metrics | Usage metering queue job counts
-*MonitoringApi* | [**getScannerMetrics**](docs/MonitoringApi.md#getscannermetrics) | **GET** /api/monitoring/scanner-metrics | Get block scanner metrics
 *MonitoringApi* | [**listMonitoringAlerts**](docs/MonitoringApi.md#listmonitoringalerts) | **GET** /api/monitoring/alerts | List monitoring alerts
 *MultiRoleFeatureApi* | [**addCustomRole**](docs/MultiRoleFeatureApi.md#addcustomrole) | **POST** /api/projects/{projectId}/multi-role/roles | Add custom role
 *MultiRoleFeatureApi* | [**applyRoleFeaturePreset**](docs/MultiRoleFeatureApi.md#applyrolefeaturepreset) | **POST** /api/projects/{projectId}/multi-role/roles/{roleSlug}/apply-preset | Apply Admin / User / Viewer feature permission preset
@@ -300,18 +287,14 @@ Class | Method | HTTP request | Description
 *OrganizationsApi* | [**updateSubOrganizationMemberRole**](docs/OrganizationsApi.md#updatesuborganizationmemberrole) | **PATCH** /api/orgs/{orgId}/suborgs/{suborgId}/members/{userId}/role | ~~Update sub-organization member role~~ (deprecated)
 *OrganizationsApi* | [**updateUserAccountStatus**](docs/OrganizationsApi.md#updateuseraccountstatus) | **PATCH** /api/orgs/{orgId}/users/{userId}/status | Update user account status (activate or suspend)
 *OrganizationsApi* | [**verifyOrgCustomDomainDns**](docs/OrganizationsApi.md#verifyorgcustomdomaindns) | **POST** /api/orgs/{orgId}/projects/{projectId}/domains/{hostname}/verify-dns | Verify domain ownership via DNS TXT
-*ProjectFeesApi* | [**cancelPayout**](docs/ProjectFeesApi.md#cancelpayout) | **POST** /api/admin/payouts/{payoutId}/cancel | ~~Cancel payout (Admin)~~ (deprecated)
 *ProjectFeesApi* | [**confirmAddressVerification**](docs/ProjectFeesApi.md#confirmaddressverification) | **POST** /api/projects/{projectId}/fee-settings/{currency}/confirm-verification | ~~Confirm address verification~~ (deprecated)
 *ProjectFeesApi* | [**createOrUpdateFeeSettings**](docs/ProjectFeesApi.md#createorupdatefeesettings) | **POST** /api/projects/{projectId}/fee-settings | ~~Create or update project fee settings~~ (deprecated)
-*ProjectFeesApi* | [**getAdminPayoutDashboard**](docs/ProjectFeesApi.md#getadminpayoutdashboard) | **GET** /api/admin/payouts/dashboard | ~~Get admin payout dashboard (Admin)~~ (deprecated)
 *ProjectFeesApi* | [**getCurrencyFeeBalance**](docs/ProjectFeesApi.md#getcurrencyfeebalance) | **GET** /api/projects/{projectId}/fee-balances/{currency} | ~~Get currency fee balance~~ (deprecated)
 *ProjectFeesApi* | [**getFeeBalances**](docs/ProjectFeesApi.md#getfeebalances) | **GET** /api/projects/{projectId}/fee-balances | ~~Get all fee balances~~ (deprecated)
 *ProjectFeesApi* | [**getFeeSettings**](docs/ProjectFeesApi.md#getfeesettings) | **GET** /api/projects/{projectId}/fee-settings | ~~Get project fee settings~~ (deprecated)
 *ProjectFeesApi* | [**getPayoutHistory**](docs/ProjectFeesApi.md#getpayouthistory) | **GET** /api/projects/{projectId}/payout-history | ~~Get payout history~~ (deprecated)
-*ProjectFeesApi* | [**getPendingPayouts**](docs/ProjectFeesApi.md#getpendingpayouts) | **GET** /api/admin/payouts/pending | ~~Get all pending payouts (Admin)~~ (deprecated)
 *ProjectFeesApi* | [**getProjectFeeDashboard**](docs/ProjectFeesApi.md#getprojectfeedashboard) | **GET** /api/projects/{projectId}/fee-dashboard | ~~Get fee dashboard~~ (deprecated)
 *ProjectFeesApi* | [**initiateAddressVerification**](docs/ProjectFeesApi.md#initiateaddressverification) | **POST** /api/projects/{projectId}/fee-settings/{currency}/verify-address | ~~Initiate address verification~~ (deprecated)
-*ProjectFeesApi* | [**processPayout**](docs/ProjectFeesApi.md#processpayout) | **POST** /api/admin/payouts/{payoutId}/process | ~~Manually process payout (Admin)~~ (deprecated)
 *ProjectFeesApi* | [**requestManualPayout**](docs/ProjectFeesApi.md#requestmanualpayout) | **POST** /api/projects/{projectId}/payouts/request-manual | ~~Request manual payout~~ (deprecated)
 *ProjectFeesApi* | [**updateCurrencyFeeSettings**](docs/ProjectFeesApi.md#updatecurrencyfeesettings) | **PATCH** /api/projects/{projectId}/fee-settings/{currency} | ~~Update currency fee settings~~ (deprecated)
 *ProjectsApi* | [**configureOAuthProvider**](docs/ProjectsApi.md#configureoauthprovider) | **POST** /api/auth/oauth/projects/{projectId}/providers/{provider} | Configure OAuth provider for a project
@@ -372,40 +355,6 @@ Class | Method | HTTP request | Description
 *UsersApi* | [**verify2FA**](docs/UsersApi.md#verify2fa) | **POST** /api/users/2fa/verify | Verify and enable 2FA
 *UsersApi* | [**verifyEmail**](docs/UsersApi.md#verifyemail) | **POST** /api/users/verify-email | Verify email address (organization and project)
 *VerifiedRoleUpgradeApi* | [**verifiedRoleUpgrade**](docs/VerifiedRoleUpgradeApi.md#verifiedroleupgrade) | **POST** /api/orgs/{orgId}/users/{userId}/upgrade | Verified role upgrade with payment verification
-*WalletApi* | [**broadcastNonCustodialTransaction**](docs/WalletApi.md#broadcastnoncustodialtransaction) | **POST** /api/wallet/non-custodial/broadcast | Broadcast a client-signed transaction
-*WalletApi* | [**calculateWalletFee**](docs/WalletApi.md#calculatewalletfee) | **POST** /api/wallet/calculate-fee | Get network fee only (alias for POST /api/wallet/estimate-network-fee)
-*WalletApi* | [**createWallet**](docs/WalletApi.md#createwallet) | **POST** /api/wallet/create | Create new wallet (for testing non-custodial)
-*WalletApi* | [**createWalletWebhook**](docs/WalletApi.md#createwalletwebhook) | **POST** /api/wallet/non-custodial/webhooks | Create a wallet webhook
-*WalletApi* | [**deleteNonCustodialAddress**](docs/WalletApi.md#deletenoncustodialaddress) | **DELETE** /api/wallet/non-custodial/addresses/{addressId} | Delete or deactivate a monitored wallet address
-*WalletApi* | [**deleteWalletWebhook**](docs/WalletApi.md#deletewalletwebhook) | **DELETE** /api/wallet/non-custodial/webhooks/{webhookId} | Delete a wallet webhook
-*WalletApi* | [**estimateNetworkFee**](docs/WalletApi.md#estimatenetworkfee) | **POST** /api/wallet/estimate-network-fee | Estimate network fee (preferred; reads from fee oracle cache)
-*WalletApi* | [**estimateNonCustodialGas**](docs/WalletApi.md#estimatenoncustodialgas) | **POST** /api/wallet/non-custodial/estimate-gas | Estimate network fee from blockchain (all supported chains; not controlled by Mudbase)
-*WalletApi* | [**generatePrivateKey**](docs/WalletApi.md#generateprivatekey) | **POST** /api/wallet/generate-key | Generate private key
-*WalletApi* | [**getAllFees**](docs/WalletApi.md#getallfees) | **GET** /api/wallet/fees | Get all chain network fees (fee oracle snapshot)
-*WalletApi* | [**getBalance**](docs/WalletApi.md#getbalance) | **GET** /api/wallet/{walletId}/balance | Get wallet balance
-*WalletApi* | [**getCancelParams**](docs/WalletApi.md#getcancelparams) | **POST** /api/wallet/non-custodial/cancel | Get replacement tx params for cancel (stuck EVM tx)
-*WalletApi* | [**getNetworkStatus**](docs/WalletApi.md#getnetworkstatus) | **GET** /api/wallet/network-status | Get network status (congestion + fee metric per chain)
-*WalletApi* | [**getNonCustodialAddress**](docs/WalletApi.md#getnoncustodialaddress) | **GET** /api/wallet/non-custodial/addresses/{addressId} | Get non-custodial address by ID
-*WalletApi* | [**getNonCustodialBalance**](docs/WalletApi.md#getnoncustodialbalance) | **GET** /api/wallet/non-custodial/addresses/{addressId}/balance | Get balance for a non-custodial address
-*WalletApi* | [**getNonCustodialTransactionByHash**](docs/WalletApi.md#getnoncustodialtransactionbyhash) | **GET** /api/wallet/non-custodial/transactions/{txHash} | Get transaction by hash
-*WalletApi* | [**getNonCustodialTransactions**](docs/WalletApi.md#getnoncustodialtransactions) | **GET** /api/wallet/non-custodial/addresses/{addressId}/transactions | Get transaction history for a non-custodial address
-*WalletApi* | [**getSpeedUpParams**](docs/WalletApi.md#getspeedupparams) | **POST** /api/wallet/non-custodial/speed-up | Get replacement tx params for speed-up (stuck EVM tx)
-*WalletApi* | [**getSupportedCurrencies**](docs/WalletApi.md#getsupportedcurrencies) | **GET** /api/wallet/currencies | Get supported currencies and chains
-*WalletApi* | [**getTransaction**](docs/WalletApi.md#gettransaction) | **GET** /api/wallet/transactions/{transactionId} | Get transaction details
-*WalletApi* | [**getTransactionHistory**](docs/WalletApi.md#gettransactionhistory) | **GET** /api/wallet/transactions | Get transaction history (custodial wallets; same monitoring as non-custodial)
-*WalletApi* | [**getUserWallets**](docs/WalletApi.md#getuserwallets) | **GET** /api/wallet | Get user wallets
-*WalletApi* | [**getWalletFeeConfig**](docs/WalletApi.md#getwalletfeeconfig) | **GET** /api/wallet/projects/{projectId}/fee-config | Get project fee configuration (for non-custodial / external users)
-*WalletApi* | [**getWalletPrivateKey**](docs/WalletApi.md#getwalletprivatekey) | **GET** /api/wallet/{walletId}/private-key | Get wallet private key (WARNING: Sensitive data; for testing non-custodial)
-*WalletApi* | [**getWalletWebhookLogs**](docs/WalletApi.md#getwalletwebhooklogs) | **GET** /api/wallet/non-custodial/webhooks/{webhookId}/logs | Get webhook delivery logs
-*WalletApi* | [**listNonCustodialAddresses**](docs/WalletApi.md#listnoncustodialaddresses) | **GET** /api/wallet/non-custodial/addresses | List registered non-custodial addresses
-*WalletApi* | [**listWalletWebhooks**](docs/WalletApi.md#listwalletwebhooks) | **GET** /api/wallet/non-custodial/webhooks | List wallet webhooks
-*WalletApi* | [**registerNonCustodialAddress**](docs/WalletApi.md#registernoncustodialaddress) | **POST** /api/wallet/non-custodial/register-address | Register a non-custodial wallet address
-*WalletApi* | [**testWalletWebhook**](docs/WalletApi.md#testwalletwebhook) | **POST** /api/wallet/non-custodial/webhooks/test | Test a webhook delivery (sends a single test payload)
-*WalletApi* | [**updateNonCustodialAddress**](docs/WalletApi.md#updatenoncustodialaddress) | **PUT** /api/wallet/non-custodial/addresses/{addressId} | Update a monitored wallet address
-*WalletApi* | [**updateWalletFeeConfig**](docs/WalletApi.md#updatewalletfeeconfig) | **PATCH** /api/wallet/projects/{projectId}/fee-config | Update project fee configuration (for non-custodial / external users)
-*WalletApi* | [**updateWalletWebhook**](docs/WalletApi.md#updatewalletwebhook) | **PUT** /api/wallet/non-custodial/webhooks/{webhookId} | Update a wallet webhook
-*WalletApi* | [**validateAddress**](docs/WalletApi.md#validateaddress) | **POST** /api/wallet/validate-address | Validate cryptocurrency address
-*WalletApi* | [**withdraw**](docs/WalletApi.md#withdraw) | **POST** /api/wallet/{walletId}/withdraw | Prepare withdrawal (semi-transaction; broadcast via non-custodial)
 *WebhooksApi* | [**configureWebhook**](docs/WebhooksApi.md#configurewebhook) | **PUT** /api/webhooks/projects/{projectId}/config | Create or update project webhook
 *WebhooksApi* | [**getWebhookConfig**](docs/WebhooksApi.md#getwebhookconfig) | **GET** /api/webhooks/projects/{projectId}/config | Get project webhook configuration
 *WebhooksApi* | [**getWebhookStats**](docs/WebhooksApi.md#getwebhookstats) | **GET** /api/webhooks/stats | Get webhook delivery statistics
@@ -455,8 +404,12 @@ Class | Method | HTTP request | Description
  - [ApiKycWebhookConfigGet200Response](docs/ApiKycWebhookConfigGet200Response.md)
  - [ApiKycWebhookConfigPut200Response](docs/ApiKycWebhookConfigPut200Response.md)
  - [ApiKycWebhookConfigPutRequest](docs/ApiKycWebhookConfigPutRequest.md)
+ - [ApiKycWebhookConfigTestPost200Response](docs/ApiKycWebhookConfigTestPost200Response.md)
+ - [ApiKycWorkflowsGet200Response](docs/ApiKycWorkflowsGet200Response.md)
+ - [ApiKycWorkflowsGet200ResponseWorkflowsInner](docs/ApiKycWorkflowsGet200ResponseWorkflowsInner.md)
  - [ApiMeBootstrapGet200Response](docs/ApiMeBootstrapGet200Response.md)
  - [ApiProjectsProjectIdAddonsAddonInvokePost200Response](docs/ApiProjectsProjectIdAddonsAddonInvokePost200Response.md)
+ - [ApiProjectsProjectIdKybSessionsPostRequest](docs/ApiProjectsProjectIdKybSessionsPostRequest.md)
  - [ApplyRoleFeaturePreset200Response](docs/ApplyRoleFeaturePreset200Response.md)
  - [ApplyRoleFeaturePresetRequest](docs/ApplyRoleFeaturePresetRequest.md)
  - [ApproveRoleElevation200Response](docs/ApproveRoleElevation200Response.md)
@@ -468,15 +421,9 @@ Class | Method | HTTP request | Description
  - [AuthResponse](docs/AuthResponse.md)
  - [Billing](docs/Billing.md)
  - [BillingLastPayment](docs/BillingLastPayment.md)
- - [BroadcastNonCustodialTransaction200Response](docs/BroadcastNonCustodialTransaction200Response.md)
- - [BroadcastNonCustodialTransaction200ResponseData](docs/BroadcastNonCustodialTransaction200ResponseData.md)
- - [BroadcastNonCustodialTransactionRequest](docs/BroadcastNonCustodialTransactionRequest.md)
  - [Bucket](docs/Bucket.md)
  - [BucketListResponse](docs/BucketListResponse.md)
  - [BucketResponse](docs/BucketResponse.md)
- - [CalculateWalletFee200Response](docs/CalculateWalletFee200Response.md)
- - [CalculateWalletFee200ResponseData](docs/CalculateWalletFee200ResponseData.md)
- - [CalculateWalletFee200ResponseDataFeeTiersValue](docs/CalculateWalletFee200ResponseDataFeeTiersValue.md)
  - [CancelSubscriptionRequest](docs/CancelSubscriptionRequest.md)
  - [ChangePasswordRequest](docs/ChangePasswordRequest.md)
  - [CheckFeatureAccess200Response](docs/CheckFeatureAccess200Response.md)
@@ -549,12 +496,6 @@ Class | Method | HTTP request | Description
  - [CreateRoleRequest](docs/CreateRoleRequest.md)
  - [CreateRoleRequestCollectionPermissionsValue](docs/CreateRoleRequestCollectionPermissionsValue.md)
  - [CreateRoleRequestPermissionsInner](docs/CreateRoleRequestPermissionsInner.md)
- - [CreateWallet201Response](docs/CreateWallet201Response.md)
- - [CreateWallet201ResponseData](docs/CreateWallet201ResponseData.md)
- - [CreateWalletRequest](docs/CreateWalletRequest.md)
- - [CreateWalletWebhook201Response](docs/CreateWalletWebhook201Response.md)
- - [CreateWalletWebhookRequest](docs/CreateWalletWebhookRequest.md)
- - [CreateWalletWebhookRequestFilters](docs/CreateWalletWebhookRequestFilters.md)
  - [DashboardActivityItem](docs/DashboardActivityItem.md)
  - [DashboardOverviewData](docs/DashboardOverviewData.md)
  - [DashboardOverviewDataActiveUsers](docs/DashboardOverviewDataActiveUsers.md)
@@ -574,6 +515,14 @@ Class | Method | HTTP request | Description
  - [DeleteOrganization200Response](docs/DeleteOrganization200Response.md)
  - [DeleteRole200Response](docs/DeleteRole200Response.md)
  - [DeleteSubOrganization200Response](docs/DeleteSubOrganization200Response.md)
+ - [DeviceListResponse](docs/DeviceListResponse.md)
+ - [DeviceRegisterRequest](docs/DeviceRegisterRequest.md)
+ - [DeviceRegisteredResponse](docs/DeviceRegisteredResponse.md)
+ - [DeviceRegisteredResponseData](docs/DeviceRegisteredResponseData.md)
+ - [DeviceToken](docs/DeviceToken.md)
+ - [DeviceUnregisterRequest](docs/DeviceUnregisterRequest.md)
+ - [DeviceUnregisteredResponse](docs/DeviceUnregisteredResponse.md)
+ - [DeviceUnregisteredResponseData](docs/DeviceUnregisteredResponseData.md)
  - [Disable2FARequest](docs/Disable2FARequest.md)
  - [DownloadBucketFile403Response](docs/DownloadBucketFile403Response.md)
  - [DownloadBucketFile404Response](docs/DownloadBucketFile404Response.md)
@@ -595,12 +544,6 @@ Class | Method | HTTP request | Description
  - [EraseUserData409Response](docs/EraseUserData409Response.md)
  - [EraseUserDataRequest](docs/EraseUserDataRequest.md)
  - [ErrorDetails](docs/ErrorDetails.md)
- - [EstimateNetworkFee200Response](docs/EstimateNetworkFee200Response.md)
- - [EstimateNetworkFeeRequest](docs/EstimateNetworkFeeRequest.md)
- - [EstimateNonCustodialGas200Response](docs/EstimateNonCustodialGas200Response.md)
- - [EstimateNonCustodialGas200ResponseData](docs/EstimateNonCustodialGas200ResponseData.md)
- - [EstimateNonCustodialGasRequest](docs/EstimateNonCustodialGasRequest.md)
- - [EstimateNonCustodialGasRequestTransaction](docs/EstimateNonCustodialGasRequestTransaction.md)
  - [ExecuteFunctionRequest](docs/ExecuteFunctionRequest.md)
  - [ExecuteIntegrationRequest](docs/ExecuteIntegrationRequest.md)
  - [ExportUserData200Response](docs/ExportUserData200Response.md)
@@ -633,30 +576,16 @@ Class | Method | HTTP request | Description
  - [GenerateDataProcessingRecord200ResponseRecord](docs/GenerateDataProcessingRecord200ResponseRecord.md)
  - [GenerateDataProcessingRecordRequest](docs/GenerateDataProcessingRecordRequest.md)
  - [GeneratePresignedUploadRequest](docs/GeneratePresignedUploadRequest.md)
- - [GeneratePrivateKey200Response](docs/GeneratePrivateKey200Response.md)
- - [GeneratePrivateKey200ResponseData](docs/GeneratePrivateKey200ResponseData.md)
- - [GeneratePrivateKeyRequest](docs/GeneratePrivateKeyRequest.md)
  - [GenerateSignedUrlRequest](docs/GenerateSignedUrlRequest.md)
  - [GetActiveUsers200Response](docs/GetActiveUsers200Response.md)
  - [GetActiveUsers200ResponseUsersInner](docs/GetActiveUsers200ResponseUsersInner.md)
- - [GetAdminAuditEvents200Response](docs/GetAdminAuditEvents200Response.md)
- - [GetAdminPayoutDashboard200Response](docs/GetAdminPayoutDashboard200Response.md)
- - [GetAdminPayoutDashboard200ResponseData](docs/GetAdminPayoutDashboard200ResponseData.md)
- - [GetAdminPayoutDashboard200ResponseDataByCurrencyInner](docs/GetAdminPayoutDashboard200ResponseDataByCurrencyInner.md)
- - [GetAllFees200Response](docs/GetAllFees200Response.md)
- - [GetAllFees200ResponseData](docs/GetAllFees200ResponseData.md)
  - [GetAvailableOAuthProviders200Response](docs/GetAvailableOAuthProviders200Response.md)
  - [GetAvailableOAuthProviders200ResponseProvidersInner](docs/GetAvailableOAuthProviders200ResponseProvidersInner.md)
  - [GetAvailableRoles200Response](docs/GetAvailableRoles200Response.md)
  - [GetAvailableRoles200ResponseDataInner](docs/GetAvailableRoles200ResponseDataInner.md)
- - [GetBalance200Response](docs/GetBalance200Response.md)
- - [GetBalance200ResponseData](docs/GetBalance200ResponseData.md)
  - [GetBillingEstimate200Response](docs/GetBillingEstimate200Response.md)
  - [GetBillingEstimate200ResponseLineItemsInner](docs/GetBillingEstimate200ResponseLineItemsInner.md)
  - [GetBillingEstimate200ResponseSpendLimits](docs/GetBillingEstimate200ResponseSpendLimits.md)
- - [GetCancelParams200Response](docs/GetCancelParams200Response.md)
- - [GetCancelParams200ResponseData](docs/GetCancelParams200ResponseData.md)
- - [GetCancelParamsRequest](docs/GetCancelParamsRequest.md)
  - [GetChatDetails200Response](docs/GetChatDetails200Response.md)
  - [GetChatDetails200ResponseData](docs/GetChatDetails200ResponseData.md)
  - [GetChatDetails200ResponseDataParticipantsInner](docs/GetChatDetails200ResponseDataParticipantsInner.md)
@@ -675,14 +604,6 @@ Class | Method | HTTP request | Description
  - [GetCurrencyFeeBalance200ResponseData](docs/GetCurrencyFeeBalance200ResponseData.md)
  - [GetCurrentUser200Response](docs/GetCurrentUser200Response.md)
  - [GetDashboard200Response](docs/GetDashboard200Response.md)
- - [GetDashboardOrganizationDetail200Response](docs/GetDashboardOrganizationDetail200Response.md)
- - [GetDashboardOrganizationDetail200ResponseOrganization](docs/GetDashboardOrganizationDetail200ResponseOrganization.md)
- - [GetDashboardOrganizationDetail200ResponseOrganizationProjectsInner](docs/GetDashboardOrganizationDetail200ResponseOrganizationProjectsInner.md)
- - [GetDashboardOrganizationDetail200ResponseOrganizationProjectsInnerUsersInner](docs/GetDashboardOrganizationDetail200ResponseOrganizationProjectsInnerUsersInner.md)
- - [GetDashboardOrganizationDetail200ResponseOrganizationUsersInner](docs/GetDashboardOrganizationDetail200ResponseOrganizationUsersInner.md)
- - [GetDashboardOrganizations200Response](docs/GetDashboardOrganizations200Response.md)
- - [GetDashboardOrganizations200ResponseOrganizationsInner](docs/GetDashboardOrganizations200ResponseOrganizationsInner.md)
- - [GetDashboardOrganizations200ResponseOrganizationsInnerCreatedBy](docs/GetDashboardOrganizations200ResponseOrganizationsInnerCreatedBy.md)
  - [GetEventThroughput200Response](docs/GetEventThroughput200Response.md)
  - [GetFeeBalances200Response](docs/GetFeeBalances200Response.md)
  - [GetFeeBalances200ResponseDataInner](docs/GetFeeBalances200ResponseDataInner.md)
@@ -705,11 +626,6 @@ Class | Method | HTTP request | Description
  - [GetLocalSession200Response](docs/GetLocalSession200Response.md)
  - [GetMultiRoleConfig200Response](docs/GetMultiRoleConfig200Response.md)
  - [GetMultiRoleConfig200ResponseData](docs/GetMultiRoleConfig200ResponseData.md)
- - [GetNetworkStatus200Response](docs/GetNetworkStatus200Response.md)
- - [GetNetworkStatus200ResponseDataValue](docs/GetNetworkStatus200ResponseDataValue.md)
- - [GetNonCustodialBalance200Response](docs/GetNonCustodialBalance200Response.md)
- - [GetNonCustodialTransactionByHash200Response](docs/GetNonCustodialTransactionByHash200Response.md)
- - [GetNonCustodialTransactions200Response](docs/GetNonCustodialTransactions200Response.md)
  - [GetOAuthProviderConfig200Response](docs/GetOAuthProviderConfig200Response.md)
  - [GetOAuthProviderConfig200ResponseConfig](docs/GetOAuthProviderConfig200ResponseConfig.md)
  - [GetOrgOAuthProviders200Response](docs/GetOrgOAuthProviders200Response.md)
@@ -728,8 +644,7 @@ Class | Method | HTTP request | Description
  - [GetPaymentRecords200ResponseDataRecordsInner](docs/GetPaymentRecords200ResponseDataRecordsInner.md)
  - [GetPayoutHistory200Response](docs/GetPayoutHistory200Response.md)
  - [GetPayoutHistory200ResponseDataInner](docs/GetPayoutHistory200ResponseDataInner.md)
- - [GetPendingPayouts200Response](docs/GetPendingPayouts200Response.md)
- - [GetPendingPayouts200ResponseDataInner](docs/GetPendingPayouts200ResponseDataInner.md)
+ - [GetPayoutHistory200ResponsePagination](docs/GetPayoutHistory200ResponsePagination.md)
  - [GetPendingRoleElevationRequests200Response](docs/GetPendingRoleElevationRequests200Response.md)
  - [GetPermissionsMatrix200Response](docs/GetPermissionsMatrix200Response.md)
  - [GetPermissionsMatrix200ResponseData](docs/GetPermissionsMatrix200ResponseData.md)
@@ -753,15 +668,9 @@ Class | Method | HTTP request | Description
  - [GetPublicPlans200Response](docs/GetPublicPlans200Response.md)
  - [GetRole200Response](docs/GetRole200Response.md)
  - [GetRoleElevationStatus200Response](docs/GetRoleElevationStatus200Response.md)
- - [GetScannerMetrics200Response](docs/GetScannerMetrics200Response.md)
- - [GetScannerMetrics200ResponseAlertsInner](docs/GetScannerMetrics200ResponseAlertsInner.md)
- - [GetScannerMetrics200ResponseMetricsValue](docs/GetScannerMetrics200ResponseMetricsValue.md)
  - [GetSearchAnalytics200Response](docs/GetSearchAnalytics200Response.md)
  - [GetSearchAnalytics200ResponseTopQueriesInner](docs/GetSearchAnalytics200ResponseTopQueriesInner.md)
  - [GetSearchSuggestions200Response](docs/GetSearchSuggestions200Response.md)
- - [GetSpeedUpParams200Response](docs/GetSpeedUpParams200Response.md)
- - [GetSpeedUpParams200ResponseData](docs/GetSpeedUpParams200ResponseData.md)
- - [GetSpeedUpParamsRequest](docs/GetSpeedUpParamsRequest.md)
  - [GetSubOrganizations200Response](docs/GetSubOrganizations200Response.md)
  - [GetSubscriptionTierById200Response](docs/GetSubscriptionTierById200Response.md)
  - [GetSubscriptionTierById200ResponsePlan](docs/GetSubscriptionTierById200ResponsePlan.md)
@@ -769,15 +678,8 @@ Class | Method | HTTP request | Description
  - [GetSubscriptionTiers200ResponsePlansInner](docs/GetSubscriptionTiers200ResponsePlansInner.md)
  - [GetSubscriptions200Response](docs/GetSubscriptions200Response.md)
  - [GetSubscriptions200ResponseSubscriptionsInner](docs/GetSubscriptions200ResponseSubscriptionsInner.md)
- - [GetSupportedCurrencies200Response](docs/GetSupportedCurrencies200Response.md)
- - [GetSupportedCurrencies200ResponseData](docs/GetSupportedCurrencies200ResponseData.md)
- - [GetSupportedCurrencies200ResponseDataCurrenciesInner](docs/GetSupportedCurrencies200ResponseDataCurrenciesInner.md)
  - [GetTemplates200Response](docs/GetTemplates200Response.md)
  - [GetTemplates200ResponseTemplatesInner](docs/GetTemplates200ResponseTemplatesInner.md)
- - [GetTransaction200Response](docs/GetTransaction200Response.md)
- - [GetTransaction200ResponseData](docs/GetTransaction200ResponseData.md)
- - [GetTransactionHistory200Response](docs/GetTransactionHistory200Response.md)
- - [GetTransactionHistory200ResponsePagination](docs/GetTransactionHistory200ResponsePagination.md)
  - [GetUsageStats200Response](docs/GetUsageStats200Response.md)
  - [GetUsageStats200ResponseStats](docs/GetUsageStats200ResponseStats.md)
  - [GetUsageWarnings200Response](docs/GetUsageWarnings200Response.md)
@@ -788,21 +690,11 @@ Class | Method | HTTP request | Description
  - [GetUserChats200ResponseDataChatsInnerLastMessage](docs/GetUserChats200ResponseDataChatsInnerLastMessage.md)
  - [GetUserOverview200Response](docs/GetUserOverview200Response.md)
  - [GetUserOverview200ResponseFootprint](docs/GetUserOverview200ResponseFootprint.md)
- - [GetUserWallets200Response](docs/GetUserWallets200Response.md)
  - [GetUsersByRole200Response](docs/GetUsersByRole200Response.md)
- - [GetWalletFeeConfig200Response](docs/GetWalletFeeConfig200Response.md)
- - [GetWalletFeeConfig200ResponseData](docs/GetWalletFeeConfig200ResponseData.md)
- - [GetWalletPrivateKey200Response](docs/GetWalletPrivateKey200Response.md)
- - [GetWalletPrivateKey200ResponseData](docs/GetWalletPrivateKey200ResponseData.md)
- - [GetWalletWebhookLogs200Response](docs/GetWalletWebhookLogs200Response.md)
  - [GetWebhookConfig200Response](docs/GetWebhookConfig200Response.md)
  - [GetWebhookConfig200ResponseData](docs/GetWebhookConfig200ResponseData.md)
  - [GetWebhookConfig200ResponseDataTransformationsInner](docs/GetWebhookConfig200ResponseDataTransformationsInner.md)
  - [GetWebhookConfig404Response](docs/GetWebhookConfig404Response.md)
- - [HandleFlutterwaveWebhook200Response](docs/HandleFlutterwaveWebhook200Response.md)
- - [HandleFlutterwaveWebhookRequest](docs/HandleFlutterwaveWebhookRequest.md)
- - [HandleFlutterwaveWebhookRequestData](docs/HandleFlutterwaveWebhookRequestData.md)
- - [HandleFlutterwaveWebhookRequestDataCustomer](docs/HandleFlutterwaveWebhookRequestDataCustomer.md)
  - [HealthResponse](docs/HealthResponse.md)
  - [HealthResponseServices](docs/HealthResponseServices.md)
  - [ImportIntegrationRequest](docs/ImportIntegrationRequest.md)
@@ -828,14 +720,12 @@ Class | Method | HTTP request | Description
  - [ListBackups200Response](docs/ListBackups200Response.md)
  - [ListBackups200ResponseBackupsInner](docs/ListBackups200ResponseBackupsInner.md)
  - [ListCollections200Response](docs/ListCollections200Response.md)
- - [ListNonCustodialAddresses200Response](docs/ListNonCustodialAddresses200Response.md)
  - [ListOAuthProviders200Response](docs/ListOAuthProviders200Response.md)
  - [ListOAuthProviders200ResponseProvidersInner](docs/ListOAuthProviders200ResponseProvidersInner.md)
  - [ListOrganizations200Response](docs/ListOrganizations200Response.md)
  - [ListProjectEmailTemplates200Response](docs/ListProjectEmailTemplates200Response.md)
  - [ListProjects200Response](docs/ListProjects200Response.md)
  - [ListRoles200Response](docs/ListRoles200Response.md)
- - [ListWalletWebhooks200Response](docs/ListWalletWebhooks200Response.md)
  - [LogSecurityEvent200Response](docs/LogSecurityEvent200Response.md)
  - [LogSecurityEvent200ResponseEvent](docs/LogSecurityEvent200ResponseEvent.md)
  - [LogSecurityEventRequest](docs/LogSecurityEventRequest.md)
@@ -849,6 +739,8 @@ Class | Method | HTTP request | Description
  - [MarkMessagesAsRead200Response](docs/MarkMessagesAsRead200Response.md)
  - [MarkMessagesAsRead200ResponseData](docs/MarkMessagesAsRead200ResponseData.md)
  - [MarkMessagesAsReadRequest](docs/MarkMessagesAsReadRequest.md)
+ - [McpConfigGet200Response](docs/McpConfigGet200Response.md)
+ - [McpConfigGet200ResponseToolsInner](docs/McpConfigGet200ResponseToolsInner.md)
  - [Message](docs/Message.md)
  - [MessageHistoryResponse](docs/MessageHistoryResponse.md)
  - [MessageHistoryResponseData](docs/MessageHistoryResponseData.md)
@@ -869,23 +761,21 @@ Class | Method | HTTP request | Description
  - [MonitoringLogsResponseLogsInnerUser](docs/MonitoringLogsResponseLogsInnerUser.md)
  - [MonitoringPerformanceResponse](docs/MonitoringPerformanceResponse.md)
  - [MonitoringPerformanceResponseMetrics](docs/MonitoringPerformanceResponseMetrics.md)
- - [NonCustodialAddress](docs/NonCustodialAddress.md)
- - [NonCustodialAddressResponse](docs/NonCustodialAddressResponse.md)
  - [OTPSendRequest](docs/OTPSendRequest.md)
  - [OTPVerifyRequest](docs/OTPVerifyRequest.md)
  - [OrgAddDomainResponse](docs/OrgAddDomainResponse.md)
- - [OrgCloudflareEdgeHints](docs/OrgCloudflareEdgeHints.md)
- - [OrgCloudflareEdgeHintsOwnershipVerification](docs/OrgCloudflareEdgeHintsOwnershipVerification.md)
- - [OrgCloudflareSslValidationRecord](docs/OrgCloudflareSslValidationRecord.md)
  - [OrgCustomDomainPlatformReadyRequest](docs/OrgCustomDomainPlatformReadyRequest.md)
  - [OrgDnsInstructionsResponse](docs/OrgDnsInstructionsResponse.md)
  - [OrgDnsRecord](docs/OrgDnsRecord.md)
  - [OrgDomainEntryOrgConsole](docs/OrgDomainEntryOrgConsole.md)
  - [OrgDomainEntryWithDns](docs/OrgDomainEntryWithDns.md)
  - [OrgDomainsListResponse](docs/OrgDomainsListResponse.md)
+ - [OrgEdgeHints](docs/OrgEdgeHints.md)
+ - [OrgEdgeHintsOwnershipVerification](docs/OrgEdgeHintsOwnershipVerification.md)
  - [OrgOAuthCallback400Response](docs/OrgOAuthCallback400Response.md)
  - [OrgPatchDomainResponse](docs/OrgPatchDomainResponse.md)
  - [OrgPlatformDnsVerificationCustomer](docs/OrgPlatformDnsVerificationCustomer.md)
+ - [OrgSslValidationRecord](docs/OrgSslValidationRecord.md)
  - [OrgVerifyCustomDomainDnsFailureResponse](docs/OrgVerifyCustomDomainDnsFailureResponse.md)
  - [OrgVerifyCustomDomainDnsSuccessResponse](docs/OrgVerifyCustomDomainDnsSuccessResponse.md)
  - [Organization](docs/Organization.md)
@@ -897,11 +787,6 @@ Class | Method | HTTP request | Description
  - [PatchProjectFcmConfigRequestOneOf1](docs/PatchProjectFcmConfigRequestOneOf1.md)
  - [Permission](docs/Permission.md)
  - [Plan](docs/Plan.md)
- - [PlatformAdminActivateOrgCustomDomainRequest](docs/PlatformAdminActivateOrgCustomDomainRequest.md)
- - [PlatformAdminCustomDomainAddonRequest](docs/PlatformAdminCustomDomainAddonRequest.md)
- - [PlatformAdminDetachMemberRequest](docs/PlatformAdminDetachMemberRequest.md)
- - [PlatformAdminDomainDnsRecheckBatchRequest](docs/PlatformAdminDomainDnsRecheckBatchRequest.md)
- - [PlatformAdminPatchOrgLimits200Response](docs/PlatformAdminPatchOrgLimits200Response.md)
  - [PresignedPostResponse](docs/PresignedPostResponse.md)
  - [PreviewProjectEmailTemplateRequest](docs/PreviewProjectEmailTemplateRequest.md)
  - [Project](docs/Project.md)
@@ -933,7 +818,6 @@ Class | Method | HTTP request | Description
  - [RegisterLocalUser201Response](docs/RegisterLocalUser201Response.md)
  - [RegisterLocalUser201ResponseUser](docs/RegisterLocalUser201ResponseUser.md)
  - [RegisterLocalUserRequest](docs/RegisterLocalUserRequest.md)
- - [RegisterNonCustodialAddressRequest](docs/RegisterNonCustodialAddressRequest.md)
  - [RegisterRequest](docs/RegisterRequest.md)
  - [RegisterUser429Response](docs/RegisterUser429Response.md)
  - [RegisterWithRole201Response](docs/RegisterWithRole201Response.md)
@@ -975,9 +859,6 @@ Class | Method | HTTP request | Description
  - [SimulateAppPermissions200ResponseEvaluated](docs/SimulateAppPermissions200ResponseEvaluated.md)
  - [SimulateAppPermissionsRequest](docs/SimulateAppPermissionsRequest.md)
  - [SimulateFunctionTriggerRequest](docs/SimulateFunctionTriggerRequest.md)
- - [StartBugAnalysisScan503Response](docs/StartBugAnalysisScan503Response.md)
- - [StartBugAnalysisScanByProjectRequest](docs/StartBugAnalysisScanByProjectRequest.md)
- - [StartBugAnalysisScanRequest](docs/StartBugAnalysisScanRequest.md)
  - [StorageConfig](docs/StorageConfig.md)
  - [SystemStatusResponse](docs/SystemStatusResponse.md)
  - [SystemStatusResponseData](docs/SystemStatusResponseData.md)
@@ -986,9 +867,8 @@ Class | Method | HTTP request | Description
  - [SystemStatusResponseDataMemory](docs/SystemStatusResponseDataMemory.md)
  - [SystemStatusResponseDataRequests](docs/SystemStatusResponseDataRequests.md)
  - [SystemStatusResponseDataStorage](docs/SystemStatusResponseDataStorage.md)
+ - [TestIntegration200Response](docs/TestIntegration200Response.md)
  - [TestIntegrationRequest](docs/TestIntegrationRequest.md)
- - [TestWalletWebhook200Response](docs/TestWalletWebhook200Response.md)
- - [TestWalletWebhookRequest](docs/TestWalletWebhookRequest.md)
  - [TestWebhookTransformation200Response](docs/TestWebhookTransformation200Response.md)
  - [TestWebhookTransformation200ResponseData](docs/TestWebhookTransformation200ResponseData.md)
  - [TestWebhookTransformationRequest](docs/TestWebhookTransformationRequest.md)
@@ -1015,8 +895,6 @@ Class | Method | HTTP request | Description
  - [UpdateMultiRoleSettings200Response](docs/UpdateMultiRoleSettings200Response.md)
  - [UpdateMultiRoleSettingsRequest](docs/UpdateMultiRoleSettingsRequest.md)
  - [UpdateMultiRoleSettingsRequestSettings](docs/UpdateMultiRoleSettingsRequestSettings.md)
- - [UpdateNonCustodialAddress200Response](docs/UpdateNonCustodialAddress200Response.md)
- - [UpdateNonCustodialAddressRequest](docs/UpdateNonCustodialAddressRequest.md)
  - [UpdateOAuthProviderConfigRequest](docs/UpdateOAuthProviderConfigRequest.md)
  - [UpdateOrganization200Response](docs/UpdateOrganization200Response.md)
  - [UpdateOrganizationPlan200Response](docs/UpdateOrganizationPlan200Response.md)
@@ -1035,11 +913,6 @@ Class | Method | HTTP request | Description
  - [UpdateUserAccountStatusRequest](docs/UpdateUserAccountStatusRequest.md)
  - [UpdateUserProfile200Response](docs/UpdateUserProfile200Response.md)
  - [UpdateUserRequest](docs/UpdateUserRequest.md)
- - [UpdateWalletFeeConfig200Response](docs/UpdateWalletFeeConfig200Response.md)
- - [UpdateWalletFeeConfig200ResponseData](docs/UpdateWalletFeeConfig200ResponseData.md)
- - [UpdateWalletFeeConfigRequest](docs/UpdateWalletFeeConfigRequest.md)
- - [UpdateWalletWebhook200Response](docs/UpdateWalletWebhook200Response.md)
- - [UpdateWalletWebhookRequest](docs/UpdateWalletWebhookRequest.md)
  - [UploadFiles413Response](docs/UploadFiles413Response.md)
  - [UploadProjectLogo200Response](docs/UploadProjectLogo200Response.md)
  - [UploadVerificationDocumentsRequest](docs/UploadVerificationDocumentsRequest.md)
@@ -1054,9 +927,6 @@ Class | Method | HTTP request | Description
  - [UsageTrendsResponseTrendsInnerId](docs/UsageTrendsResponseTrendsInnerId.md)
  - [User](docs/User.md)
  - [UserSummary](docs/UserSummary.md)
- - [ValidateAddress200Response](docs/ValidateAddress200Response.md)
- - [ValidateAddress200ResponseData](docs/ValidateAddress200ResponseData.md)
- - [ValidateAddressRequest](docs/ValidateAddressRequest.md)
  - [ValidatePasswordResetToken200Response](docs/ValidatePasswordResetToken200Response.md)
  - [ValidatePasswordResetToken400Response](docs/ValidatePasswordResetToken400Response.md)
  - [ValidatePasswordResetTokenRequest](docs/ValidatePasswordResetTokenRequest.md)
@@ -1071,21 +941,12 @@ Class | Method | HTTP request | Description
  - [VerifyPayment200ResponseData](docs/VerifyPayment200ResponseData.md)
  - [VerifyPayment200ResponseDataSubscription](docs/VerifyPayment200ResponseDataSubscription.md)
  - [VerifyProjectEmailSmtpDomainRequest](docs/VerifyProjectEmailSmtpDomainRequest.md)
- - [WalletBalance](docs/WalletBalance.md)
- - [WalletTransaction](docs/WalletTransaction.md)
- - [WalletTransactionTokenTransfersInner](docs/WalletTransactionTokenTransfersInner.md)
- - [WalletWebhook](docs/WalletWebhook.md)
- - [WalletWebhookFilters](docs/WalletWebhookFilters.md)
- - [WalletWebhookStats](docs/WalletWebhookStats.md)
  - [WebhookListResponse](docs/WebhookListResponse.md)
  - [WebhookLog](docs/WebhookLog.md)
  - [WebhookLogResponse](docs/WebhookLogResponse.md)
  - [WebhookStatsResponse](docs/WebhookStatsResponse.md)
  - [WebhookStatsResponseEventStatsInner](docs/WebhookStatsResponseEventStatsInner.md)
  - [WebhookStatsResponseStatusStatsInner](docs/WebhookStatsResponseStatusStatsInner.md)
- - [Withdraw200Response](docs/Withdraw200Response.md)
- - [Withdraw200ResponseData](docs/Withdraw200ResponseData.md)
- - [WithdrawRequest](docs/WithdrawRequest.md)
 
 
 <a id="documentation-for-authorization"></a>

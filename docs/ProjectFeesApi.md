@@ -4,77 +4,16 @@ All URIs are relative to *https://cloud.mudbase.dev*
 
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
-|[**cancelPayout**](#cancelpayout) | **POST** /api/admin/payouts/{payoutId}/cancel | ~~Cancel payout (Admin)~~ (deprecated)|
 |[**confirmAddressVerification**](#confirmaddressverification) | **POST** /api/projects/{projectId}/fee-settings/{currency}/confirm-verification | ~~Confirm address verification~~ (deprecated)|
 |[**createOrUpdateFeeSettings**](#createorupdatefeesettings) | **POST** /api/projects/{projectId}/fee-settings | ~~Create or update project fee settings~~ (deprecated)|
-|[**getAdminPayoutDashboard**](#getadminpayoutdashboard) | **GET** /api/admin/payouts/dashboard | ~~Get admin payout dashboard (Admin)~~ (deprecated)|
 |[**getCurrencyFeeBalance**](#getcurrencyfeebalance) | **GET** /api/projects/{projectId}/fee-balances/{currency} | ~~Get currency fee balance~~ (deprecated)|
 |[**getFeeBalances**](#getfeebalances) | **GET** /api/projects/{projectId}/fee-balances | ~~Get all fee balances~~ (deprecated)|
 |[**getFeeSettings**](#getfeesettings) | **GET** /api/projects/{projectId}/fee-settings | ~~Get project fee settings~~ (deprecated)|
 |[**getPayoutHistory**](#getpayouthistory) | **GET** /api/projects/{projectId}/payout-history | ~~Get payout history~~ (deprecated)|
-|[**getPendingPayouts**](#getpendingpayouts) | **GET** /api/admin/payouts/pending | ~~Get all pending payouts (Admin)~~ (deprecated)|
 |[**getProjectFeeDashboard**](#getprojectfeedashboard) | **GET** /api/projects/{projectId}/fee-dashboard | ~~Get fee dashboard~~ (deprecated)|
 |[**initiateAddressVerification**](#initiateaddressverification) | **POST** /api/projects/{projectId}/fee-settings/{currency}/verify-address | ~~Initiate address verification~~ (deprecated)|
-|[**processPayout**](#processpayout) | **POST** /api/admin/payouts/{payoutId}/process | ~~Manually process payout (Admin)~~ (deprecated)|
 |[**requestManualPayout**](#requestmanualpayout) | **POST** /api/projects/{projectId}/payouts/request-manual | ~~Request manual payout~~ (deprecated)|
 |[**updateCurrencyFeeSettings**](#updatecurrencyfeesettings) | **PATCH** /api/projects/{projectId}/fee-settings/{currency} | ~~Update currency fee settings~~ (deprecated)|
-
-# **cancelPayout**
-> ApplyRoleFeaturePreset200Response cancelPayout()
-
-
-### Example
-
-```typescript
-import {
-    ProjectFeesApi,
-    Configuration,
-    PlatformAdminDetachMemberRequest
-} from 'mudbase-sdk';
-
-const configuration = new Configuration();
-const apiInstance = new ProjectFeesApi(configuration);
-
-let payoutId: string; // (default to undefined)
-let platformAdminDetachMemberRequest: PlatformAdminDetachMemberRequest; // (optional)
-
-const { status, data } = await apiInstance.cancelPayout(
-    payoutId,
-    platformAdminDetachMemberRequest
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **platformAdminDetachMemberRequest** | **PlatformAdminDetachMemberRequest**|  | |
-| **payoutId** | [**string**] |  | defaults to undefined|
-
-
-### Return type
-
-**ApplyRoleFeaturePreset200Response**
-
-### Authorization
-
-[OrgBearerAuth](../README.md#OrgBearerAuth), [ProjectBearerAuth](../README.md#ProjectBearerAuth)
-
-### HTTP request headers
-
- - **Content-Type**: application/json
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | Payout cancelled |  -  |
-|**400** | Bad request |  -  |
-|**401** | Authentication required |  -  |
-|**403** | Access denied |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **confirmAddressVerification**
 > ConfirmAddressVerification200Response confirmAddressVerification(confirmAddressVerificationRequest)
@@ -194,51 +133,6 @@ const { status, data } = await apiInstance.createOrUpdateFeeSettings(
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **getAdminPayoutDashboard**
-> GetAdminPayoutDashboard200Response getAdminPayoutDashboard()
-
-
-### Example
-
-```typescript
-import {
-    ProjectFeesApi,
-    Configuration
-} from 'mudbase-sdk';
-
-const configuration = new Configuration();
-const apiInstance = new ProjectFeesApi(configuration);
-
-const { status, data } = await apiInstance.getAdminPayoutDashboard();
-```
-
-### Parameters
-This endpoint does not have any parameters.
-
-
-### Return type
-
-**GetAdminPayoutDashboard200Response**
-
-### Authorization
-
-[OrgBearerAuth](../README.md#OrgBearerAuth), [ProjectBearerAuth](../README.md#ProjectBearerAuth)
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | Admin dashboard statistics |  -  |
-|**401** | Authentication required |  -  |
-|**403** | Access denied |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
 # **getCurrencyFeeBalance**
 > GetCurrencyFeeBalance200Response getCurrencyFeeBalance()
 
@@ -290,8 +184,8 @@ const { status, data } = await apiInstance.getCurrencyFeeBalance(
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 |**200** | Currency balance |  -  |
-|**404** | Resource not found |  -  |
 |**401** | Authentication required |  -  |
+|**404** | Resource not found |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -348,7 +242,7 @@ const { status, data } = await apiInstance.getFeeBalances(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **getFeeSettings**
-> TestWalletWebhook200Response getFeeSettings()
+> TestIntegration200Response getFeeSettings()
 
 Get all fee settings configured for a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
 
@@ -379,7 +273,7 @@ const { status, data } = await apiInstance.getFeeSettings(
 
 ### Return type
 
-**TestWalletWebhook200Response**
+**TestIntegration200Response**
 
 ### Authorization
 
@@ -395,8 +289,8 @@ const { status, data } = await apiInstance.getFeeSettings(
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 |**200** | Fee settings |  -  |
-|**404** | Resource not found |  -  |
 |**401** | Authentication required |  -  |
+|**404** | Resource not found |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -461,67 +355,6 @@ const { status, data } = await apiInstance.getPayoutHistory(
 |-------------|-------------|------------------|
 |**200** | Payout history |  -  |
 |**401** | Authentication required |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **getPendingPayouts**
-> GetPendingPayouts200Response getPendingPayouts()
-
-
-### Example
-
-```typescript
-import {
-    ProjectFeesApi,
-    Configuration
-} from 'mudbase-sdk';
-
-const configuration = new Configuration();
-const apiInstance = new ProjectFeesApi(configuration);
-
-let status: string; // (optional) (default to undefined)
-let currency: string; // (optional) (default to undefined)
-let limit: number; // (optional) (default to 50)
-let page: number; // (optional) (default to 1)
-
-const { status, data } = await apiInstance.getPendingPayouts(
-    status,
-    currency,
-    limit,
-    page
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **status** | [**string**] |  | (optional) defaults to undefined|
-| **currency** | [**string**] |  | (optional) defaults to undefined|
-| **limit** | [**number**] |  | (optional) defaults to 50|
-| **page** | [**number**] |  | (optional) defaults to 1|
-
-
-### Return type
-
-**GetPendingPayouts200Response**
-
-### Authorization
-
-[OrgBearerAuth](../README.md#OrgBearerAuth), [ProjectBearerAuth](../README.md#ProjectBearerAuth)
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | Pending payouts |  -  |
-|**401** | Authentication required |  -  |
-|**403** | Access denied |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -629,59 +462,6 @@ const { status, data } = await apiInstance.initiateAddressVerification(
 |**200** | Verification initiated |  -  |
 |**400** | Bad request |  -  |
 |**401** | Authentication required |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **processPayout**
-> ApplyRoleFeaturePreset200Response processPayout()
-
-
-### Example
-
-```typescript
-import {
-    ProjectFeesApi,
-    Configuration
-} from 'mudbase-sdk';
-
-const configuration = new Configuration();
-const apiInstance = new ProjectFeesApi(configuration);
-
-let payoutId: string; // (default to undefined)
-
-const { status, data } = await apiInstance.processPayout(
-    payoutId
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **payoutId** | [**string**] |  | defaults to undefined|
-
-
-### Return type
-
-**ApplyRoleFeaturePreset200Response**
-
-### Authorization
-
-[OrgBearerAuth](../README.md#OrgBearerAuth), [ProjectBearerAuth](../README.md#ProjectBearerAuth)
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | Payout processing initiated |  -  |
-|**400** | Bad request |  -  |
-|**401** | Authentication required |  -  |
-|**403** | Access denied |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

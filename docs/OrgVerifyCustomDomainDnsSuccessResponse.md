@@ -13,7 +13,7 @@ Name | Type | Description | Notes
 **expectedTxt** | **string** | Same as dnsTxtValue | [default to undefined]
 **dnsTxtHost** | **string** |  | [default to undefined]
 **dnsTxtValue** | **string** |  | [default to undefined]
-**cloudflare** | [**OrgCloudflareEdgeHints**](OrgCloudflareEdgeHints.md) |  | [optional] [default to undefined]
+**edge** | [**OrgEdgeHints**](OrgEdgeHints.md) |  | [optional] [default to undefined]
 **dnsRecords** | [**Array&lt;OrgDnsRecord&gt;**](OrgDnsRecord.md) | Same shape as &#x60;OrgDomainEntryWithDns.dnsRecords&#x60; when Fly ACME ran after this successful verify; omit or empty when Fly ACME is disabled or not provisioned. | [optional] [default to undefined]
 **flyCertificateStatus** | **string** | Fly certificate status after verify when Fly ACME is active; null otherwise | [optional] [default to undefined]
 **flyAcmeEnabled** | **boolean** | True when Fly ACME would call the Certificates API (token, app, CUSTOM_DOMAIN_FLY_ACME_ENABLED). | [optional] [default to undefined]
@@ -35,7 +35,7 @@ const instance: OrgVerifyCustomDomainDnsSuccessResponse = {
     expectedTxt,
     dnsTxtHost,
     dnsTxtValue,
-    cloudflare,
+    edge,
     dnsRecords,
     flyCertificateStatus,
     flyAcmeEnabled,

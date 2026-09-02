@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**key** | **string** | The S3 object key returned when the presigned PUT URL was issued | [default to undefined]
+**key** | **string** | The object key returned when the presigned PUT URL was issued | [default to undefined]
 **projectId** | **string** |  | [default to undefined]
 **originalName** | **string** |  | [optional] [default to undefined]
 **contentType** | **string** |  | [optional] [default to undefined]

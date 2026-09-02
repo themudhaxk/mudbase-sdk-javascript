@@ -15,8 +15,6 @@ Name | Type | Description | Notes
 **realtimeConnections** | **number** |  | [optional] [default to undefined]
 **realtimeMessages** | **number** |  | [optional] [default to undefined]
 **chatMessagesPerMonth** | **number** |  | [optional] [default to undefined]
-**monitoredWallets** | **number** |  | [optional] [default to undefined]
-**walletWebhooksPerOrg** | **number** |  | [optional] [default to undefined]
 **apiKeysPerProject** | **number** |  | [optional] [default to undefined]
 **webhooksPerProject** | **number** |  | [optional] [default to undefined]
 **functionsPerProject** | **number** |  | [optional] [default to undefined]
@@ -48,8 +46,6 @@ const instance: AdminOrgLimitsPatchRequest = {
     realtimeConnections,
     realtimeMessages,
     chatMessagesPerMonth,
-    monitoredWallets,
-    walletWebhooksPerOrg,
     apiKeysPerProject,
     webhooksPerProject,
     functionsPerProject,

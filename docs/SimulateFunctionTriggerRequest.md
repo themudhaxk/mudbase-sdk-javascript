@@ -6,7 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **trigger** | **object** | Simulated trigger (type, event) | [optional] [default to undefined]
-**eventContext** | **object** | Simulated event context (document, file, webhook, wallet, message) | [optional] [default to undefined]
+**eventContext** | **object** | Simulated event context (document, file, webhook, message) | [optional] [default to undefined]
 **payload** | **object** | Additional payload | [optional] [default to undefined]
 
 ## Example

@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **success** | **boolean** |  | [optional] [default to undefined]
 **data** | [**Array&lt;GetPayoutHistory200ResponseDataInner&gt;**](GetPayoutHistory200ResponseDataInner.md) |  | [optional] [default to undefined]
-**pagination** | [**GetTransactionHistory200ResponsePagination**](GetTransactionHistory200ResponsePagination.md) |  | [optional] [default to undefined]
+**pagination** | [**GetPayoutHistory200ResponsePagination**](GetPayoutHistory200ResponsePagination.md) |  | [optional] [default to undefined]
 
 ## Example
 

@@ -33,3 +33,10 @@ index.ts
 # package.json is frozen so the socket.io-client dependency survives regeneration.
 # If the generator changes other package.json fields, re-apply them by hand.
 package.json
+# common.ts is frozen because createRequestFunction needs a hand-applied return-type
+# annotation + `as unknown as Promise<R>` cast to satisfy TS (axios's request() has a
+# conditional return type that doesn't resolve against the generic R, so raw generator
+# output fails with TS2527 "inferred type references an inaccessible unique symbol" and
+# the build breaks). If a future generator version changes common.ts, re-apply that patch
+# by hand before removing this line.
+common.ts

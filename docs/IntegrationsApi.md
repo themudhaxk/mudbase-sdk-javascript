@@ -188,7 +188,7 @@ const { status, data } = await apiInstance.deleteIntegration(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **executeIntegration**
-> TestWalletWebhook200Response executeIntegration(executeIntegrationRequest)
+> TestIntegration200Response executeIntegration(executeIntegrationRequest)
 
 Execute an integration action (API call) with specified endpoint and parameters. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
 
@@ -226,7 +226,7 @@ const { status, data } = await apiInstance.executeIntegration(
 
 ### Return type
 
-**TestWalletWebhook200Response**
+**TestIntegration200Response**
 
 ### Authorization
 
@@ -573,7 +573,7 @@ const { status, data } = await apiInstance.importIntegration(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **testIntegration**
-> TestWalletWebhook200Response testIntegration(testIntegrationRequest)
+> TestIntegration200Response testIntegration(testIntegrationRequest)
 
 Test an integration connection and configuration. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
 
@@ -611,7 +611,7 @@ const { status, data } = await apiInstance.testIntegration(
 
 ### Return type
 
-**TestWalletWebhook200Response**
+**TestIntegration200Response**
 
 ### Authorization
 

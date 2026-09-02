@@ -6,7 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **planName** | **string** | Plan id from GET /api/billing/plans (excludes free and enterprise) | [default to undefined]
-**billingCycle** | **string** | Yearly &#x3D; 8% discount | [optional] [default to BillingCycleEnum_Monthly]
+**billingCycle** | **string** | Yearly &#x3D; 2 months free (~16.67% discount) | [optional] [default to BillingCycleEnum_Monthly]
 **redirectUrl** | **string** | Override redirect after payment (default FRONTEND_URL/billing/callback) | [optional] [default to undefined]
 
 ## Example
