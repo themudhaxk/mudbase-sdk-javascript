@@ -21,3 +21,15 @@
 #docs/*.md
 # Then explicitly reverse the ignore rule for a single file:
 #!docs/README.md
+
+# --- Hand-written realtime helper (not part of the OpenAPI spec) ---
+# These are maintained by hand and MUST NOT be overwritten on regeneration.
+realtime.ts
+REALTIME.md
+test/realtime.test.mjs
+# index.ts is frozen so its `export * from "./realtime"` line survives regeneration.
+# `export * from "./api"` still re-exports any newly generated API surface via the wildcard.
+index.ts
+# package.json is frozen so the socket.io-client dependency survives regeneration.
+# If the generator changes other package.json fields, re-apply them by hand.
+package.json
