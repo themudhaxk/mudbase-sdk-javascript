@@ -1,3 +1,23 @@
+<!-- SUPERSEDED-REPO NOTICE — do not remove -->
+> # ⚠️ Superseded mirror — DO NOT publish this repo to npm as `mudbase-sdk`
+>
+> The official, published `mudbase-sdk` npm package is the **fetch**-based client generated
+> from the OpenAPI spec in [`themudhaxk/mudbase-docs`](https://github.com/themudhaxk/mudbase-docs)
+> (see `scripts/generate-sdks.js` + `.github/workflows/publish-sdks.yml` there). That line
+> owns the `mudbase-sdk` name on npm (versions `1.x`, currently `1.3.10`+), and it now ships the
+> realtime `onSnapshot` helper and the device-token operations too.
+>
+> This repository is a **separate axios-based mirror** and is **retired**. Its `package.json`
+> declares `name: mudbase-sdk` / `version: 2.1.0`, but **`mudbase-sdk@2.x` is intentionally NOT
+> on npm and must never be published from here** — publishing this axios tarball as `mudbase-sdk`
+> would clobber the maintained fetch line (a higher `2.x` version would hijack the `latest`
+> dist-tag and break every existing consumer of the fetch client). The `v2.1.0` git tag is a
+> source snapshot only; do not run `npm publish` against it.
+>
+> If you need the SDK: `npm install mudbase-sdk` pulls the maintained fetch client. Realtime
+> and device-token changes belong in `mudbase-docs` (spec + `sdk-extras/`), not here.
+<!-- /SUPERSEDED-REPO NOTICE -->
+
 ## mudbase-sdk@2.0.0
 
 This generator creates TypeScript/JavaScript client that utilizes [axios](https://github.com/axios/axios). The generated Node module can be used in the following environments:
