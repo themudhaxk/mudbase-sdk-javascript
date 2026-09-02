@@ -77,7 +77,7 @@ const { status, data } = await apiInstance.activateFunction(
 # **createFunction**
 > FunctionResponse createFunction(createFunctionRequest)
 
-Create a new serverless function. Trigger types: http, document, file, webhook, wallet, cron, messaging. Sandbox globals available today: `payload`, `context`, `env`, `console`. Function code runs in an isolated worker with no ambient network or database access — it can only read its trigger payload, the `env` vars you configure, and return a JSON-serializable result; it cannot yet call back into your project\'s database, storage, messaging, or wallet APIs from inside the function body. If you need to read or write project data from a function, call the regular REST API (with your own API key) from your own backend in response to the function\'s returned result, rather than from within the function\'s own code. 
+Create a new serverless function. Trigger types: http, document, file, webhook, cron, messaging. Sandbox globals available today: `payload`, `context`, `env`, `console`. Function code runs in an isolated worker with no ambient network or database access — it can only read its trigger payload, the `env` vars you configure, and return a JSON-serializable result; it cannot yet call back into your project\'s database, storage, or messaging APIs from inside the function body. If you need to read or write project data from a function, call the regular REST API (with your own API key) from your own backend in response to the function\'s returned result, rather than from within the function\'s own code. 
 
 ### Example
 
@@ -528,7 +528,7 @@ const { status, data } = await apiInstance.getFunctionVersions(
 # **listFunctions**
 > FunctionListResponse listFunctions()
 
-List serverless functions in a project with optional search and filters. Supports trigger types: http, event, document, file, webhook, wallet, cron, messaging. 
+List serverless functions in a project with optional search and filters. Supports trigger types: http, event, document, file, webhook, cron, messaging. 
 
 ### Example
 
@@ -545,7 +545,7 @@ let projectId: string; // (default to undefined)
 let page: number; // (optional) (default to 1)
 let limit: number; // (optional) (default to 20)
 let search: string; //Search by name or description (optional) (default to undefined)
-let triggerType: 'http' | 'event' | 'document' | 'file' | 'webhook' | 'wallet' | 'cron' | 'messaging'; //Filter by trigger type (optional) (default to undefined)
+let triggerType: 'http' | 'event' | 'document' | 'file' | 'webhook' | 'cron' | 'messaging'; //Filter by trigger type (optional) (default to undefined)
 let isActive: boolean; //Filter by active status (true/false) (optional) (default to undefined)
 
 const { status, data } = await apiInstance.listFunctions(
@@ -566,7 +566,7 @@ const { status, data } = await apiInstance.listFunctions(
 | **page** | [**number**] |  | (optional) defaults to 1|
 | **limit** | [**number**] |  | (optional) defaults to 20|
 | **search** | [**string**] | Search by name or description | (optional) defaults to undefined|
-| **triggerType** | [**&#39;http&#39; | &#39;event&#39; | &#39;document&#39; | &#39;file&#39; | &#39;webhook&#39; | &#39;wallet&#39; | &#39;cron&#39; | &#39;messaging&#39;**]**Array<&#39;http&#39; &#124; &#39;event&#39; &#124; &#39;document&#39; &#124; &#39;file&#39; &#124; &#39;webhook&#39; &#124; &#39;wallet&#39; &#124; &#39;cron&#39; &#124; &#39;messaging&#39;>** | Filter by trigger type | (optional) defaults to undefined|
+| **triggerType** | [**&#39;http&#39; | &#39;event&#39; | &#39;document&#39; | &#39;file&#39; | &#39;webhook&#39; | &#39;cron&#39; | &#39;messaging&#39;**]**Array<&#39;http&#39; &#124; &#39;event&#39; &#124; &#39;document&#39; &#124; &#39;file&#39; &#124; &#39;webhook&#39; &#124; &#39;cron&#39; &#124; &#39;messaging&#39;>** | Filter by trigger type | (optional) defaults to undefined|
 | **isActive** | [**boolean**] | Filter by active status (true/false) | (optional) defaults to undefined|
 
 
@@ -713,7 +713,7 @@ const { status, data } = await apiInstance.rollbackFunction(
 # **simulateFunctionTrigger**
 > FunctionExecutionResponse simulateFunctionTrigger()
 
-Test a function with simulated trigger context. Use to verify document, file, webhook, wallet, or cron payloads. Executes the function with the provided eventContext merged into the payload.  Asynchronous, same pattern as Execute function: returns 202 immediately with an `executionId`. Poll `GET /api/functions/projects/{projectId}/functions/{functionId}/executions/{executionId}` for the real result. 
+Test a function with simulated trigger context. Use to verify document, file, webhook, or cron payloads. Executes the function with the provided eventContext merged into the payload.  Asynchronous, same pattern as Execute function: returns 202 immediately with an `executionId`. Poll `GET /api/functions/projects/{projectId}/functions/{functionId}/executions/{executionId}` for the real result. 
 
 ### Example
 

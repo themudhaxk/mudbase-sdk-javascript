@@ -6,7 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **type** | **string** | Trigger type | [default to undefined]
-**event** | **string** | Event name (e.g. create, update, delete for document; uploaded, deleted for file; tx, balance for wallet) | [optional] [default to undefined]
+**event** | **string** | Event name (e.g. create, update, delete for document; uploaded, deleted for file) | [optional] [default to undefined]
 **schedule** | **string** | For cron - minutely, hourly, daily, weekly, or custom cron expression | [optional] [default to undefined]
 **path** | **string** | HTTP path for http triggers | [optional] [default to undefined]
 **method** | **string** |  | [optional] [default to undefined]

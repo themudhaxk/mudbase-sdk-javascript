@@ -1,6 +1,6 @@
 # OrgDomainEntryOrgConsole
 
-Org API compact domain row: use **`dnsRecords`** for the Mudbase ownership TXT (purpose `mudbase_ownership`) and routing CNAME. Omits `hostnameNormalized`, `verificationToken`, `dnsTxtHost`, and `dnsTxtValue`. Omits `cloudflareEdge` when Cloudflare SaaS is not configured. Optional keys with no value are omitted from JSON responses.
+Org API compact domain row: use **`dnsRecords`** for the Mudbase ownership TXT (purpose `mudbase_ownership`) and routing CNAME. Omits `hostnameNormalized`, `verificationToken`, `dnsTxtHost`, and `dnsTxtValue`. Omits `edge` when edge SSL is not configured. Optional keys with no value are omitted from JSON responses.
 
 ## Properties
 
@@ -21,7 +21,7 @@ Name | Type | Description | Notes
 **dnsRecords** | [**Array&lt;OrgDnsRecord&gt;**](OrgDnsRecord.md) |  | [optional] [default to undefined]
 **platformActivationPending** | **boolean** |  | [optional] [default to undefined]
 **customDomainLiveForApiTraffic** | **boolean** |  | [optional] [default to undefined]
-**cloudflareEdge** | [**OrgCloudflareEdgeHints**](OrgCloudflareEdgeHints.md) |  | [optional] [default to undefined]
+**edge** | [**OrgEdgeHints**](OrgEdgeHints.md) |  | [optional] [default to undefined]
 **flyCertificateStatus** | **string** |  | [optional] [default to undefined]
 **platformDnsVerification** | [**OrgPlatformDnsVerificationCustomer**](OrgPlatformDnsVerificationCustomer.md) |  | [optional] [default to undefined]
 **platformDnsVerificationSubmittedAt** | **string** |  | [optional] [default to undefined]
@@ -47,7 +47,7 @@ const instance: OrgDomainEntryOrgConsole = {
     dnsRecords,
     platformActivationPending,
     customDomainLiveForApiTraffic,
-    cloudflareEdge,
+    edge,
     flyCertificateStatus,
     platformDnsVerification,
     platformDnsVerificationSubmittedAt,

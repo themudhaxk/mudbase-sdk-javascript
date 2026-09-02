@@ -6,13 +6,16 @@ All URIs are relative to *https://cloud.mudbase.dev*
 |------------- | ------------- | -------------|
 |[**getMessageHistory**](#getmessagehistory) | **GET** /api/messaging/projects/{projectId}/messaging/history | Get message history|
 |[**getMessageStats**](#getmessagestats) | **GET** /api/messaging/projects/{projectId}/messaging/stats | Get message statistics|
-|[**getProjectFcmConfig**](#getprojectfcmconfig) | **GET** /api/messaging/projects/{projectId}/messaging/push-config | Get BYO FCM configuration (masked)|
+|[**getProjectFcmConfig**](#getprojectfcmconfig) | **GET** /api/messaging/projects/{projectId}/messaging/push-config | Get bring-your-own push credentials status (masked)|
 |[**getProjectSmsByo**](#getprojectsmsbyo) | **GET** /api/messaging/projects/{projectId}/messaging/sms-provider | Get BYO SMS provider configuration (masked)|
-|[**patchProjectFcmConfig**](#patchprojectfcmconfig) | **PATCH** /api/messaging/projects/{projectId}/messaging/push-config | Set or clear per-project FCM service account|
+|[**listDeviceTokens**](#listdevicetokens) | **GET** /api/messaging/projects/{projectId}/messaging/devices | List registered device tokens|
+|[**patchProjectFcmConfig**](#patchprojectfcmconfig) | **PATCH** /api/messaging/projects/{projectId}/messaging/push-config | Set or clear your own push service account (optional)|
 |[**patchProjectSmsByo**](#patchprojectsmsbyo) | **PATCH** /api/messaging/projects/{projectId}/messaging/sms-provider | Update BYO SMS provider credentials|
+|[**registerDeviceToken**](#registerdevicetoken) | **POST** /api/messaging/projects/{projectId}/messaging/devices | Register a device push token|
 |[**sendEmail**](#sendemail) | **POST** /api/messaging/projects/{projectId}/messaging/email | Send email|
 |[**sendPushNotification**](#sendpushnotification) | **POST** /api/messaging/projects/{projectId}/messaging/push | Send push notification|
 |[**sendSMS**](#sendsms) | **POST** /api/messaging/projects/{projectId}/messaging/sms | Send SMS|
+|[**unregisterDeviceToken**](#unregisterdevicetoken) | **DELETE** /api/messaging/projects/{projectId}/messaging/devices | Unregister a device push token|
 
 # **getMessageHistory**
 > MessageHistoryResponse getMessageHistory()
@@ -139,7 +142,7 @@ const { status, data } = await apiInstance.getMessageStats(
 # **getProjectFcmConfig**
 > GetProjectFcmConfig200Response getProjectFcmConfig()
 
-Returns whether a per-project Firebase service account JSON is stored (encrypted). Falls back to platform `FCM_SERVICE_ACCOUNT_JSON` when unset.
+Returns whether this project has its own push provider credentials stored (encrypted). This is an optional, advanced override - push works out of the box with platform-managed credentials, so when no per-project credentials are stored, push is sent with the platform-managed credentials.
 
 ### Example
 
@@ -183,7 +186,7 @@ const { status, data } = await apiInstance.getProjectFcmConfig(
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-|**200** | FCM BYO flags |  -  |
+|**200** | Bring-your-own push credentials flags |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -238,10 +241,61 @@ const { status, data } = await apiInstance.getProjectSmsByo(
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **listDeviceTokens**
+> DeviceListResponse listDeviceTokens()
+
+List the device push tokens registered to a project, most-recently-seen first.  Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). 
+
+### Example
+
+```typescript
+import {
+    MessagingApi,
+    Configuration
+} from 'mudbase-sdk';
+
+const configuration = new Configuration();
+const apiInstance = new MessagingApi(configuration);
+
+let projectId: string; // (default to undefined)
+
+const { status, data } = await apiInstance.listDeviceTokens(
+    projectId
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **projectId** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+**DeviceListResponse**
+
+### Authorization
+
+[OrgBearerAuth](../README.md#OrgBearerAuth), [ApiKeyAuth](../README.md#ApiKeyAuth), [ProjectBearerAuth](../README.md#ProjectBearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Registered device tokens |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **patchProjectFcmConfig**
 > patchProjectFcmConfig(patchProjectFcmConfigRequest)
 
-Body `serviceAccountJson` is the Firebase service account object (stored encrypted). Send `clear: true` to remove and use platform FCM only. 
+Optional advanced step - push works out of the box with platform-managed credentials, so most projects never call this. Use it only to deliver push from your own push provider account. Body `serviceAccountJson` is the Firebase service account JSON you download from your own Firebase project (stored encrypted). Send `clear: true` to remove it and go back to the platform-managed credentials. 
 
 ### Example
 
@@ -347,6 +401,64 @@ const { status, data } = await apiInstance.patchProjectSmsByo(
 |-------------|-------------|------------------|
 |**200** | Updated configuration |  -  |
 |**400** | Bad request |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **registerDeviceToken**
+> DeviceRegisteredResponse registerDeviceToken(deviceRegisterRequest)
+
+Register a device\'s push token with a project so it can receive push notifications. A client registers its token here first; the send endpoint (`/messaging/push`) only delivers to tokens that are registered to the project, so a caller cannot push to arbitrary or other-tenant tokens.  Registration is idempotent - re-registering a token that already exists just refreshes it (updates `platform` and `lastSeenAt`) instead of creating a duplicate. Each project has a cap on the number of registered tokens; when the cap is reached, the least-recently-seen tokens are evicted to make room, so a register-on-launch call never fails.  Push works out of the box with platform-managed credentials - no provider setup is required to start registering tokens and sending push.  Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). 
+
+### Example
+
+```typescript
+import {
+    MessagingApi,
+    Configuration,
+    DeviceRegisterRequest
+} from 'mudbase-sdk';
+
+const configuration = new Configuration();
+const apiInstance = new MessagingApi(configuration);
+
+let projectId: string; // (default to undefined)
+let deviceRegisterRequest: DeviceRegisterRequest; //
+
+const { status, data } = await apiInstance.registerDeviceToken(
+    projectId,
+    deviceRegisterRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **deviceRegisterRequest** | **DeviceRegisterRequest**|  | |
+| **projectId** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+**DeviceRegisteredResponse**
+
+### Authorization
+
+[OrgBearerAuth](../README.md#OrgBearerAuth), [ApiKeyAuth](../README.md#ApiKeyAuth), [ProjectBearerAuth](../README.md#ProjectBearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**201** | Device token registered |  -  |
+|**400** | Bad request |  -  |
+|**403** | App role feature permission denied |  -  |
+|**429** | Device registration rate limit exceeded |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -467,7 +579,7 @@ const { status, data } = await apiInstance.sendPushNotification(
 # **sendSMS**
 > MessageSentResponse sendSMS(sMSRequest)
 
-Send an SMS message to one or more phone numbers. Uses project BYO SMS when configured; otherwise platform Twilio env if set. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+Send an SMS message to one or more phone numbers. Uses project BYO SMS when configured; otherwise the platform SMS provider if set. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
 
 ### Example
 
@@ -518,6 +630,61 @@ const { status, data } = await apiInstance.sendSMS(
 |**201** | SMS sent |  -  |
 |**403** | App role feature permission denied |  -  |
 |**429** | Per-project messaging send rate limit exceeded |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **unregisterDeviceToken**
+> DeviceUnregisteredResponse unregisterDeviceToken(deviceUnregisterRequest)
+
+Remove a device push token from a project - call this on logout or when a token rotates, so the send endpoint stops delivering to it.  The token to remove is sent in the request body. Removing a token that is not registered is a no-op and still returns 200 (with `removed: false`).  Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). 
+
+### Example
+
+```typescript
+import {
+    MessagingApi,
+    Configuration,
+    DeviceUnregisterRequest
+} from 'mudbase-sdk';
+
+const configuration = new Configuration();
+const apiInstance = new MessagingApi(configuration);
+
+let projectId: string; // (default to undefined)
+let deviceUnregisterRequest: DeviceUnregisterRequest; //
+
+const { status, data } = await apiInstance.unregisterDeviceToken(
+    projectId,
+    deviceUnregisterRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **deviceUnregisterRequest** | **DeviceUnregisterRequest**|  | |
+| **projectId** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+**DeviceUnregisteredResponse**
+
+### Authorization
+
+[OrgBearerAuth](../README.md#OrgBearerAuth), [ApiKeyAuth](../README.md#ApiKeyAuth), [ProjectBearerAuth](../README.md#ProjectBearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Device token removed (or already absent) |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

@@ -25,7 +25,6 @@ All URIs are relative to *https://cloud.mudbase.dev*
 |[**getSubscriptionTierById**](#getsubscriptiontierbyid) | **GET** /api/billing/plans/{planId} | Get one subscription tier by id|
 |[**getSubscriptionTiers**](#getsubscriptiontiers) | **GET** /api/billing/plans | Get subscription tiers (org-level BaaS plans)|
 |[**getSubscriptions**](#getsubscriptions) | **GET** /api/billing/projects/{projectId}/subscriptions | Get subscriptions|
-|[**handleFlutterwaveWebhook**](#handleflutterwavewebhook) | **POST** /api/billing/webhooks/flutterwave | Payment gateway webhook|
 |[**initializeOrgPlanCheckout**](#initializeorgplancheckout) | **POST** /api/billing/org/checkout | Initialize org-level BaaS plan payment (Starter, Growth, Scale)|
 |[**initializePayment**](#initializepayment) | **POST** /api/orgs/{orgId}/payment-processing/initialize-payment | Initialize fiat payment with split (org subaccount + platform fee)|
 |[**initializePaymentForProject**](#initializepaymentforproject) | **POST** /api/projects/{projectId}/payment-processing/initialize-payment | Initialize fiat payment (project-scoped)|
@@ -1077,7 +1076,7 @@ No authorization required
 # **getSubscriptionTiers**
 > GetSubscriptionTiers200Response getSubscriptionTiers()
 
-**Org-level BaaS plan catalog** (source of truth in paymentService.js). Returns Free, Starter ($29), Growth ($69), Scale ($199), Enterprise. Use for pricing page and to get plan ids for POST /api/billing/org/checkout. Public; no auth required. Each plan includes id (free|starter|growth|scale|enterprise), name, description, price (cents), priceYearly (cents, 8% off), currency, limits, overages, enforcement. 
+**Org-level BaaS plan catalog** (source of truth in paymentService.js). Returns Free, Starter ($29), Growth ($69), Scale ($199), Enterprise. Use for pricing page and to get plan ids for POST /api/billing/org/checkout. Public; no auth required. Each plan includes id (free|starter|growth|scale|enterprise), name, description, price (cents), priceYearly (cents, 2 months free), currency, limits, overages, enforcement. 
 
 ### Example
 
@@ -1166,60 +1165,6 @@ const { status, data } = await apiInstance.getSubscriptions(
 |-------------|-------------|------------------|
 |**200** | Subscriptions list |  -  |
 |**401** | Authentication required |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **handleFlutterwaveWebhook**
-> HandleFlutterwaveWebhook200Response handleFlutterwaveWebhook(handleFlutterwaveWebhookRequest)
-
-Receives payment gateway webhook events (charge.completed, payment.successful). No auth; verified by verif-hash header. - Subscription billing: meta without isPaymentProcessing triggers verifyPaymentAndCreateSubscription (mudbase_xxx refs). - Payment processing: meta.isPaymentProcessing === true triggers fiat payment record (mudbase_fiat_xxx refs); org share goes to org subaccount, platform fee to main or configured subaccounts. 
-
-### Example
-
-```typescript
-import {
-    BillingApi,
-    Configuration,
-    HandleFlutterwaveWebhookRequest
-} from 'mudbase-sdk';
-
-const configuration = new Configuration();
-const apiInstance = new BillingApi(configuration);
-
-let handleFlutterwaveWebhookRequest: HandleFlutterwaveWebhookRequest; //
-
-const { status, data } = await apiInstance.handleFlutterwaveWebhook(
-    handleFlutterwaveWebhookRequest
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **handleFlutterwaveWebhookRequest** | **HandleFlutterwaveWebhookRequest**|  | |
-
-
-### Return type
-
-**HandleFlutterwaveWebhook200Response**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: application/json
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | Webhook received |  -  |
-|**400** | Invalid or missing event |  -  |
-|**500** | Internal server error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

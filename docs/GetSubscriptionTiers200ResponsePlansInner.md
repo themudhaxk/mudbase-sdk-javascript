@@ -9,7 +9,7 @@ Name | Type | Description | Notes
 **name** | **string** |  | [optional] [default to undefined]
 **description** | **string** |  | [optional] [default to undefined]
 **price** | **number** | Monthly price in cents | [optional] [default to undefined]
-**priceYearly** | **number** | Yearly price in cents (8% off) | [optional] [default to undefined]
+**priceYearly** | **number** | Yearly price in cents (2 months free, ~16.67% off) | [optional] [default to undefined]
 **currency** | **string** |  | [optional] [default to undefined]
 **priceId** | **string** |  | [optional] [default to undefined]
 **limits** | **object** |  | [optional] [default to undefined]

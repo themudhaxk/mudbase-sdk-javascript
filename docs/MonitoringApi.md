@@ -11,7 +11,6 @@ All URIs are relative to *https://cloud.mudbase.dev*
 |[**getMonitoringLogs**](#getmonitoringlogs) | **GET** /api/monitoring/logs | Get audit logs|
 |[**getMonitoringPerformance**](#getmonitoringperformance) | **GET** /api/monitoring/performance | Get performance metrics|
 |[**getMonitoringQueueMetrics**](#getmonitoringqueuemetrics) | **GET** /api/monitoring/queue-metrics | Usage metering queue job counts|
-|[**getScannerMetrics**](#getscannermetrics) | **GET** /api/monitoring/scanner-metrics | Get block scanner metrics|
 |[**listMonitoringAlerts**](#listmonitoringalerts) | **GET** /api/monitoring/alerts | List monitoring alerts|
 
 # **createMonitoringAlert**
@@ -395,52 +394,6 @@ void (empty response body)
 |-------------|-------------|------------------|
 |**200** | Queue depth snapshot |  -  |
 |**401** | Authentication required |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **getScannerMetrics**
-> GetScannerMetrics200Response getScannerMetrics()
-
-Returns per-chain block scanner lag and health. Used for observability of ETH/UTXO block-based wallet monitoring. Alerts when lag exceeds threshold.
-
-### Example
-
-```typescript
-import {
-    MonitoringApi,
-    Configuration
-} from 'mudbase-sdk';
-
-const configuration = new Configuration();
-const apiInstance = new MonitoringApi(configuration);
-
-const { status, data } = await apiInstance.getScannerMetrics();
-```
-
-### Parameters
-This endpoint does not have any parameters.
-
-
-### Return type
-
-**GetScannerMetrics200Response**
-
-### Authorization
-
-[OrgBearerAuth](../README.md#OrgBearerAuth), [ProjectBearerAuth](../README.md#ProjectBearerAuth)
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | Scanner metrics and optional lag alerts |  -  |
-|**401** | Authentication required |  -  |
-|**500** | Failed to fetch scanner metrics |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

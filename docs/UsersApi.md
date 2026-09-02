@@ -219,8 +219,8 @@ const { status, data } = await apiInstance.eraseUserData(
 |-------------|-------------|------------------|
 |**200** | Account erased |  -  |
 |**400** | Missing/invalid confirm, currentPassword, or totpToken |  -  |
-|**409** | Sole owner of one or more organizations - transfer or delete them first |  -  |
 |**401** | Authentication required |  -  |
+|**409** | Sole owner of one or more organizations - transfer or delete them first |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

@@ -5,6 +5,8 @@ All URIs are relative to *https://cloud.mudbase.dev*
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
 |[**apiFilesDownloadFileIdGet**](#apifilesdownloadfileidget) | **GET** /api/files/download/{fileId} | Get a download URL for a file|
+|[**apiFilesLogoRedirectGet**](#apifileslogoredirectget) | **GET** /api/files/logo-redirect | Redirect to an org/project logo\&#39;s content|
+|[**apiFilesPublicFileIdGet**](#apifilespublicfileidget) | **GET** /api/files/public/{fileId} | Redirect to a public file\&#39;s content|
 |[**confirmDirectUpload**](#confirmdirectupload) | **POST** /api/files/upload/confirm | Confirm direct upload (scan + finalize metadata)|
 |[**deleteFile**](#deletefile) | **DELETE** /api/bucket/projects/{projectId}/buckets/{bucketId}/files/{fileId} | Delete file|
 |[**downloadBucketFile**](#downloadbucketfile) | **GET** /api/bucket/files/{fileId}/download | Download file from bucket|
@@ -72,10 +74,115 @@ const { status, data } = await apiInstance.apiFilesDownloadFileIdGet(
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **apiFilesLogoRedirectGet**
+> apiFilesLogoRedirectGet()
+
+Unauthenticated. Logos are always meant to be public branding assets, but the object storage backend has no per-object ACL, so this route (not the bucket) is what actually serves them - the `key` query param is validated against the exact shape logoStorageService.uploadLogo() produces before signing, so this can never be used to fetch an arbitrary storage key. 302-redirects to a short-lived signed GET url.
+
+### Example
+
+```typescript
+import {
+    FilesApi,
+    Configuration
+} from 'mudbase-sdk';
+
+const configuration = new Configuration();
+const apiInstance = new FilesApi(configuration);
+
+let key: string; // (default to undefined)
+
+const { status, data } = await apiInstance.apiFilesLogoRedirectGet(
+    key
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **key** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: Not defined
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**302** | Redirect to a short-lived signed download URL |  -  |
+|**400** | Key does not match the expected logo key shape |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiFilesPublicFileIdGet**
+> apiFilesPublicFileIdGet()
+
+Unauthenticated. Only serves files with isPublic=true whose upload has been confirmed and whose virus scan came back clean - the object storage backend has no per-object ACL, so this route (not the storage bucket) is what actually decides whether a \"public\" file\'s bytes are reachable. 302-redirects to a fresh, short-lived (60s) signed GET url so the actual bytes are still served straight off the storage edge.
+
+### Example
+
+```typescript
+import {
+    FilesApi,
+    Configuration
+} from 'mudbase-sdk';
+
+const configuration = new Configuration();
+const apiInstance = new FilesApi(configuration);
+
+let fileId: string; // (default to undefined)
+
+const { status, data } = await apiInstance.apiFilesPublicFileIdGet(
+    fileId
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **fileId** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: Not defined
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**302** | Redirect to a short-lived signed download URL |  -  |
+|**403** | File is not public |  -  |
+|**404** | File not found, or not yet confirmed/scanned |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **confirmDirectUpload**
 > ConfirmUploadResponse confirmDirectUpload(confirmDirectUploadRequest)
 
-After a client uploads directly to S3 using the presigned PUT URL, call this endpoint to have the server scan the object, create the File record, and optionally quarantine if infected.
+After a client uploads directly to object storage using the presigned PUT URL, call this endpoint to have the server scan the object, create the File record, and optionally quarantine if infected.
 
 ### Example
 
@@ -252,7 +359,7 @@ No authorization required
 # **downloadFile**
 > SignedUrlResponse downloadFile()
 
-Returns a time-limited provider-signed URL (S3) for direct download. Server enforces RBAC before issuing the URL.
+Returns a time-limited provider-signed URL for direct download. Server enforces RBAC before issuing the URL.
 
 ### Example
 
@@ -312,7 +419,7 @@ const { status, data } = await apiInstance.downloadFile(
 # **generatePresignedUpload**
 > PresignedPostResponse generatePresignedUpload(generatePresignedUploadRequest)
 
-Issue a presigned PUT URL for clients to upload directly to object storage. The server stores the issued key with expiry and RBAC is enforced. PUT (not POST) is used because Cloudflare R2 does not implement the S3 POST Object API. The client must PUT the file body to `url` with the exact `headers` returned (a Content-Type mismatch fails with SignatureDoesNotMatch). `maxFileUploadBytes` is enforced server-side by `/api/files/upload/confirm` after the upload, not by the presigned URL itself. 
+Issue a presigned PUT URL for clients to upload directly to object storage. The server stores the issued key with expiry and RBAC is enforced. PUT (not POST) is used because the object storage backend does not implement a POST-based upload API. The client must PUT the file body to `url` with the exact `headers` returned (a Content-Type mismatch fails with SignatureDoesNotMatch). `maxFileUploadBytes` is enforced server-side by `/api/files/upload/confirm` after the upload, not by the presigned URL itself. 
 
 ### Example
 

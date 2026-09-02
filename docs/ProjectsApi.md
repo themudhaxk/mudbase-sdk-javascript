@@ -241,8 +241,8 @@ const { status, data } = await apiInstance.getOAuthProviderConfig(
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 |**200** | OAuth provider configuration |  -  |
-|**404** | Resource not found |  -  |
 |**403** | Access denied |  -  |
+|**404** | Resource not found |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -458,8 +458,8 @@ const { status, data } = await apiInstance.getProjectOAuthProviders(
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 |**200** | List of configured OAuth providers |  -  |
-|**404** | Resource not found |  -  |
 |**403** | Access denied |  -  |
+|**404** | Resource not found |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
