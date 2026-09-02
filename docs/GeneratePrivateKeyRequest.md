@@ -1,0 +1,20 @@
+# GeneratePrivateKeyRequest
+
+
+## Properties
+
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**currency** | **string** |  | [default to undefined]
+
+## Example
+
+```typescript
+import { GeneratePrivateKeyRequest } from 'mudbase-sdk';
+
+const instance: GeneratePrivateKeyRequest = {
+    currency,
+};
+```
+
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
