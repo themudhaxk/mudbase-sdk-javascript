@@ -27,6 +27,9 @@
 realtime.ts
 REALTIME.md
 test/realtime.test.mjs
+messaging.ts
+MESSAGING.md
+test/messaging.test.mjs
 # index.ts is frozen so its `export * from "./realtime"` line survives regeneration.
 # `export * from "./api"` still re-exports any newly generated API surface via the wildcard.
 index.ts

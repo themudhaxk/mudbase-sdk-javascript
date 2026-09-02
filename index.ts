@@ -17,4 +17,6 @@ export * from "./api";
 export * from "./configuration";
 // Hand-written realtime helpers (not generated from OpenAPI). See realtime.ts / REALTIME.md.
 export * from "./realtime";
+// Hand-written messaging push-token helper (not generated from OpenAPI). See messaging.ts / MESSAGING.md.
+export * from "./messaging";
 
