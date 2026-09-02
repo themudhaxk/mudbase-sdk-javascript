@@ -15,4 +15,6 @@
 
 export * from "./api";
 export * from "./configuration";
+// Hand-written realtime helpers (not generated from OpenAPI). See realtime.ts / REALTIME.md.
+export * from "./realtime";
 
