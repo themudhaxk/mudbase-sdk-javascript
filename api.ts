@@ -14452,8 +14452,12 @@ export interface DataApiListDataRequest {
     /**
      * Declared-relationship field(s) to resolve, e.g. \'author\' or [\'author\', \'comments\'].
      * A dot-path (\'comments.author\') resolves a nested relationship. Composes with sort,
-     * page, limit, and filter. Deep/relationship-field filtering (e.g. \'author.name\') is
-     * not supported server-side yet.
+     * page, limit, and filter. Deep/relationship-field filtering (e.g. \'author.name=value\')
+     * and sort-by-relationship-field (e.g. \'sort=-author.name\') are supported server-side
+     * (see relationshipService.js\'s resolveRelationshipFilters/resolveRelationshipSortKeys) -
+     * this generated request type has no field for them since they are extra top-level query
+     * params, not named parameters here; use the DataQuery builder in query.ts
+     * (.whereRelated()/.sortByRelated()) for a typed, composable way to add them.
      */
     readonly populate?: string | Array<string>
 }

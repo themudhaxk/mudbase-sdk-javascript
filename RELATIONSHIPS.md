@@ -13,12 +13,15 @@ adds on top of the generated `DataApi` and `RelationshipsApi`:
 npm install mudbase-sdk
 ```
 
-> Status: the backend for this feature (relational-ergonomics-phase-1) has not merged to
-> main yet, so treat this as a preview surface - the wire contract can still move before
-> it lands, and `api.ts`'s `populate` parameters plus the whole `RelationshipsApi` class are
-> hand-patched ahead of the OpenAPI spec (see `.openapi-generator-ignore`). Deep/relationship
-> field filtering, e.g. `?author.name=`, is explicitly not implemented server-side yet - the
-> SDK does not expose it either, to avoid implying it works.
+> Status: the backend for this feature (relational-ergonomics phases 1-7, PRs #103/#104/
+> #105/#108/#110/#113) has merged to `mudbase-server` `main`. `api.ts`'s `populate`
+> parameters plus the whole `RelationshipsApi` class are still hand-patched ahead of the
+> OpenAPI spec (see `.openapi-generator-ignore`) - once `openapi.yaml` is updated for the
+> `/data` list/get endpoints' relationship query params and the generator re-run, these
+> hand-patches should be replaced by generated output. Deep/relationship-field filtering
+> (`?author.name=`, PR #105) and sort-by-relationship-field (`?sort=-author.name`, PR #108)
+> are both live server-side and both have a typed builder method below
+> (`.whereRelated()` / `.sortByRelated()`).
 
 ## Declaring a relationship
 
@@ -154,6 +157,49 @@ and both collapse to a single `?populate=author,comments` request. A dot-path ke
 type-checked against `PostRelations` (nested relations are not modeled in the type, only
 resolved at the wire level) - the base-level keys (`"author"`, `"comments"`) are.
 
-`.filter()` on `DataQuery` only ever applies to the base collection's own fields, matching
-the server: filtering on a populated/relationship field (e.g. `{"author.name": "..."}`) is
-not implemented server-side yet.
+`.filter()`/`.where()` on `DataQuery` only ever apply to the base collection's own fields.
+For a populated/relationship field, use `.whereRelated()` and `.sortByRelated()` below -
+they use a different real backend mechanism (a top-level dotted query param), not a nested
+key inside `?filter=`.
+
+## Filtering, sorting, and paginating: the full fluent builder
+
+`.where()` filters the base collection's own fields with an operator, composing into the
+same `?filter=` JSON parameter as `.filter()`. `.whereRelated()` and `.sortByRelated()`
+reach onto a *related* collection's fields, using the backend's relationship-field-filter
+(PR #105) and sort-by-relationship-field (PR #108) query params:
+
+```ts
+const { data } = await typedCollection<Post, PostRelations>(dataApi, projectId, "posts")
+  .where("status", "==", "published")
+  .where("views", ">", 100)
+  .populate("author")
+  .whereRelated("author.role", "admin")   // ?author.role=admin - resolved via resolveRelationshipFilters
+  .sortByRelated("author.name", "desc")   // ?sort=-author.name - resolved via resolveRelationshipSortKeys
+  .limit(20)
+  .list();
+
+data[0].author.name; // typed as User, populated and filtered to admins only
+```
+
+`.where(field, operator, value)` accepts `"==" | "!=" | ">" | ">=" | "<" | "<=" | "in" |
+"nin"` - the exact subset of `utils/querySanitizer.js`'s server-side operator whitelist
+that has a single-value comparison meaning. This is a client-side convenience only: the
+server independently re-validates and rejects any operator outside its own whitelist
+regardless of what a client sends, so `.where()` cannot be used to bypass or weaken that
+enforcement. Repeated `.where()` calls on the same field merge
+(`.where("price", ">", 10).where("price", "<", 100)` -> `{ price: { $gt: 10, $lt: 100 } }`);
+`.filter()` shallow-merges a raw filter object in on top of whatever `.where()`/`.filter()`
+already built.
+
+`.whereRelated(path, value)` is equality-only, matching the real backend contract: a
+dotted query param (`?author.role=admin`) can only ever carry one raw string value, coerced
+server-side into bool/number/string - there is no `>`/`in`/etc. mechanism for a
+relationship-field filter today. `path` must contain a dot (a relationship traversal); the
+backend implicitly joins whatever relationship it names to evaluate the filter, so calling
+`.populate()` first is not required for `.whereRelated()` to work.
+
+`.sortByRelated(path, direction)` composes into the same `?sort=` parameter as `.sort()`.
+Only single-value relationship hops (many-to-one/one-to-one) resolve server-side - a path
+through a one-to-many/many-to-many relationship has no single well-defined sort value and
+is left unresolved, matching `resolveRelationshipSortKeys`'s documented scope limit.

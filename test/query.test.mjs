@@ -5,6 +5,13 @@
  * injected straight into DataApi so each test only checks the request that would have been
  * sent. Run with `npm test` (which builds first so this can import ./dist/api.js and
  * ./dist/query.js).
+ *
+ * The `.where()`/`.whereRelated()`/`.sortByRelated()` tests below (relational-ergonomics item
+ * 16) assert against `calls[0].params`/`calls[0].url`'s `filter`/`sort` search params rather
+ * than a merged final URL for the `.whereRelated()` case specifically, because the fake axios
+ * above intercepts *before* axios's own `buildURL` step runs - it never actually merges
+ * `config.params` onto the URL the way real axios does. `real-axios-merge.test.mjs` covers
+ * that merge end to end against a real `axios` instance and a local HTTP server instead.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -128,4 +135,148 @@ test("DataQuery.list() returns the data and pagination envelope", async () => {
   assert.equal(result.data.length, 1);
   assert.equal(result.data[0].title, "hi");
   assert.deepEqual(result.pagination, fakePagination);
+});
+
+// --- relational-ergonomics item 16: .where() / .whereRelated() / .sortByRelated() ---
+
+test("DataQuery.sort() calls accumulate into a comma-joined sort param", async () => {
+  const { api, calls } = makeDataApi({ data: [], pagination: {} });
+  await typedCollection(api, "proj_1", "posts").sort("-createdAt").sort("title").list();
+  const url = new URL(calls[0].url);
+  assert.equal(url.searchParams.get("sort"), "-createdAt,title");
+});
+
+test("DataQuery.sort() de-duplicates a field sorted twice", async () => {
+  const { api, calls } = makeDataApi({ data: [], pagination: {} });
+  await typedCollection(api, "proj_1", "posts").sort("-createdAt").sort("-createdAt").list();
+  const url = new URL(calls[0].url);
+  assert.equal(url.searchParams.get("sort"), "-createdAt");
+});
+
+test("DataQuery.sortByRelated() defaults to ascending and composes with .sort()", async () => {
+  const { api, calls } = makeDataApi({ data: [], pagination: {} });
+  await typedCollection(api, "proj_1", "posts").sort("-createdAt").sortByRelated("author.name").list();
+  const url = new URL(calls[0].url);
+  assert.equal(url.searchParams.get("sort"), "-createdAt,author.name");
+});
+
+test("DataQuery.sortByRelated('desc') prefixes the path with -", async () => {
+  const { api, calls } = makeDataApi({ data: [], pagination: {} });
+  await typedCollection(api, "proj_1", "posts").sortByRelated("author.name", "desc").list();
+  const url = new URL(calls[0].url);
+  assert.equal(url.searchParams.get("sort"), "-author.name");
+});
+
+test("DataQuery.sortByRelated() rejects a non-dotted path", () => {
+  assert.throws(
+    () => typedCollection({}, "proj_1", "posts").sortByRelated("name"),
+    /dotted relationship path/,
+  );
+});
+
+test("DataQuery.where('==') sets a plain equality filter value", async () => {
+  const { api, calls } = makeDataApi({ data: [], pagination: {} });
+  await typedCollection(api, "proj_1", "posts").where("status", "==", "published").list();
+  const url = new URL(calls[0].url);
+  assert.deepEqual(JSON.parse(url.searchParams.get("filter")), { status: "published" });
+});
+
+test("DataQuery.where() with a comparison operator produces a Mongo operator object", async () => {
+  const { api, calls } = makeDataApi({ data: [], pagination: {} });
+  await typedCollection(api, "proj_1", "posts").where("views", ">", 100).list();
+  const url = new URL(calls[0].url);
+  assert.deepEqual(JSON.parse(url.searchParams.get("filter")), { views: { $gt: 100 } });
+});
+
+test("DataQuery.where() calls on the same field with different operators merge", async () => {
+  const { api, calls } = makeDataApi({ data: [], pagination: {} });
+  await typedCollection(api, "proj_1", "posts").where("price", ">", 10).where("price", "<", 100).list();
+  const url = new URL(calls[0].url);
+  assert.deepEqual(JSON.parse(url.searchParams.get("filter")), { price: { $gt: 10, $lt: 100 } });
+});
+
+test("DataQuery.where('in') maps to $in and .where('nin') maps to $nin", async () => {
+  const { api, calls } = makeDataApi({ data: [], pagination: {} });
+  await typedCollection(api, "proj_1", "posts")
+    .where("status", "in", ["draft", "review"])
+    .where("authorType", "nin", ["banned"])
+    .list();
+  const url = new URL(calls[0].url);
+  assert.deepEqual(JSON.parse(url.searchParams.get("filter")), {
+    status: { $in: ["draft", "review"] },
+    authorType: { $nin: ["banned"] },
+  });
+});
+
+test("DataQuery.where() rejects an operator outside the server's allow-list", () => {
+  assert.throws(
+    () => typedCollection({}, "proj_1", "posts").where("body", "regex", "x"),
+    /unsupported operator/,
+  );
+});
+
+test("DataQuery.filter() and .where() shallow-merge rather than overwrite each other", async () => {
+  const { api, calls } = makeDataApi({ data: [], pagination: {} });
+  await typedCollection(api, "proj_1", "posts")
+    .filter({ published: true })
+    .where("views", ">", 100)
+    .list();
+  const url = new URL(calls[0].url);
+  assert.deepEqual(JSON.parse(url.searchParams.get("filter")), { published: true, views: { $gt: 100 } });
+});
+
+test("DataQuery.whereRelated() sends a dotted top-level query param via the axios request's params, not the filter object", async () => {
+  const { api, calls } = makeDataApi({ data: [], pagination: {} });
+  await typedCollection(api, "proj_1", "posts").whereRelated("author.role", "admin").list();
+  assert.deepEqual(calls[0].params, { "author.role": "admin" });
+  const url = new URL(calls[0].url);
+  assert.equal(url.searchParams.has("filter"), false);
+});
+
+test("DataQuery.whereRelated() merges multiple related-field conditions", async () => {
+  const { api, calls } = makeDataApi({ data: [], pagination: {} });
+  await typedCollection(api, "proj_1", "posts")
+    .whereRelated("author.role", "admin")
+    .whereRelated("author.verified", true)
+    .list();
+  assert.deepEqual(calls[0].params, { "author.role": "admin", "author.verified": true });
+});
+
+test("DataQuery.whereRelated() preserves caller-supplied axios options alongside its own params", async () => {
+  const { api, calls } = makeDataApi({ data: [], pagination: {} });
+  await typedCollection(api, "proj_1", "posts")
+    .whereRelated("author.role", "admin")
+    .list({ params: { extra: "1" }, headers: { "X-Test": "yes" } });
+  assert.deepEqual(calls[0].params, { extra: "1", "author.role": "admin" });
+  assert.equal(calls[0].headers["X-Test"], "yes");
+});
+
+test("DataQuery.whereRelated() rejects a non-dotted path", () => {
+  assert.throws(
+    () => typedCollection({}, "proj_1", "posts").whereRelated("role", "admin"),
+    /dotted relationship path/,
+  );
+});
+
+test("DataQuery.get() does not attach .whereRelated() conditions as axios params", async () => {
+  const { api, calls } = makeDataApi({ data: { _id: "doc_1" } });
+  await typedCollection(api, "proj_1", "posts").whereRelated("author.role", "admin").get("doc_1");
+  assert.equal(calls[0].params, undefined);
+});
+
+test("DataQuery composes .where()/.populate()/.whereRelated()/.sortByRelated()/.limit() in one chain", async () => {
+  const { api, calls } = makeDataApi({ data: [], pagination: {} });
+  await typedCollection(api, "proj_1", "posts")
+    .where("status", "==", "published")
+    .populate("author")
+    .whereRelated("author.role", "admin")
+    .sortByRelated("author.name", "desc")
+    .limit(20)
+    .list();
+  const url = new URL(calls[0].url);
+  assert.deepEqual(JSON.parse(url.searchParams.get("filter")), { status: "published" });
+  assert.equal(url.searchParams.get("populate"), "author");
+  assert.equal(url.searchParams.get("sort"), "-author.name");
+  assert.equal(url.searchParams.get("limit"), "20");
+  assert.deepEqual(calls[0].params, { "author.role": "admin" });
 });
