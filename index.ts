@@ -19,4 +19,6 @@ export * from "./configuration";
 export * from "./realtime";
 // Hand-written relationship/populate query sugar (not generated from OpenAPI). See query.ts / RELATIONSHIPS.md.
 export * from "./query";
+// Hand-written messaging push-token helper (not generated from OpenAPI). See messaging.ts / MESSAGING.md.
+export * from "./messaging";
 
