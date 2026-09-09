@@ -43,3 +43,18 @@ package.json
 # the build breaks). If a future generator version changes common.ts, re-apply that patch
 # by hand before removing this line.
 common.ts
+
+# --- Hand-written relationship/populate ergonomics (backend PR feat/relational-ergonomics-
+# phase-1, not yet reflected in openapi.yaml) ---
+# api.ts is frozen because it carries two hand-applied patches ahead of the spec: the
+# `populate` parameter on DataApi's getData/listData, and the whole RelationshipsApi class
+# (CRUD for declared relationships). Once openapi.yaml ships the relational-ergonomics
+# endpoints and the generator is re-run, diff the regenerated output against this file, fold
+# in any unrelated upstream changes by hand, and remove this line.
+api.ts
+# query.ts is a hand-written fluent/typed sugar layer on top of DataApi, same idea as
+# realtime.ts. Not part of the OpenAPI spec at all, never regenerate over it.
+query.ts
+RELATIONSHIPS.md
+test/query.test.mjs
+test/relationships.test.mjs

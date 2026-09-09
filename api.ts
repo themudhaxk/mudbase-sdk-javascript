@@ -13939,6 +13939,23 @@ export class ComplianceApi extends BaseAPI {
 
 
 /**
+ * Comma-joins a populate value for the `?populate=` query param on DataApi's getData/listData
+ * (declared-relationship populate, see relationshipService.js on the server). Accepts a single
+ * key, a comma-separated string, or an array of keys - repeated `.populate("x")` calls on the
+ * DataQuery builder in query.ts collapse to an array here. A dot-path key (e.g.
+ * "comments.author") is one key and passes through unchanged; it is never split on the dot.
+ *
+ * NOTE: hand-patched ahead of the OpenAPI generator. The declared-relationship engine (backend
+ * PR feat/relational-ergonomics-phase-1) has not shipped an updated openapi.yaml yet, so this
+ * repo's generated DataApi does not have a populate parameter. Once the spec catches up, this
+ * helper and the populate parameters added to getData/listData below should be removed in favor
+ * of the regenerated client - this is a stopgap, not a permanent hand-maintained surface.
+ */
+function joinPopulateParam(populate: string | Array<string>): string {
+    return Array.isArray(populate) ? populate.join(',') : populate;
+}
+
+/**
  * DataApi - axios parameter creator
  */
 export const DataApiAxiosParamCreator = function (configuration?: Configuration) {
@@ -14045,15 +14062,16 @@ export const DataApiAxiosParamCreator = function (configuration?: Configuration)
             };
         },
         /**
-         * 
+         *
          * @summary Get single document
-         * @param {string} projectId 
-         * @param {string} collectionId 
-         * @param {string} documentId 
+         * @param {string} projectId
+         * @param {string} collectionId
+         * @param {string} documentId
+         * @param {string | Array<string>} [populate] Declared-relationship field(s) to resolve. Comma-separated (\'author,comments\') or an array joined the same way; a dot-path (\'comments.author\') is passed through as one key for a nested populate. See relationshipService.resolvePopulateKeys on the server.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getData: async (projectId: string, collectionId: string, documentId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        getData: async (projectId: string, collectionId: string, documentId: string, populate?: string | Array<string>, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'projectId' is not null or undefined
             assertParamExists('getData', 'projectId', projectId)
             // verify required parameter 'collectionId' is not null or undefined
@@ -14083,6 +14101,10 @@ export const DataApiAxiosParamCreator = function (configuration?: Configuration)
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            if (populate !== undefined) {
+                localVarQueryParameter['populate'] = joinPopulateParam(populate);
+            }
+
             localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -14095,18 +14117,19 @@ export const DataApiAxiosParamCreator = function (configuration?: Configuration)
             };
         },
         /**
-         * List all documents in a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * List all documents in a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented.
          * @summary List data in collection
-         * @param {string} projectId 
-         * @param {string} collectionId 
-         * @param {number} [page] 
-         * @param {number} [limit] 
-         * @param {string} [sort] 
-         * @param {string} [filter] 
+         * @param {string} projectId
+         * @param {string} collectionId
+         * @param {number} [page]
+         * @param {number} [limit]
+         * @param {string} [sort]
+         * @param {string} [filter]
+         * @param {string | Array<string>} [populate] Declared-relationship field(s) to resolve. Comma-separated (\'author,comments\') or an array joined the same way; a dot-path (\'comments.author\') is passed through as one key for a nested populate. Composes with sort/page/limit/filter unchanged - see routes/data.js on the server. Deep/relationship-field filtering (e.g. \'author.name\') is not supported server-side yet.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listData: async (projectId: string, collectionId: string, page?: number, limit?: number, sort?: string, filter?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        listData: async (projectId: string, collectionId: string, page?: number, limit?: number, sort?: string, filter?: string, populate?: string | Array<string>, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'projectId' is not null or undefined
             assertParamExists('listData', 'projectId', projectId)
             // verify required parameter 'collectionId' is not null or undefined
@@ -14147,6 +14170,10 @@ export const DataApiAxiosParamCreator = function (configuration?: Configuration)
 
             if (filter !== undefined) {
                 localVarQueryParameter['filter'] = filter;
+            }
+
+            if (populate !== undefined) {
+                localVarQueryParameter['populate'] = joinPopulateParam(populate);
             }
 
             localVarHeaderParameter['Accept'] = 'application/json';
@@ -14255,34 +14282,36 @@ export const DataApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * 
+         *
          * @summary Get single document
-         * @param {string} projectId 
-         * @param {string} collectionId 
-         * @param {string} documentId 
+         * @param {string} projectId
+         * @param {string} collectionId
+         * @param {string} documentId
+         * @param {string | Array<string>} [populate]
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getData(projectId: string, collectionId: string, documentId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DataResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getData(projectId, collectionId, documentId, options);
+        async getData(projectId: string, collectionId: string, documentId: string, populate?: string | Array<string>, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DataResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getData(projectId, collectionId, documentId, populate, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DataApi.getData']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * List all documents in a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * List all documents in a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented.
          * @summary List data in collection
-         * @param {string} projectId 
-         * @param {string} collectionId 
-         * @param {number} [page] 
-         * @param {number} [limit] 
-         * @param {string} [sort] 
-         * @param {string} [filter] 
+         * @param {string} projectId
+         * @param {string} collectionId
+         * @param {number} [page]
+         * @param {number} [limit]
+         * @param {string} [sort]
+         * @param {string} [filter]
+         * @param {string | Array<string>} [populate]
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async listData(projectId: string, collectionId: string, page?: number, limit?: number, sort?: string, filter?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DataListResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.listData(projectId, collectionId, page, limit, sort, filter, options);
+        async listData(projectId: string, collectionId: string, page?: number, limit?: number, sort?: string, filter?: string, populate?: string | Array<string>, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DataListResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listData(projectId, collectionId, page, limit, sort, filter, populate, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DataApi.listData']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -14340,17 +14369,17 @@ export const DataApiFactory = function (configuration?: Configuration, basePath?
          * @throws {RequiredError}
          */
         getData(requestParameters: DataApiGetDataRequest, options?: RawAxiosRequestConfig): AxiosPromise<DataResponse> {
-            return localVarFp.getData(requestParameters.projectId, requestParameters.collectionId, requestParameters.documentId, options).then((request) => request(axios, basePath));
+            return localVarFp.getData(requestParameters.projectId, requestParameters.collectionId, requestParameters.documentId, requestParameters.populate, options).then((request) => request(axios, basePath));
         },
         /**
-         * List all documents in a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * List all documents in a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented.
          * @summary List data in collection
          * @param {DataApiListDataRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         listData(requestParameters: DataApiListDataRequest, options?: RawAxiosRequestConfig): AxiosPromise<DataListResponse> {
-            return localVarFp.listData(requestParameters.projectId, requestParameters.collectionId, requestParameters.page, requestParameters.limit, requestParameters.sort, requestParameters.filter, options).then((request) => request(axios, basePath));
+            return localVarFp.listData(requestParameters.projectId, requestParameters.collectionId, requestParameters.page, requestParameters.limit, requestParameters.sort, requestParameters.filter, requestParameters.populate, options).then((request) => request(axios, basePath));
         },
         /**
          * Update a document in a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
@@ -14396,6 +14425,12 @@ export interface DataApiGetDataRequest {
     readonly collectionId: string
 
     readonly documentId: string
+
+    /**
+     * Declared-relationship field(s) to resolve, e.g. \'author\' or [\'author\', \'comments\'].
+     * A dot-path (\'comments.author\') resolves a nested relationship.
+     */
+    readonly populate?: string | Array<string>
 }
 
 /**
@@ -14413,6 +14448,18 @@ export interface DataApiListDataRequest {
     readonly sort?: string
 
     readonly filter?: string
+
+    /**
+     * Declared-relationship field(s) to resolve, e.g. \'author\' or [\'author\', \'comments\'].
+     * A dot-path (\'comments.author\') resolves a nested relationship. Composes with sort,
+     * page, limit, and filter. Deep/relationship-field filtering (e.g. \'author.name=value\')
+     * and sort-by-relationship-field (e.g. \'sort=-author.name\') are supported server-side
+     * (see relationshipService.js\'s resolveRelationshipFilters/resolveRelationshipSortKeys) -
+     * this generated request type has no field for them since they are extra top-level query
+     * params, not named parameters here; use the DataQuery builder in query.ts
+     * (.whereRelated()/.sortByRelated()) for a typed, composable way to add them.
+     */
+    readonly populate?: string | Array<string>
 }
 
 /**
@@ -14462,18 +14509,18 @@ export class DataApi extends BaseAPI {
      * @throws {RequiredError}
      */
     public getData(requestParameters: DataApiGetDataRequest, options?: RawAxiosRequestConfig) {
-        return DataApiFp(this.configuration).getData(requestParameters.projectId, requestParameters.collectionId, requestParameters.documentId, options).then((request) => request(this.axios, this.basePath));
+        return DataApiFp(this.configuration).getData(requestParameters.projectId, requestParameters.collectionId, requestParameters.documentId, requestParameters.populate, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
-     * List all documents in a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+     * List all documents in a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented.
      * @summary List data in collection
      * @param {DataApiListDataRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
     public listData(requestParameters: DataApiListDataRequest, options?: RawAxiosRequestConfig) {
-        return DataApiFp(this.configuration).listData(requestParameters.projectId, requestParameters.collectionId, requestParameters.page, requestParameters.limit, requestParameters.sort, requestParameters.filter, options).then((request) => request(this.axios, this.basePath));
+        return DataApiFp(this.configuration).listData(requestParameters.projectId, requestParameters.collectionId, requestParameters.page, requestParameters.limit, requestParameters.sort, requestParameters.filter, requestParameters.populate, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -29699,6 +29746,574 @@ export const GetHistoricalAnalyticsPeriodEnum = {
     Week: 'week',
 } as const;
 export type GetHistoricalAnalyticsPeriodEnum = typeof GetHistoricalAnalyticsPeriodEnum[keyof typeof GetHistoricalAnalyticsPeriodEnum];
+
+/**
+ * NOTE: hand-patched ahead of the OpenAPI generator, same as the populate parameters on
+ * DataApi above. The declared-relationship engine (backend PR feat/relational-ergonomics-
+ * phase-1) has not shipped an updated openapi.yaml yet, so RelationshipsApi below is written
+ * by hand against the real route/controller contract (routes/relationship.js,
+ * controllers/relationshipController.js) rather than generated. Replace with the generated
+ * version once the spec catches up.
+ */
+export const RelationshipTypeEnum = {
+    OneToOne: 'one-to-one',
+    OneToMany: 'one-to-many',
+    ManyToOne: 'many-to-one',
+    ManyToMany: 'many-to-many',
+} as const;
+export type RelationshipTypeEnum = typeof RelationshipTypeEnum[keyof typeof RelationshipTypeEnum];
+
+export const RelationshipOnDeleteEnum = {
+    Restrict: 'restrict',
+    Cascade: 'cascade',
+    SetNull: 'set-null',
+    NoAction: 'no-action',
+} as const;
+export type RelationshipOnDeleteEnum = typeof RelationshipOnDeleteEnum[keyof typeof RelationshipOnDeleteEnum];
+
+/**
+ * A declared relationship between two collections in a project. Reference fields on the
+ * documents themselves stay plain ids - this record only tells the server\'s populate engine,
+ * write-time reference validator, and cascade-delete enforcer how two collections relate. See
+ * models/Relationship.js on the server for the full field-ownership contract per `type`.
+ */
+export interface Relationship {
+    '_id'?: string;
+    'project'?: string;
+    'sourceCollection'?: string;
+    'targetCollection'?: string;
+    'field'?: string;
+    'type'?: RelationshipTypeEnum;
+    'onDelete'?: RelationshipOnDeleteEnum;
+    'createdBy'?: string;
+    'createdAt'?: string;
+    'updatedAt'?: string;
+}
+export interface RelationshipListResponse {
+    'success'?: boolean;
+    'data'?: Array<Relationship>;
+    'pagination'?: Pagination;
+}
+export interface RelationshipResponse {
+    'success'?: boolean;
+    'data'?: Relationship;
+    'message'?: string;
+}
+export interface DeleteRelationship200Response {
+    'success'?: boolean;
+    'message'?: string;
+}
+/**
+ * One relationship\'s orphan-reference scan result: reference values on the source collection
+ * that point at a target document which no longer exists. Detection only, no repair.
+ */
+export interface RelationshipOrphanReportEntry {
+    'relationshipId'?: string;
+    'sourceCollection'?: string;
+    'targetCollection'?: string;
+    'field'?: string;
+    'type'?: RelationshipTypeEnum;
+    'error'?: string;
+    'orphanCount'?: number;
+    'orphanSamples'?: Array<string>;
+    'truncated'?: boolean;
+}
+export interface RelationshipOrphanReportResponse {
+    'success'?: boolean;
+    'data'?: Array<RelationshipOrphanReportEntry>;
+    'totalOrphans'?: number;
+}
+export interface CreateRelationshipRequest {
+    'sourceCollection': string;
+    'targetCollection': string;
+    'field': string;
+    'type': RelationshipTypeEnum;
+    'onDelete'?: RelationshipOnDeleteEnum;
+}
+export interface UpdateRelationshipRequest {
+    'type'?: RelationshipTypeEnum;
+    'onDelete'?: RelationshipOnDeleteEnum;
+}
+
+/**
+ * RelationshipsApi - axios parameter creator
+ */
+export const RelationshipsApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Declare a new relationship between two collections in this project. Requires project owner/admin (ProjectBearerAuth or ApiKeyAuth).
+         * @summary Declare a new relationship between two collections
+         * @param {string} projectId
+         * @param {CreateRelationshipRequest} createRelationshipRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createRelationship: async (projectId: string, createRelationshipRequest: CreateRelationshipRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            assertParamExists('createRelationship', 'projectId', projectId)
+            assertParamExists('createRelationship', 'createRelationshipRequest', createRelationshipRequest)
+            const localVarPath = `/api/projects/{projectId}/relationships`
+                .replace('{projectId}', encodeURIComponent(String(projectId)));
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createRelationshipRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Remove a relationship declaration (metadata only - never touches documents). Requires project owner/admin.
+         * @summary Delete a relationship declaration
+         * @param {string} projectId
+         * @param {string} relationshipId
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteRelationship: async (projectId: string, relationshipId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            assertParamExists('deleteRelationship', 'projectId', projectId)
+            assertParamExists('deleteRelationship', 'relationshipId', relationshipId)
+            const localVarPath = `/api/projects/{projectId}/relationships/{relationshipId}`
+                .replace('{projectId}', encodeURIComponent(String(projectId)))
+                .replace('{relationshipId}', encodeURIComponent(String(relationshipId)));
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get a single relationship definition.
+         * @summary Get a single relationship definition
+         * @param {string} projectId
+         * @param {string} relationshipId
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getRelationship: async (projectId: string, relationshipId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            assertParamExists('getRelationship', 'projectId', projectId)
+            assertParamExists('getRelationship', 'relationshipId', relationshipId)
+            const localVarPath = `/api/projects/{projectId}/relationships/{relationshipId}`
+                .replace('{projectId}', encodeURIComponent(String(projectId)))
+                .replace('{relationshipId}', encodeURIComponent(String(relationshipId)));
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * List declared relationships for a project, optionally narrowed to one source and/or target collection.
+         * @summary List declared relationships for a project
+         * @param {string} projectId
+         * @param {string} [sourceCollection]
+         * @param {string} [targetCollection]
+         * @param {number} [page]
+         * @param {number} [limit]
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listRelationships: async (projectId: string, sourceCollection?: string, targetCollection?: string, page?: number, limit?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            assertParamExists('listRelationships', 'projectId', projectId)
+            const localVarPath = `/api/projects/{projectId}/relationships`
+                .replace('{projectId}', encodeURIComponent(String(projectId)));
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            if (sourceCollection !== undefined) {
+                localVarQueryParameter['sourceCollection'] = sourceCollection;
+            }
+
+            if (targetCollection !== undefined) {
+                localVarQueryParameter['targetCollection'] = targetCollection;
+            }
+
+            if (page !== undefined) {
+                localVarQueryParameter['page'] = page;
+            }
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Scan every declared relationship for FK values with no matching target document. Owner/admin only, detection only - repair is a separate follow-up.
+         * @summary Scan for orphaned references
+         * @param {string} projectId
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getRelationshipOrphans: async (projectId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            assertParamExists('getRelationshipOrphans', 'projectId', projectId)
+            const localVarPath = `/api/projects/{projectId}/relationships/orphans`
+                .replace('{projectId}', encodeURIComponent(String(projectId)));
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Update a relationship\'s type or onDelete policy. sourceCollection/field are immutable - delete and recreate to repoint those. Requires project owner/admin.
+         * @summary Update a relationship\'s type or onDelete policy
+         * @param {string} projectId
+         * @param {string} relationshipId
+         * @param {UpdateRelationshipRequest} updateRelationshipRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateRelationship: async (projectId: string, relationshipId: string, updateRelationshipRequest: UpdateRelationshipRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            assertParamExists('updateRelationship', 'projectId', projectId)
+            assertParamExists('updateRelationship', 'relationshipId', relationshipId)
+            assertParamExists('updateRelationship', 'updateRelationshipRequest', updateRelationshipRequest)
+            const localVarPath = `/api/projects/{projectId}/relationships/{relationshipId}`
+                .replace('{projectId}', encodeURIComponent(String(projectId)))
+                .replace('{relationshipId}', encodeURIComponent(String(relationshipId)));
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(updateRelationshipRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * RelationshipsApi - functional programming interface
+ */
+export const RelationshipsApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = RelationshipsApiAxiosParamCreator(configuration)
+    return {
+        async createRelationship(projectId: string, createRelationshipRequest: CreateRelationshipRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RelationshipResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createRelationship(projectId, createRelationshipRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['RelationshipsApi.createRelationship']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        async deleteRelationship(projectId: string, relationshipId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DeleteRelationship200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteRelationship(projectId, relationshipId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['RelationshipsApi.deleteRelationship']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        async getRelationship(projectId: string, relationshipId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RelationshipResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getRelationship(projectId, relationshipId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['RelationshipsApi.getRelationship']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        async listRelationships(projectId: string, sourceCollection?: string, targetCollection?: string, page?: number, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RelationshipListResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listRelationships(projectId, sourceCollection, targetCollection, page, limit, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['RelationshipsApi.listRelationships']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        async getRelationshipOrphans(projectId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RelationshipOrphanReportResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getRelationshipOrphans(projectId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['RelationshipsApi.getRelationshipOrphans']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        async updateRelationship(projectId: string, relationshipId: string, updateRelationshipRequest: UpdateRelationshipRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RelationshipResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateRelationship(projectId, relationshipId, updateRelationshipRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['RelationshipsApi.updateRelationship']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * RelationshipsApi - factory interface
+ */
+export const RelationshipsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = RelationshipsApiFp(configuration)
+    return {
+        createRelationship(requestParameters: RelationshipsApiCreateRelationshipRequest, options?: RawAxiosRequestConfig): AxiosPromise<RelationshipResponse> {
+            return localVarFp.createRelationship(requestParameters.projectId, requestParameters.createRelationshipRequest, options).then((request) => request(axios, basePath));
+        },
+        deleteRelationship(requestParameters: RelationshipsApiDeleteRelationshipRequest, options?: RawAxiosRequestConfig): AxiosPromise<DeleteRelationship200Response> {
+            return localVarFp.deleteRelationship(requestParameters.projectId, requestParameters.relationshipId, options).then((request) => request(axios, basePath));
+        },
+        getRelationship(requestParameters: RelationshipsApiGetRelationshipRequest, options?: RawAxiosRequestConfig): AxiosPromise<RelationshipResponse> {
+            return localVarFp.getRelationship(requestParameters.projectId, requestParameters.relationshipId, options).then((request) => request(axios, basePath));
+        },
+        listRelationships(requestParameters: RelationshipsApiListRelationshipsRequest, options?: RawAxiosRequestConfig): AxiosPromise<RelationshipListResponse> {
+            return localVarFp.listRelationships(requestParameters.projectId, requestParameters.sourceCollection, requestParameters.targetCollection, requestParameters.page, requestParameters.limit, options).then((request) => request(axios, basePath));
+        },
+        getRelationshipOrphans(requestParameters: RelationshipsApiGetRelationshipOrphansRequest, options?: RawAxiosRequestConfig): AxiosPromise<RelationshipOrphanReportResponse> {
+            return localVarFp.getRelationshipOrphans(requestParameters.projectId, options).then((request) => request(axios, basePath));
+        },
+        updateRelationship(requestParameters: RelationshipsApiUpdateRelationshipRequest, options?: RawAxiosRequestConfig): AxiosPromise<RelationshipResponse> {
+            return localVarFp.updateRelationship(requestParameters.projectId, requestParameters.relationshipId, requestParameters.updateRelationshipRequest, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * Request parameters for createRelationship operation in RelationshipsApi.
+ */
+export interface RelationshipsApiCreateRelationshipRequest {
+    readonly projectId: string
+
+    readonly createRelationshipRequest: CreateRelationshipRequest
+}
+
+/**
+ * Request parameters for deleteRelationship operation in RelationshipsApi.
+ */
+export interface RelationshipsApiDeleteRelationshipRequest {
+    readonly projectId: string
+
+    readonly relationshipId: string
+}
+
+/**
+ * Request parameters for getRelationship operation in RelationshipsApi.
+ */
+export interface RelationshipsApiGetRelationshipRequest {
+    readonly projectId: string
+
+    readonly relationshipId: string
+}
+
+/**
+ * Request parameters for listRelationships operation in RelationshipsApi.
+ */
+export interface RelationshipsApiListRelationshipsRequest {
+    readonly projectId: string
+
+    readonly sourceCollection?: string
+
+    readonly targetCollection?: string
+
+    readonly page?: number
+
+    readonly limit?: number
+}
+
+/**
+ * Request parameters for getRelationshipOrphans operation in RelationshipsApi.
+ */
+export interface RelationshipsApiGetRelationshipOrphansRequest {
+    readonly projectId: string
+}
+
+/**
+ * Request parameters for updateRelationship operation in RelationshipsApi.
+ */
+export interface RelationshipsApiUpdateRelationshipRequest {
+    readonly projectId: string
+
+    readonly relationshipId: string
+
+    readonly updateRelationshipRequest: UpdateRelationshipRequest
+}
+
+/**
+ * RelationshipsApi - object-oriented interface. Thin client for the declared-relationship
+ * metadata CRUD endpoints (routes/relationship.js on the server) - the same declarations that
+ * drive DataApi's `?populate=` support above, write-time reference validation, and cascade
+ * delete. `getRelationshipOrphans` is owner/admin-only (detection, not repair).
+ */
+export class RelationshipsApi extends BaseAPI {
+    /**
+     * @summary Declare a new relationship between two collections
+     * @param {RelationshipsApiCreateRelationshipRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public createRelationship(requestParameters: RelationshipsApiCreateRelationshipRequest, options?: RawAxiosRequestConfig) {
+        return RelationshipsApiFp(this.configuration).createRelationship(requestParameters.projectId, requestParameters.createRelationshipRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * @summary Delete a relationship declaration
+     * @param {RelationshipsApiDeleteRelationshipRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public deleteRelationship(requestParameters: RelationshipsApiDeleteRelationshipRequest, options?: RawAxiosRequestConfig) {
+        return RelationshipsApiFp(this.configuration).deleteRelationship(requestParameters.projectId, requestParameters.relationshipId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * @summary Get a single relationship definition
+     * @param {RelationshipsApiGetRelationshipRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public getRelationship(requestParameters: RelationshipsApiGetRelationshipRequest, options?: RawAxiosRequestConfig) {
+        return RelationshipsApiFp(this.configuration).getRelationship(requestParameters.projectId, requestParameters.relationshipId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * @summary List declared relationships for a project
+     * @param {RelationshipsApiListRelationshipsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public listRelationships(requestParameters: RelationshipsApiListRelationshipsRequest, options?: RawAxiosRequestConfig) {
+        return RelationshipsApiFp(this.configuration).listRelationships(requestParameters.projectId, requestParameters.sourceCollection, requestParameters.targetCollection, requestParameters.page, requestParameters.limit, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * @summary Scan for orphaned references (owner/admin only)
+     * @param {RelationshipsApiGetRelationshipOrphansRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public getRelationshipOrphans(requestParameters: RelationshipsApiGetRelationshipOrphansRequest, options?: RawAxiosRequestConfig) {
+        return RelationshipsApiFp(this.configuration).getRelationshipOrphans(requestParameters.projectId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * @summary Update a relationship\'s type or onDelete policy
+     * @param {RelationshipsApiUpdateRelationshipRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public updateRelationship(requestParameters: RelationshipsApiUpdateRelationshipRequest, options?: RawAxiosRequestConfig) {
+        return RelationshipsApiFp(this.configuration).updateRelationship(requestParameters.projectId, requestParameters.relationshipId, requestParameters.updateRelationshipRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
 
 
 /**
