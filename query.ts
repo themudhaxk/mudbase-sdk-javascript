@@ -110,8 +110,8 @@ export class DataQuery<TBase, TRelations = Record<string, never>, TPopulated ext
 
     /**
      * Add one relationship field to resolve. Repeatable: `.populate("author").populate("comments")`
-     * collapses to `populate: ["author", "comments"]` on the request, which the generated
-     * DataApi joins into `?populate=author,comments`. A dot-path key (e.g. "comments.author")
+     * collapses to `populate: "author,comments"` on the request (comma-joined string), which
+     * DataApi forwards as `?populate=author,comments`. A dot-path key (e.g. "comments.author")
      * resolves a nested relationship and is passed through unsplit.
      */
     populate<K extends PopulateKey<TRelations>>(key: K | Array<K>): DataQuery<TBase, TRelations, TPopulated | (K & keyof TRelations)> {
@@ -239,11 +239,11 @@ export class DataQuery<TBase, TRelations = Record<string, never>, TPopulated ext
         return this;
     }
 
-    private populateParam(): string | Array<string> | undefined {
+    private populateParam(): string | undefined {
         if (this.populateKeys.length === 0) {
             return undefined;
         }
-        return this.populateKeys.length === 1 ? this.populateKeys[0] : [...this.populateKeys];
+        return this.populateKeys.join(",");
     }
 
     private sortParam(): string | undefined {
