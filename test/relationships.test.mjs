@@ -58,7 +58,7 @@ test("createRelationship sends POST with the declaration as a JSON body", async 
   const { api, calls } = makeClient({ success: true, data: {} });
   await api.createRelationship({
     projectId: "proj_1",
-    createRelationshipRequest: {
+    relationshipCreateRequest: {
       sourceCollection: "posts",
       targetCollection: "users",
       field: "author",
@@ -91,7 +91,7 @@ test("updateRelationship sends PATCH with only the changed fields", async () => 
   await api.updateRelationship({
     projectId: "proj_1",
     relationshipId: "rel_1",
-    updateRelationshipRequest: { onDelete: "cascade" },
+    relationshipUpdateRequest: { onDelete: "cascade" },
   });
   assert.equal(calls[0].method, "PATCH");
   assert.equal(calls[0].url, "https://cloud.example.dev/api/projects/proj_1/relationships/rel_1");

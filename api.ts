@@ -2,7 +2,7 @@
 /* eslint-disable */
 /**
  * MUDBASESDK
- * MUDBASE is a scalable, real-time, and secure Backend-as-a-Service (BaaS) platform  designed for modern applications. Built with custom logic, it offers fine-grained  control, extensibility, and enterprise-grade security.  ## Features - 🔐 Multi-provider authentication (30+ OAuth providers) - 📊 Real-time database with collections - 📁 File storage and management - 🔑 API key management with permissions - 🔗 Webhook system with retry logic - ⚡ Serverless functions - 💬 Multi-channel messaging (Push, Email, SMS) - 📈 Usage analytics and monitoring - 🌐 Real-time WebSocket events - 🔍 Full-text search capabilities - 💳 Billing: fiat only for project subscriptions and org BaaS checkout (platform fee split). On-chain billing is not exposed on these APIs (optional `crypto-payment-module/` in repo, not mounted by default). - 🏢 Enterprise / Phase 4: custom domains on Growth, Scale, and Enterprise (TXT DNS at `_mudbase-verify.<hostname>`); `settings.customDomainAddon` is optional (billing/legacy); dedicated DB migration script, periodic DNS recheck job, optional `infrastructureEnvironments[]` and edge/metering fields on `dedicated`. 
+ * MUDBASE is a scalable, real-time, and secure Backend-as-a-Service (BaaS) platform  designed for modern applications. Built with custom logic, it offers fine-grained  control, extensibility, and enterprise-grade security.  ## Features - 🔐 Multi-provider authentication (30+ OAuth providers) - 📊 Real-time database with collections - 📁 File storage and management - 🔑 API key management with permissions - 🔗 Webhook system with retry logic - ⚡ Serverless functions - 💬 Multi-channel messaging (Push, Email, SMS) - 📈 Usage analytics and monitoring - 🌐 Real-time WebSocket events - 🔍 Full-text search capabilities - 💳 Billing: fiat only for project subscriptions and org BaaS checkout (platform fee split). On-chain billing is not exposed on these APIs (optional `crypto-payment-module/` in repo, not mounted by default). - 📡 Block-based multi-chain wallet monitoring (ETH/UTXO scanners, GetBlock, scanner metrics API) - 🏢 Enterprise / Phase 4: custom domains on Growth, Scale, and Enterprise (TXT DNS at `_mudbase-verify.<hostname>`); `settings.customDomainAddon` is optional (billing/legacy); dedicated DB migration script, periodic DNS recheck job, optional `infrastructureEnvironments[]` and edge/metering fields on `dedicated`.  ## Testing Configurations Below are example configurations for testing in different environments:  ### Development (Localhost) ```json {   \"scheme\": \"http\",   \"base_path\": \"\",   \"host\": \"localhost:5000\",   \"xApiKey\": \"xApiKey\",   \"bearerToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NWFjYmUwZTEyOTkzMmZiYjdhMGZjMiIsImVtYWlsIjoibXVkaGF4a3NlcnZpY2VzQGdtYWlsLmNvbSIsImlhdCI6MTc1MDc4MDg5OCwiZXhwIjoxNzUwODY3Mjk4fQ.sfoqzEbCuz5Y8qHkLItzrZZYC823SPT4RbO7Kucqvuc\",   \"userId\": \"685acbe0e129932fbb7a0fc2\",   \"projectId\": \"685ad30be129932fbb7a1047\",   \"collectionId\": \"685ada8fd9416ac02f171abf\",   \"documentId\": \"685ae1210136e73fa1dcaf36\",   \"apikeyId\": \"685ae8a785426b6a4190d5fc\",   \"webhookId\": \"685af3992f9c4c96514247e9\",   \"functionId\": \"685af8b85d73a104065b6a77\",   \"fileId\": \"685af8b85d73a104065b6a77\" } 
  *
  * The version of the OpenAPI document: 1.3.10
  * Contact: support@mudbase.dev
@@ -211,6 +211,8 @@ export interface AdminOrgLimitsPatchRequest {
     'realtimeConnections'?: number | null;
     'realtimeMessages'?: number | null;
     'chatMessagesPerMonth'?: number | null;
+    'monitoredWallets'?: number | null;
+    'walletWebhooksPerOrg'?: number | null;
     'apiKeysPerProject'?: number | null;
     'webhooksPerProject'?: number | null;
     'functionsPerProject'?: number | null;
@@ -301,6 +303,79 @@ export interface AdminProvisionEnterpriseBody {
     'version'?: string | null;
     'forceOverride'?: boolean;
 }
+export interface AggregateData200Response {
+    'data'?: Array<object>;
+}
+export interface AggregateData400Response {
+    'error'?: string;
+    'code'?: string;
+}
+export interface AggregateDataRequest {
+    /**
+     * A declared field name to group by. Omit to aggregate over the entire (filtered) collection as a single group.
+     */
+    'groupBy'?: string;
+    'metrics': Array<AggregateDataRequestMetricsInner>;
+    /**
+     * Same sanitized filter object shape the list endpoint accepts, applied before grouping.
+     */
+    'filter'?: object;
+    'having'?: AggregateDataRequestHaving;
+    /**
+     * Maximum number of groups returned.
+     */
+    'limit'?: number;
+}
+/**
+ * Compares one of this request\'s own metric aliases against a fixed comparison operator, applied after grouping.
+ */
+export interface AggregateDataRequestHaving {
+    /**
+     * Must match one of this request\'s own `metrics[].as` (or default alias).
+     */
+    'metric'?: string;
+    'op'?: AggregateDataRequestHavingOpEnum;
+    'value'?: AggregateDataRequestHavingValue;
+}
+
+export const AggregateDataRequestHavingOpEnum = {
+    GreaterThan: '>',
+    GreaterThanOrEqualTo: '>=',
+    LessThan: '<',
+    LessThanOrEqualTo: '<=',
+    DoubleEqual: '==',
+    NotEqual: '!=',
+} as const;
+
+export type AggregateDataRequestHavingOpEnum = typeof AggregateDataRequestHavingOpEnum[keyof typeof AggregateDataRequestHavingOpEnum];
+
+/**
+ * @type AggregateDataRequestHavingValue
+ */
+export type AggregateDataRequestHavingValue = number | string;
+
+export interface AggregateDataRequestMetricsInner {
+    'op': AggregateDataRequestMetricsInnerOpEnum;
+    /**
+     * A declared field name. Required for sum/avg/min/max; optional for count.
+     */
+    'field'?: string;
+    /**
+     * Alias for this metric in the response. Defaults to `count`, or `<op>_<field>`.
+     */
+    'as'?: string;
+}
+
+export const AggregateDataRequestMetricsInnerOpEnum = {
+    Count: 'count',
+    Sum: 'sum',
+    Avg: 'avg',
+    Min: 'min',
+    Max: 'max',
+} as const;
+
+export type AggregateDataRequestMetricsInnerOpEnum = typeof AggregateDataRequestMetricsInnerOpEnum[keyof typeof AggregateDataRequestMetricsInnerOpEnum];
+
 export interface ApiAddonsGet200Response {
     'addons'?: Array<object>;
 }
@@ -437,30 +512,6 @@ export interface ApiKycWebhookConfigPutRequest {
      */
     'generateSecret'?: boolean;
 }
-export interface ApiKycWebhookConfigTestPost200Response {
-    'ok'?: boolean;
-    'httpStatus'?: number | null;
-    'error'?: string | null;
-}
-export interface ApiKycWorkflowsGet200Response {
-    'workflows'?: Array<ApiKycWorkflowsGet200ResponseWorkflowsInner>;
-    'kyc'?: Array<object>;
-    'kyb'?: Array<object>;
-}
-export interface ApiKycWorkflowsGet200ResponseWorkflowsInner {
-    'id'?: string;
-    'name'?: string;
-    'type'?: ApiKycWorkflowsGet200ResponseWorkflowsInnerTypeEnum;
-    'isDefault'?: boolean;
-}
-
-export const ApiKycWorkflowsGet200ResponseWorkflowsInnerTypeEnum = {
-    Kyc: 'kyc',
-    Kyb: 'kyb',
-} as const;
-
-export type ApiKycWorkflowsGet200ResponseWorkflowsInnerTypeEnum = typeof ApiKycWorkflowsGet200ResponseWorkflowsInnerTypeEnum[keyof typeof ApiKycWorkflowsGet200ResponseWorkflowsInnerTypeEnum];
-
 export interface ApiMeBootstrapGet200Response {
     'user'?: object;
     'organizations'?: Array<object>;
@@ -469,25 +520,6 @@ export interface ApiMeBootstrapGet200Response {
 }
 export interface ApiProjectsProjectIdAddonsAddonInvokePost200Response {
     'job'?: object;
-}
-export interface ApiProjectsProjectIdKybSessionsPostRequest {
-    /**
-     * Overrides the organization\'s default KYB workflow.
-     */
-    'workflowId'?: string;
-    /**
-     * Your own identifier for the business being verified.
-     */
-    'vendorBusinessId'?: string;
-    /**
-     * Arbitrary reference echoed back on webhooks.
-     */
-    'vendorData'?: string;
-    /**
-     * Where to redirect the business user after the hosted flow.
-     */
-    'callback'?: string;
-    'language'?: string;
 }
 export interface ApplyRoleFeaturePreset200Response {
     'success'?: boolean;
@@ -562,6 +594,56 @@ export interface BillingLastPayment {
     'date'?: string;
     'status'?: string;
 }
+export interface BroadcastNonCustodialTransaction200Response {
+    'success'?: boolean;
+    'message'?: string;
+    'data'?: BroadcastNonCustodialTransaction200ResponseData;
+}
+export interface BroadcastNonCustodialTransaction200ResponseData {
+    'txHash'?: string;
+    'chain'?: string;
+    'fromAddress'?: string;
+    /**
+     * Native currency for the chain (ETH, BNB, MATIC, etc.)
+     */
+    'currency'?: string;
+}
+export interface BroadcastNonCustodialTransactionRequest {
+    /**
+     * Blockchain for broadcast (EVM, UTXO, or chain-specific)
+     */
+    'chain': BroadcastNonCustodialTransactionRequestChainEnum;
+    /**
+     * Fully signed transaction (hex string)
+     */
+    'signedTx': string;
+    /**
+     * Address that signed the transaction (must be registered)
+     */
+    'fromAddress': string;
+}
+
+export const BroadcastNonCustodialTransactionRequestChainEnum = {
+    Ethereum: 'ethereum',
+    Polygon: 'polygon',
+    Arbitrum: 'arbitrum',
+    Optimism: 'optimism',
+    Base: 'base',
+    Bsc: 'bsc',
+    Binance: 'binance',
+    Avalanche: 'avalanche',
+    Celo: 'celo',
+    Bitcoin: 'bitcoin',
+    Litecoin: 'litecoin',
+    Dogecoin: 'dogecoin',
+    Tron: 'tron',
+    Solana: 'solana',
+    Ton: 'ton',
+    Cardano: 'cardano',
+} as const;
+
+export type BroadcastNonCustodialTransactionRequestChainEnum = typeof BroadcastNonCustodialTransactionRequestChainEnum[keyof typeof BroadcastNonCustodialTransactionRequestChainEnum];
+
 export interface Bucket {
     '_id'?: string;
     'name'?: string;
@@ -579,6 +661,80 @@ export interface BucketResponse {
     'success'?: boolean;
     'message'?: string;
     'bucket'?: Bucket;
+}
+export interface CalculateWalletFee200Response {
+    'success'?: boolean;
+    'data'?: CalculateWalletFee200ResponseData;
+}
+export interface CalculateWalletFee200ResponseData {
+    /**
+     * Request currency / native currency for the chain
+     */
+    'currency'?: string;
+    'network'?: string | null;
+    'amount'?: number;
+    /**
+     * Chain id used for estimation
+     */
+    'chain'?: string;
+    /**
+     * Human-readable network fee from blockchain
+     */
+    'networkFee'?: string;
+    'estimatedTime'?: string;
+    /**
+     * Network congestion level (EVM from gas price; UTXO from sat/vB)
+     */
+    'congestion'?: CalculateWalletFee200ResponseDataCongestionEnum;
+    /**
+     * (EVM only) Gas limit
+     */
+    'gasLimit'?: string;
+    /**
+     * (EVM only) Gas price in wei
+     */
+    'gasPrice'?: string;
+    /**
+     * (EVM only) Gas price in Gwei
+     */
+    'gasPriceGwei'?: number;
+    /**
+     * (EVM only) Cost in wei
+     */
+    'estimatedCost'?: string;
+    /**
+     * (UTXO only) Satoshis per vbyte
+     */
+    'satPerVb'?: number;
+    /**
+     * (UTXO only) Fee in satoshis
+     */
+    'feeSat'?: number;
+    /**
+     * (Solana only) Fee in lamports
+     */
+    'lamports'?: number;
+    /**
+     * (EVM only) slow / normal / fast tiers; each has gasPriceGwei, networkFee
+     */
+    'feeTiers'?: { [key: string]: CalculateWalletFee200ResponseDataFeeTiersValue; };
+    /**
+     * True when current gas is ≥5× chain minimum (consider warning user)
+     */
+    'gasSpikeWarning'?: boolean;
+}
+
+export const CalculateWalletFee200ResponseDataCongestionEnum = {
+    Low: 'low',
+    Normal: 'normal',
+    High: 'high',
+} as const;
+
+export type CalculateWalletFee200ResponseDataCongestionEnum = typeof CalculateWalletFee200ResponseDataCongestionEnum[keyof typeof CalculateWalletFee200ResponseDataCongestionEnum];
+
+export interface CalculateWalletFee200ResponseDataFeeTiersValue {
+    'gasPriceGwei'?: number;
+    'networkFee'?: string;
 }
 export interface CancelSubscriptionRequest {
     /**
@@ -622,6 +778,10 @@ export interface CheckUserPresence200ResponsePresenceValue {
 export interface CheckUserPresenceRequest {
     'userIds': Array<string>;
 }
+export interface CloseSandboxSession200Response {
+    'success'?: boolean;
+    'sessionId'?: string;
+}
 export interface Collection {
     '_id'?: string;
     'name'?: string;
@@ -654,6 +814,48 @@ export interface CollectionPermissionRule {
     'actions'?: Array<CollectionAction>;
     'conditions'?: object;
 }
+export interface CompleteOnboardingRequest {
+    /**
+     * Contact number for outreach only - never verified, never used as an identity factor, never gates access. Digits with an optional leading `+` and spaces/`()`/`.`/`-` separators. 
+     */
+    'phone': string;
+    /**
+     * Free-text or picklist answer to \"how did you hear about us?\". Reporting-only.
+     */
+    'attributionSource': string;
+}
+export interface CompleteOnboardingResponse {
+    'message'?: string;
+    'user'?: User;
+    'verification'?: CompleteOnboardingResponseVerification;
+    'onboarding'?: CompleteOnboardingResponseOnboarding;
+}
+/**
+ * Same shape returned on register/login/session once this endpoint completes it.
+ */
+export interface CompleteOnboardingResponseOnboarding {
+    'onboardingComplete'?: boolean;
+    'needsProfile'?: boolean;
+    'required'?: boolean;
+    'gatedActions'?: Array<string>;
+}
+/**
+ * Same shape as the register/login/session verification capabilities descriptor.
+ */
+export interface CompleteOnboardingResponseVerification {
+    'emailVerified'?: boolean;
+    'tier'?: CompleteOnboardingResponseVerificationTierEnum;
+    'gatedActions'?: Array<string>;
+    'limits'?: object | null;
+}
+
+export const CompleteOnboardingResponseVerificationTierEnum = {
+    Verified: 'verified',
+    Unverified: 'unverified',
+} as const;
+
+export type CompleteOnboardingResponseVerificationTierEnum = typeof CompleteOnboardingResponseVerificationTierEnum[keyof typeof CompleteOnboardingResponseVerificationTierEnum];
+
 export interface ConfigureOAuthProvider200Response {
     'message'?: string;
     'provider'?: ConfigureOAuthProvider200ResponseProvider;
@@ -754,7 +956,7 @@ export interface ConfirmDirectUpload400Response {
 }
 export interface ConfirmDirectUploadRequest {
     /**
-     * The object key returned when the presigned PUT URL was issued
+     * The S3 object key returned when the presigned PUT URL was issued
      */
     'key': string;
     'projectId': string;
@@ -1005,7 +1207,7 @@ export interface CreateFunctionRequest {
     'name': string;
     'description'?: string;
     /**
-     * Function body (async, has access to payload, db, files, messaging, utils, env, console)
+     * Function body (async, has access to payload, db, files, messaging, wallet, utils, env, console)
      */
     'code': string;
     'trigger': FunctionTrigger;
@@ -1229,6 +1431,169 @@ export const CreateRoleRequestPermissionsInnerActionsEnum = {
 
 export type CreateRoleRequestPermissionsInnerActionsEnum = typeof CreateRoleRequestPermissionsInnerActionsEnum[keyof typeof CreateRoleRequestPermissionsInnerActionsEnum];
 
+export interface CreateSandboxSessionRequest {
+    /**
+     * Runtime language identifier (e.g. python, javascript, bash).
+     */
+    'language': string;
+    /**
+     * Exact version string for the language runtime (e.g. \"3.12\", \"20\").
+     */
+    'languageVersion': string;
+    /**
+     * Seconds of inactivity before the session is automatically terminated. Minimum 30. 
+     */
+    'timeoutSeconds'?: number;
+    /**
+     * Minutes of inactivity before the session is automatically suspended (always-on sessions only). 0 disables auto-suspend. 
+     */
+    'autoSuspendMinutes'?: number;
+}
+export interface CreateSandboxSessionResponse {
+    'success'?: boolean;
+    /**
+     * MongoDB ObjectId of the created session.
+     */
+    'sessionId'?: string;
+    /**
+     * WebSocket URL for connecting to the sandbox via the gateway.
+     */
+    'wsUrl'?: string;
+    /**
+     * Short-lived JWT (60 s) for the sandbox gateway WebSocket.
+     */
+    'token'?: string;
+    /**
+     * When the token expires. Use /connect-token to refresh.
+     */
+    'expiresAt'?: string;
+    'language'?: string;
+    'languageVersion'?: string;
+    /**
+     * When the session will auto-terminate due to inactivity.
+     */
+    'timeoutAt'?: string;
+    /**
+     * Stable HTTPS URL for the session (https://sb-{sessionId}.cells.mudbase.dev). Present when the sandbox image supports public port exposure; null otherwise. 
+     */
+    'publicUrl'?: string | null;
+}
+export interface CreateWallet201Response {
+    'success'?: boolean;
+    'data'?: CreateWallet201ResponseData;
+}
+export interface CreateWallet201ResponseData {
+    '_id'?: string;
+    'currency'?: string;
+    'address'?: string;
+    'balance'?: string;
+    'isCustomKey'?: boolean;
+    'project'?: string;
+    'createdAt'?: string;
+}
+export interface CreateWalletRequest {
+    /**
+     * Currency. USDT requires network (ETH, BSC, TRX, SOL, POLYGON). All platform chains supported for testing non-custodial flows.
+     */
+    'currency': CreateWalletRequestCurrencyEnum;
+    /**
+     * Optional project ID
+     */
+    'projectId'?: string;
+    /**
+     * Required for USDT; one of ETH, BSC, TRX, SOL, POLYGON
+     */
+    'network'?: string;
+    /**
+     * Optional custom private key
+     */
+    'privateKey'?: string;
+    'label'?: string;
+}
+
+export const CreateWalletRequestCurrencyEnum = {
+    Btc: 'BTC',
+    Ltc: 'LTC',
+    Doge: 'DOGE',
+    Eth: 'ETH',
+    Celo: 'CELO',
+    Sol: 'SOL',
+    Trx: 'TRX',
+    Ton: 'TON',
+    Matic: 'MATIC',
+    Bnb: 'BNB',
+    Avax: 'AVAX',
+    Ada: 'ADA',
+    Usdt: 'USDT',
+} as const;
+
+export type CreateWalletRequestCurrencyEnum = typeof CreateWalletRequestCurrencyEnum[keyof typeof CreateWalletRequestCurrencyEnum];
+
+export interface CreateWalletWebhook201Response {
+    'success'?: boolean;
+    'message'?: string;
+    'data'?: WalletWebhook;
+}
+export interface CreateWalletWebhookRequest {
+    'url': string;
+    'events': Array<CreateWalletWebhookRequestEventsEnum>;
+    /**
+     * Optional webhook secret for HMAC signing
+     */
+    'secret'?: string;
+    'filters'?: CreateWalletWebhookRequestFilters;
+    /**
+     * Optional project ID
+     */
+    'projectId'?: string;
+}
+
+export const CreateWalletWebhookRequestEventsEnum = {
+    WalletBalanceUpdated: 'wallet.balance.updated',
+    WalletTransactionConfirmed: 'wallet.transaction.confirmed',
+    WalletTransactionFailed: 'wallet.transaction.failed',
+    WalletTransactionDetected: 'wallet.transaction.detected',
+    WalletTransactionBroadcast: 'wallet.transaction.broadcast',
+    WalletTokenBalanceUpdated: 'wallet.token.balance.updated',
+    WalletAddressCreated: 'wallet.address.created',
+    WalletAddressDeactivated: 'wallet.address.deactivated',
+} as const;
+
+export type CreateWalletWebhookRequestEventsEnum = typeof CreateWalletWebhookRequestEventsEnum[keyof typeof CreateWalletWebhookRequestEventsEnum];
+
+export interface CreateWalletWebhookRequestFilters {
+    /**
+     * Filter by address IDs (optional)
+     */
+    'addresses'?: Array<string>;
+    /**
+     * Filter by chains (optional)
+     */
+    'chains'?: Array<CreateWalletWebhookRequestFiltersChainsEnum>;
+}
+
+export const CreateWalletWebhookRequestFiltersChainsEnum = {
+    Ethereum: 'ethereum',
+    Binance: 'binance',
+    Bsc: 'bsc',
+    Polygon: 'polygon',
+    Arbitrum: 'arbitrum',
+    Optimism: 'optimism',
+    Base: 'base',
+    Avalanche: 'avalanche',
+    Celo: 'celo',
+    Bitcoin: 'bitcoin',
+    Litecoin: 'litecoin',
+    Dogecoin: 'dogecoin',
+    Solana: 'solana',
+    Tron: 'tron',
+    Ripple: 'ripple',
+    Cardano: 'cardano',
+    Ton: 'ton',
+} as const;
+
+export type CreateWalletWebhookRequestFiltersChainsEnum = typeof CreateWalletWebhookRequestFiltersChainsEnum[keyof typeof CreateWalletWebhookRequestFiltersChainsEnum];
+
 export interface DashboardActivityItem {
     'id'?: string;
     'at'?: string;
@@ -1422,6 +1787,71 @@ export interface DataResponse {
     'message'?: string;
     'data'?: object;
 }
+export interface DataTransaction200Response {
+    'success'?: boolean;
+    'message'?: string;
+    'results'?: Array<DataTransaction200ResponseResultsInner>;
+}
+export interface DataTransaction200ResponseResultsInner {
+    'op'?: DataTransaction200ResponseResultsInnerOpEnum;
+    'collection'?: string;
+    'status'?: number;
+    'data'?: object;
+}
+
+export const DataTransaction200ResponseResultsInnerOpEnum = {
+    Create: 'create',
+    Update: 'update',
+    Delete: 'delete',
+} as const;
+
+export type DataTransaction200ResponseResultsInnerOpEnum = typeof DataTransaction200ResponseResultsInnerOpEnum[keyof typeof DataTransaction200ResponseResultsInnerOpEnum];
+
+export interface DataTransaction400Response {
+    'error'?: string;
+    'code'?: string;
+    /**
+     * Present when the error is scoped to one op.
+     */
+    'index'?: number;
+}
+export interface DataTransaction413Response {
+    'error'?: string;
+    'code'?: string;
+    'max'?: number;
+}
+export interface DataTransaction504Response {
+    'success'?: boolean;
+    'error'?: string;
+    'rolledBack'?: boolean;
+}
+export interface DataTransactionRequest {
+    'ops': Array<DataTransactionRequestOpsInner>;
+}
+export interface DataTransactionRequestOpsInner {
+    'op': DataTransactionRequestOpsInnerOpEnum;
+    /**
+     * Collection slug within this project.
+     */
+    'collection': string;
+    /**
+     * Required for update and delete ops.
+     */
+    'documentId'?: string;
+    /**
+     * Required for create and update ops.
+     */
+    'data'?: object;
+}
+
+export const DataTransactionRequestOpsInnerOpEnum = {
+    Create: 'create',
+    Update: 'update',
+    Delete: 'delete',
+} as const;
+
+export type DataTransactionRequestOpsInnerOpEnum = typeof DataTransactionRequestOpsInnerOpEnum[keyof typeof DataTransactionRequestOpsInnerOpEnum];
+
 export interface DatabaseConfig {
     'collections'?: Array<string>;
 }
@@ -1440,81 +1870,6 @@ export interface DeleteRole200Response {
 }
 export interface DeleteSubOrganization200Response {
     'message'?: string;
-}
-export interface DeviceListResponse {
-    'success'?: boolean;
-    'data'?: Array<DeviceToken>;
-}
-export interface DeviceRegisterRequest {
-    /**
-     * The device push token issued to your app by its push client.
-     */
-    'token': string;
-    /**
-     * The device platform. Defaults to `unknown` when omitted or unrecognized.
-     */
-    'platform'?: DeviceRegisterRequestPlatformEnum;
-}
-
-export const DeviceRegisterRequestPlatformEnum = {
-    Ios: 'ios',
-    Android: 'android',
-    Web: 'web',
-    Unknown: 'unknown',
-} as const;
-
-export type DeviceRegisterRequestPlatformEnum = typeof DeviceRegisterRequestPlatformEnum[keyof typeof DeviceRegisterRequestPlatformEnum];
-
-export interface DeviceRegisteredResponse {
-    'success'?: boolean;
-    'data'?: DeviceRegisteredResponseData;
-}
-export interface DeviceRegisteredResponseData {
-    'token'?: string;
-    'platform'?: DeviceRegisteredResponseDataPlatformEnum;
-    'lastSeenAt'?: string;
-}
-
-export const DeviceRegisteredResponseDataPlatformEnum = {
-    Ios: 'ios',
-    Android: 'android',
-    Web: 'web',
-    Unknown: 'unknown',
-} as const;
-
-export type DeviceRegisteredResponseDataPlatformEnum = typeof DeviceRegisteredResponseDataPlatformEnum[keyof typeof DeviceRegisteredResponseDataPlatformEnum];
-
-export interface DeviceToken {
-    'token'?: string;
-    'platform'?: DeviceTokenPlatformEnum;
-    'lastSeenAt'?: string;
-    'createdAt'?: string;
-}
-
-export const DeviceTokenPlatformEnum = {
-    Ios: 'ios',
-    Android: 'android',
-    Web: 'web',
-    Unknown: 'unknown',
-} as const;
-
-export type DeviceTokenPlatformEnum = typeof DeviceTokenPlatformEnum[keyof typeof DeviceTokenPlatformEnum];
-
-export interface DeviceUnregisterRequest {
-    /**
-     * The device push token to remove from the project.
-     */
-    'token': string;
-}
-export interface DeviceUnregisteredResponse {
-    'success'?: boolean;
-    'data'?: DeviceUnregisteredResponseData;
-}
-export interface DeviceUnregisteredResponseData {
-    /**
-     * True if a matching token was removed; false if none was registered.
-     */
-    'removed'?: boolean;
 }
 export interface Disable2FARequest {
     'password': string;
@@ -1692,6 +2047,181 @@ export type EraseUserDataRequestConfirmEnum = typeof EraseUserDataRequestConfirm
  */
 export type ErrorDetails = object | string;
 
+export interface EstimateNetworkFee200Response {
+    'success'?: boolean;
+    /**
+     * Same shape as POST /api/wallet/calculate-fee response (chain, networkFee, estimatedTime, currency, and chain-specific fields).
+     */
+    'data'?: object;
+}
+export interface EstimateNetworkFeeRequest {
+    /**
+     * Currency code
+     */
+    'currency': EstimateNetworkFeeRequestCurrencyEnum;
+    /**
+     * Transaction amount (used for display; fee is chain-based)
+     */
+    'amount': number;
+    /**
+     * Required for USDT; network on which USDT is sent
+     */
+    'network'?: EstimateNetworkFeeRequestNetworkEnum;
+}
+
+export const EstimateNetworkFeeRequestCurrencyEnum = {
+    Btc: 'BTC',
+    Eth: 'ETH',
+    Bnb: 'BNB',
+    Ltc: 'LTC',
+    Sol: 'SOL',
+    Trx: 'TRX',
+    Usdt: 'USDT',
+    Matic: 'MATIC',
+    Avax: 'AVAX',
+    Celo: 'CELO',
+    Doge: 'DOGE',
+    Ton: 'TON',
+    Ada: 'ADA',
+} as const;
+
+export type EstimateNetworkFeeRequestCurrencyEnum = typeof EstimateNetworkFeeRequestCurrencyEnum[keyof typeof EstimateNetworkFeeRequestCurrencyEnum];
+export const EstimateNetworkFeeRequestNetworkEnum = {
+    Eth: 'ETH',
+    Bsc: 'BSC',
+    Trx: 'TRX',
+    Sol: 'SOL',
+    Polygon: 'POLYGON',
+} as const;
+
+export type EstimateNetworkFeeRequestNetworkEnum = typeof EstimateNetworkFeeRequestNetworkEnum[keyof typeof EstimateNetworkFeeRequestNetworkEnum];
+
+export interface EstimateNonCustodialGas200Response {
+    'success'?: boolean;
+    'data'?: EstimateNonCustodialGas200ResponseData;
+}
+export interface EstimateNonCustodialGas200ResponseData {
+    /**
+     * Chain id (e.g. bsc, ethereum, bitcoin)
+     */
+    'chain'?: string;
+    /**
+     * (EVM only) Estimated gas limit from RPC eth_estimateGas
+     */
+    'gasLimit'?: string;
+    /**
+     * (EVM only) Gas price in wei
+     */
+    'gasPrice'?: string;
+    /**
+     * (EVM only) Gas price in Gwei
+     */
+    'gasPriceGwei'?: number;
+    /**
+     * (EVM only) Total cost in wei (gasLimit * gasPrice)
+     */
+    'estimatedCost'?: string;
+    /**
+     * Human-readable network fee from blockchain (e.g. \"0.00063 ETH\", \"0.00001 BTC\")
+     */
+    'networkFee'?: string;
+    /**
+     * Estimated confirmation time when available
+     */
+    'estimatedTime'?: string;
+    /**
+     * Native currency for the chain (ETH, BNB, MATIC, BTC, SOL, TRX, etc.)
+     */
+    'currency'?: string;
+    /**
+     * (UTXO only) Satoshis per virtual byte
+     */
+    'satPerVb'?: number;
+    /**
+     * (UTXO only) Estimated fee in satoshis
+     */
+    'feeSat'?: number;
+    /**
+     * (Solana only) Fee in lamports
+     */
+    'lamports'?: number;
+}
+export interface EstimateNonCustodialGasRequest {
+    /**
+     * Chain id. For EVM, transaction is required. For non-EVM (UTXO, Solana, Tron, TON, Cardano) only chain is needed.
+     */
+    'chain': EstimateNonCustodialGasRequestChainEnum;
+    'transaction'?: EstimateNonCustodialGasRequestTransaction;
+}
+
+export const EstimateNonCustodialGasRequestChainEnum = {
+    Ethereum: 'ethereum',
+    Binance: 'binance',
+    Bsc: 'bsc',
+    Polygon: 'polygon',
+    Arbitrum: 'arbitrum',
+    Optimism: 'optimism',
+    Base: 'base',
+    Avalanche: 'avalanche',
+    Celo: 'celo',
+    Bitcoin: 'bitcoin',
+    Litecoin: 'litecoin',
+    Dogecoin: 'dogecoin',
+    Solana: 'solana',
+    Tron: 'tron',
+    Ton: 'ton',
+    Cardano: 'cardano',
+} as const;
+
+export type EstimateNonCustodialGasRequestChainEnum = typeof EstimateNonCustodialGasRequestChainEnum[keyof typeof EstimateNonCustodialGasRequestChainEnum];
+
+/**
+ * Required for EVM chains. Optional for non-EVM (ignored). Supports 1) Token transfer { from, tokenAddress, to, amount }, 2) Native transfer { from, to, value }, 3) Raw { from, to, value, data }. 
+ */
+export interface EstimateNonCustodialGasRequestTransaction {
+    /**
+     * Sender address
+     */
+    'from': string;
+    /**
+     * For native transfers: recipient address. For token transfers: recipient address (tokenAddress must be provided separately). For raw format: contract or recipient address. 
+     */
+    'to'?: string;
+    /**
+     * Amount in native currency (ETH/BNB/MATIC). Can be provided as decimal string (e.g., \"1.0\") or wei string. Required for native transfers. 
+     */
+    'value'?: string;
+    /**
+     * Raw transaction data (hex string starting with 0x). Used for raw format or contract calls. For token transfers, this is auto-generated from tokenAddress, to, and amount. 
+     */
+    'data'?: string;
+    /**
+     * Token contract address (for token transfers). When provided with \'amount\', automatically encodes the transfer. 
+     */
+    'tokenAddress'?: string;
+    /**
+     * Token amount in human-readable format (e.g., \"1.0\" for 1 token). Used with tokenAddress for user-friendly token transfers. Automatically converted to token units based on token decimals. 
+     */
+    'amount'?: string;
+}
+export interface ExecSandboxRequest {
+    /**
+     * Command and arguments as a string array (exec style, not shell). Example: [\"python\", \"/workspace/main.py\"] 
+     */
+    'cmd': Array<string>;
+    /**
+     * Maximum time in milliseconds to wait for the command to complete. Range 1 to 120000 (2 minutes). 
+     */
+    'timeoutMs'?: number;
+    /**
+     * Extra environment variables to inject for this command only. Must be a flat string-to-string map. 
+     */
+    'env'?: { [key: string]: string; };
+    /**
+     * Working directory inside the sandbox for this command.
+     */
+    'workingDir'?: string;
+}
 export interface ExecuteFunctionRequest {
     /**
      * Custom input merged with trigger context
@@ -1724,6 +2254,36 @@ export interface ExportUserData200Response {
     'files'?: Array<{ [key: string]: any; }>;
     'integrations'?: Array<{ [key: string]: any; }>;
     'apiKeys'?: Array<{ [key: string]: any; }>;
+}
+export interface ExposeSandboxPortRequest {
+    /**
+     * Internal port number to expose.
+     */
+    'port': number;
+    /**
+     * Access control for the exposed port. - public: no authentication required. - token-gated: requests must carry the portToken as a Bearer header. 
+     */
+    'access'?: ExposeSandboxPortRequestAccessEnum;
+}
+
+export const ExposeSandboxPortRequestAccessEnum = {
+    Public: 'public',
+    TokenGated: 'token-gated',
+} as const;
+
+export type ExposeSandboxPortRequestAccessEnum = typeof ExposeSandboxPortRequestAccessEnum[keyof typeof ExposeSandboxPortRequestAccessEnum];
+
+export interface ExposeSandboxPortResponse {
+    'success'?: boolean;
+    'port'?: number;
+    /**
+     * Root HTTPS URL of the session. Append any path your application uses. 
+     */
+    'publicUrl'?: string;
+    /**
+     * Bearer token for token-gated access. Only present when access is \"token-gated\". 
+     */
+    'portToken'?: string;
 }
 /**
  * Returned when an app-role feature gate denies access (HTTP 403)
@@ -1919,7 +2479,7 @@ export interface FunctionTrigger {
      */
     'type': FunctionTriggerTypeEnum;
     /**
-     * Event name (e.g. create, update, delete for document; uploaded, deleted for file)
+     * Event name (e.g. create, update, delete for document; uploaded, deleted for file; tx, balance for wallet)
      */
     'event'?: string;
     /**
@@ -1947,6 +2507,7 @@ export const FunctionTriggerTypeEnum = {
     Document: 'document',
     File: 'file',
     Webhook: 'webhook',
+    Wallet: 'wallet',
     Cron: 'cron',
     Messaging: 'messaging',
 } as const;
@@ -2002,6 +2563,32 @@ export interface GeneratePresignedUploadRequest {
     'contentType'?: string;
     'isPublic'?: boolean;
 }
+export interface GeneratePrivateKey200Response {
+    'success'?: boolean;
+    'data'?: GeneratePrivateKey200ResponseData;
+}
+export interface GeneratePrivateKey200ResponseData {
+    'currency'?: string;
+    'privateKey'?: string;
+    'publicKey'?: string;
+    'warning'?: string;
+}
+export interface GeneratePrivateKeyRequest {
+    'currency': GeneratePrivateKeyRequestCurrencyEnum;
+}
+
+export const GeneratePrivateKeyRequestCurrencyEnum = {
+    Btc: 'BTC',
+    Eth: 'ETH',
+    Bnb: 'BNB',
+    Ltc: 'LTC',
+    Sol: 'SOL',
+    Trx: 'TRX',
+    Usdt: 'USDT',
+} as const;
+
+export type GeneratePrivateKeyRequestCurrencyEnum = typeof GeneratePrivateKeyRequestCurrencyEnum[keyof typeof GeneratePrivateKeyRequestCurrencyEnum];
+
 export interface GenerateSignedUrlRequest {
     'expiresIn'?: number;
 }
@@ -2014,6 +2601,45 @@ export interface GetActiveUsers200ResponseUsersInner {
     'userId'?: string;
     'connectedAt'?: string;
     'socketId'?: string;
+}
+export interface GetAdminAuditEvents200Response {
+    'success'?: boolean;
+    'events'?: Array<object>;
+    'total'?: number;
+    'page'?: number;
+    'limit'?: number;
+    'pages'?: number;
+}
+export interface GetAdminPayoutDashboard200Response {
+    'success'?: boolean;
+    'data'?: GetAdminPayoutDashboard200ResponseData;
+}
+export interface GetAdminPayoutDashboard200ResponseData {
+    'totalPending'?: number;
+    'totalCompleted'?: number;
+    'totalFailed'?: number;
+    'byCurrency'?: Array<GetAdminPayoutDashboard200ResponseDataByCurrencyInner>;
+}
+export interface GetAdminPayoutDashboard200ResponseDataByCurrencyInner {
+    'currency'?: string;
+    'pending'?: number;
+    'completed'?: number;
+    'failed'?: number;
+}
+export interface GetAllFees200Response {
+    'success'?: boolean;
+    'data'?: GetAllFees200ResponseData;
+}
+export interface GetAllFees200ResponseData {
+    'fees'?: { [key: string]: object; };
+    /**
+     * When the cache was last updated
+     */
+    'updatedAt'?: string;
+    /**
+     * Number of chains with cached fees
+     */
+    'count'?: number;
 }
 export interface GetAvailableOAuthProviders200Response {
     'providers'?: Array<GetAvailableOAuthProviders200ResponseProvidersInner>;
@@ -2039,6 +2665,17 @@ export interface GetAvailableRoles200ResponseDataInner {
     'requiresApproval'?: boolean;
     'requiresPayment'?: boolean;
     'requiresKYC'?: boolean;
+}
+export interface GetBalance200Response {
+    'success'?: boolean;
+    'data'?: GetBalance200ResponseData;
+}
+export interface GetBalance200ResponseData {
+    'walletId'?: string;
+    'currency'?: string;
+    'address'?: string;
+    'balance'?: string;
+    'balanceInUSD'?: number;
 }
 export interface GetBillingEstimate200Response {
     /**
@@ -2068,6 +2705,57 @@ export interface GetBillingEstimate200ResponseSpendLimits {
     'hardLimitCents'?: number | null;
     'spendBlocked'?: boolean;
 }
+export interface GetCancelParams200Response {
+    'success'?: boolean;
+    'data'?: GetCancelParams200ResponseData;
+}
+export interface GetCancelParams200ResponseData {
+    'chainId'?: number;
+    'from'?: string;
+    'nonce'?: number;
+    /**
+     * Same as from (self)
+     */
+    'to'?: string;
+    /**
+     * 0
+     */
+    'value'?: string;
+    /**
+     * 0x
+     */
+    'data'?: string;
+    'gasLimit'?: string;
+    'maxFeePerGas'?: string;
+    'maxPriorityFeePerGas'?: string;
+    'gasPrice'?: string;
+}
+export interface GetCancelParamsRequest {
+    /**
+     * WalletTransaction _id
+     */
+    'txId'?: string;
+    /**
+     * mainTxHash or txHash of the stuck transaction
+     */
+    'txHash'?: string;
+    'chain': GetCancelParamsRequestChainEnum;
+}
+
+export const GetCancelParamsRequestChainEnum = {
+    Ethereum: 'ethereum',
+    Polygon: 'polygon',
+    Arbitrum: 'arbitrum',
+    Optimism: 'optimism',
+    Base: 'base',
+    Bsc: 'bsc',
+    Binance: 'binance',
+    Avalanche: 'avalanche',
+    Celo: 'celo',
+} as const;
+
+export type GetCancelParamsRequestChainEnum = typeof GetCancelParamsRequestChainEnum[keyof typeof GetCancelParamsRequestChainEnum];
+
 export interface GetChatDetails200Response {
     'success'?: boolean;
     'data'?: GetChatDetails200ResponseData;
@@ -2149,6 +2837,117 @@ export interface GetDashboard200Response {
     'revenue'?: number;
     'subscriptions'?: number;
     'activePlans'?: number;
+}
+export interface GetDashboardOrganizationDetail200Response {
+    'success'?: boolean;
+    'organization'?: GetDashboardOrganizationDetail200ResponseOrganization;
+}
+export interface GetDashboardOrganizationDetail200ResponseOrganization {
+    '_id'?: string;
+    'name'?: string;
+    'slug'?: string;
+    'description'?: string;
+    'plan'?: string;
+    'txPlan'?: string | null;
+    'deploymentType'?: GetDashboardOrganizationDetail200ResponseOrganizationDeploymentTypeEnum;
+    'dedicated'?: object;
+    'preferredRegion'?: string | null;
+    'lastProvisionRequestId'?: string | null;
+    'infrastructureEnvironments'?: Array<object>;
+    'isPlatformShell'?: boolean;
+    'settings'?: object;
+    'limits'?: object;
+    'usage'?: object;
+    'effective'?: object;
+    'billing'?: object | null;
+    'customDomains'?: Array<object>;
+    'isActive'?: boolean;
+    'createdAt'?: string;
+    'createdBy'?: object;
+    'members'?: Array<string>;
+    'projectCount'?: number;
+    'userCount'?: number;
+    'projects'?: Array<GetDashboardOrganizationDetail200ResponseOrganizationProjectsInner>;
+    'users'?: Array<GetDashboardOrganizationDetail200ResponseOrganizationUsersInner>;
+}
+
+export const GetDashboardOrganizationDetail200ResponseOrganizationDeploymentTypeEnum = {
+    Shared: 'shared',
+    Dedicated: 'dedicated',
+} as const;
+
+export type GetDashboardOrganizationDetail200ResponseOrganizationDeploymentTypeEnum = typeof GetDashboardOrganizationDetail200ResponseOrganizationDeploymentTypeEnum[keyof typeof GetDashboardOrganizationDetail200ResponseOrganizationDeploymentTypeEnum];
+
+export interface GetDashboardOrganizationDetail200ResponseOrganizationProjectsInner {
+    '_id'?: string;
+    'name'?: string;
+    'slug'?: string;
+    'description'?: string;
+    'createdAt'?: string;
+    'isArchived'?: boolean;
+    'userCount'?: number;
+    'users'?: Array<GetDashboardOrganizationDetail200ResponseOrganizationProjectsInnerUsersInner>;
+}
+export interface GetDashboardOrganizationDetail200ResponseOrganizationProjectsInnerUsersInner {
+    '_id'?: string;
+    'firstName'?: string;
+    'lastName'?: string;
+    'email'?: string;
+    'role'?: string;
+    'lastLogin'?: string;
+    'isActive'?: boolean;
+    'createdAt'?: string;
+}
+export interface GetDashboardOrganizationDetail200ResponseOrganizationUsersInner {
+    '_id'?: string;
+    'firstName'?: string;
+    'lastName'?: string;
+    'email'?: string;
+    'role'?: string;
+    'lastLogin'?: string;
+    'isActive'?: boolean;
+    'createdAt'?: string;
+    'project'?: GetOrganizationUsers200ResponseUsersInnerProject;
+}
+export interface GetDashboardOrganizations200Response {
+    'success'?: boolean;
+    'organizations'?: Array<GetDashboardOrganizations200ResponseOrganizationsInner>;
+    'total'?: number;
+    /**
+     * Present when limit query was used
+     */
+    'page'?: number;
+    'limit'?: number;
+    'pages'?: number;
+}
+export interface GetDashboardOrganizations200ResponseOrganizationsInner {
+    '_id'?: string;
+    'name'?: string;
+    'slug'?: string;
+    'description'?: string;
+    'plan'?: string;
+    'deploymentType'?: GetDashboardOrganizations200ResponseOrganizationsInnerDeploymentTypeEnum;
+    'dedicatedApiBaseUrl'?: string | null;
+    'isActive'?: boolean;
+    'createdAt'?: string;
+    'createdBy'?: GetDashboardOrganizations200ResponseOrganizationsInnerCreatedBy;
+    'projectCount'?: number;
+    'userCount'?: number;
+    'projects'?: Array<GetOrganizationUsers200ResponseUsersInnerProject>;
+}
+
+export const GetDashboardOrganizations200ResponseOrganizationsInnerDeploymentTypeEnum = {
+    Shared: 'shared',
+    Dedicated: 'dedicated',
+} as const;
+
+export type GetDashboardOrganizations200ResponseOrganizationsInnerDeploymentTypeEnum = typeof GetDashboardOrganizations200ResponseOrganizationsInnerDeploymentTypeEnum[keyof typeof GetDashboardOrganizations200ResponseOrganizationsInnerDeploymentTypeEnum];
+
+export interface GetDashboardOrganizations200ResponseOrganizationsInnerCreatedBy {
+    '_id'?: string;
+    'firstName'?: string;
+    'lastName'?: string;
+    'email'?: string;
 }
 export interface GetEventThroughput200Response {
     'windowMs'?: number;
@@ -2276,6 +3075,44 @@ export interface GetMultiRoleConfig200ResponseData {
     'settings'?: object;
     'roles'?: Array<object>;
 }
+export interface GetNetworkStatus200Response {
+    'success'?: boolean;
+    'data'?: { [key: string]: GetNetworkStatus200ResponseDataValue; };
+}
+export interface GetNetworkStatus200ResponseDataValue {
+    'congestion'?: GetNetworkStatus200ResponseDataValueCongestionEnum;
+    /**
+     * EVM only
+     */
+    'gasPriceGwei'?: number;
+    /**
+     * UTXO only
+     */
+    'satPerVb'?: number;
+    'networkFee'?: string;
+}
+
+export const GetNetworkStatus200ResponseDataValueCongestionEnum = {
+    Low: 'low',
+    Normal: 'normal',
+    High: 'high',
+} as const;
+
+export type GetNetworkStatus200ResponseDataValueCongestionEnum = typeof GetNetworkStatus200ResponseDataValueCongestionEnum[keyof typeof GetNetworkStatus200ResponseDataValueCongestionEnum];
+
+export interface GetNonCustodialBalance200Response {
+    'success'?: boolean;
+    'data'?: WalletBalance;
+}
+export interface GetNonCustodialTransactionByHash200Response {
+    'success'?: boolean;
+    'data'?: WalletTransaction;
+}
+export interface GetNonCustodialTransactions200Response {
+    'success'?: boolean;
+    'data'?: Array<WalletTransaction>;
+    'pagination'?: GetTransactionHistory200ResponsePagination;
+}
 export interface GetOAuthProviderConfig200Response {
     'name'?: string;
     'enabled'?: boolean;
@@ -2387,7 +3224,7 @@ export interface GetPaymentRecords200ResponseDataRecordsInner {
 export interface GetPayoutHistory200Response {
     'success'?: boolean;
     'data'?: Array<GetPayoutHistory200ResponseDataInner>;
-    'pagination'?: GetPayoutHistory200ResponsePagination;
+    'pagination'?: GetTransactionHistory200ResponsePagination;
 }
 export interface GetPayoutHistory200ResponseDataInner {
     '_id'?: string;
@@ -2400,14 +3237,25 @@ export interface GetPayoutHistory200ResponseDataInner {
     'status'?: string;
     'createdAt'?: string;
 }
-export interface GetPayoutHistory200ResponsePagination {
-    'page'?: number;
-    'limit'?: number;
-    'count'?: number;
-    'total'?: number;
-    'totalPages'?: number;
-    'hasNextPage'?: boolean;
-    'hasPreviousPage'?: boolean;
+export interface GetPendingPayouts200Response {
+    'success'?: boolean;
+    'data'?: Array<GetPendingPayouts200ResponseDataInner>;
+    'pagination'?: GetTransactionHistory200ResponsePagination;
+}
+export interface GetPendingPayouts200ResponseDataInner {
+    '_id'?: string;
+    'project'?: string;
+    'currency'?: string;
+    'grossAmount'?: number;
+    'netAmount'?: number;
+    'toAddress'?: string;
+    'txHash'?: string;
+    'status'?: string;
+    'error'?: string;
+    'retryCount'?: number;
+    'scheduledAt'?: string;
+    'processedAt'?: string;
+    'createdAt'?: string;
 }
 export interface GetPendingRoleElevationRequests200Response {
     'requests'?: Array<object>;
@@ -2533,6 +3381,41 @@ export interface GetRole200Response {
 export interface GetRoleElevationStatus200Response {
     'requests'?: Array<object>;
 }
+export interface GetSandboxConnectToken200Response {
+    'success'?: boolean;
+    /**
+     * Short-lived JWT (60 s) for the sandbox gateway.
+     */
+    'token'?: string;
+    /**
+     * WebSocket URL for this session.
+     */
+    'wsUrl'?: string;
+    'expiresAt'?: string;
+}
+export interface GetSandboxSession200Response {
+    'success'?: boolean;
+    'session'?: SandboxSession;
+}
+export interface GetScannerMetrics200Response {
+    'metrics'?: { [key: string]: GetScannerMetrics200ResponseMetricsValue; };
+    /**
+     * Block lag threshold above which alerts are raised
+     */
+    'lagAlertThreshold'?: number;
+    'alerts'?: Array<GetScannerMetrics200ResponseAlertsInner>;
+}
+export interface GetScannerMetrics200ResponseAlertsInner {
+    'chain'?: string;
+    'lag'?: number;
+    'threshold'?: number;
+}
+export interface GetScannerMetrics200ResponseMetricsValue {
+    'lastScannedBlock'?: number | null;
+    'currentBlock'?: number | null;
+    'lag'?: number | null;
+    'lastUpdated'?: string | null;
+}
 export interface GetSearchAnalytics200Response {
     'totalSearches'?: number;
     'topQueries'?: Array<GetSearchAnalytics200ResponseTopQueriesInner>;
@@ -2546,6 +3429,54 @@ export interface GetSearchAnalytics200ResponseTopQueriesInner {
 export interface GetSearchSuggestions200Response {
     'suggestions'?: Array<string>;
 }
+export interface GetSpeedUpParams200Response {
+    'success'?: boolean;
+    'data'?: GetSpeedUpParams200ResponseData;
+}
+export interface GetSpeedUpParams200ResponseData {
+    'chainId'?: number;
+    'from'?: string;
+    'nonce'?: number;
+    'to'?: string;
+    'value'?: string;
+    'data'?: string;
+    'gasLimit'?: string;
+    'maxFeePerGas'?: string;
+    'maxPriorityFeePerGas'?: string;
+    /**
+     * Legacy; use when EIP-1559 not used
+     */
+    'gasPrice'?: string;
+}
+export interface GetSpeedUpParamsRequest {
+    /**
+     * WalletTransaction _id (MongoDB ObjectId)
+     */
+    'txId'?: string;
+    /**
+     * mainTxHash or txHash of the stuck transaction
+     */
+    'txHash'?: string;
+    /**
+     * EVM chain (speed-up is EVM only)
+     */
+    'chain': GetSpeedUpParamsRequestChainEnum;
+}
+
+export const GetSpeedUpParamsRequestChainEnum = {
+    Ethereum: 'ethereum',
+    Polygon: 'polygon',
+    Arbitrum: 'arbitrum',
+    Optimism: 'optimism',
+    Base: 'base',
+    Bsc: 'bsc',
+    Binance: 'binance',
+    Avalanche: 'avalanche',
+    Celo: 'celo',
+} as const;
+
+export type GetSpeedUpParamsRequestChainEnum = typeof GetSpeedUpParamsRequestChainEnum[keyof typeof GetSpeedUpParamsRequestChainEnum];
+
 export interface GetSubOrganizations200Response {
     'suborgs'?: Array<Organization>;
     'total'?: number;
@@ -2575,7 +3506,7 @@ export interface GetSubscriptionTiers200ResponsePlansInner {
      */
     'price'?: number;
     /**
-     * Yearly price in cents (2 months free, ~16.67% off)
+     * Yearly price in cents (8% off)
      */
     'priceYearly'?: number;
     'currency'?: string;
@@ -2594,6 +3525,35 @@ export interface GetSubscriptions200ResponseSubscriptionsInner {
     '_id'?: string;
     'status'?: string;
 }
+export interface GetSupportedCurrencies200Response {
+    'success'?: boolean;
+    'data'?: GetSupportedCurrencies200ResponseData;
+}
+export interface GetSupportedCurrencies200ResponseData {
+    'currencies'?: Array<GetSupportedCurrencies200ResponseDataCurrenciesInner>;
+    /**
+     * Number of supported currencies/chains
+     */
+    'count'?: number;
+}
+export interface GetSupportedCurrencies200ResponseDataCurrenciesInner {
+    /**
+     * Currency symbol (BTC, ETH, MATIC, BNB, etc.)
+     */
+    'code'?: string;
+    /**
+     * Display name (e.g. Bitcoin, Polygon, Arbitrum One)
+     */
+    'name'?: string;
+    /**
+     * Chain id for API use (e.g. ethereum, polygon, arbitrum)
+     */
+    'chain'?: string | null;
+    /**
+     * For USDT only; networks on which USDT is supported (ETH, BSC, TRX, SOL, POLYGON)
+     */
+    'networks'?: Array<string>;
+}
 export interface GetTemplates200Response {
     'templates'?: Array<GetTemplates200ResponseTemplatesInner>;
 }
@@ -2602,6 +3562,76 @@ export interface GetTemplates200ResponseTemplatesInner {
     'name'?: string;
     'provider'?: string;
     'description'?: string;
+}
+export interface GetTransaction200Response {
+    'success'?: boolean;
+    'data'?: GetTransaction200ResponseData;
+}
+export interface GetTransaction200ResponseData {
+    '_id'?: string;
+    'type'?: GetTransaction200ResponseDataTypeEnum;
+    'currency'?: string;
+    'amount'?: number;
+    'toAddress'?: string;
+    'fromAddress'?: string;
+    'mainTxHash'?: string;
+    'mainTxStatus'?: GetTransaction200ResponseDataMainTxStatusEnum;
+    'networkFee'?: number;
+    'platformFee'?: number;
+    'projectFee'?: number;
+    'refundTxHash'?: string;
+    'refundStatus'?: GetTransaction200ResponseDataRefundStatusEnum;
+    'status'?: GetTransaction200ResponseDataStatusEnum;
+    'error'?: string;
+    'createdAt'?: string;
+}
+
+export const GetTransaction200ResponseDataTypeEnum = {
+    Withdrawal: 'withdrawal',
+    Deposit: 'deposit',
+    FeeRefund: 'fee_refund',
+    PlatformFeeDeduction: 'platform_fee_deduction',
+} as const;
+
+export type GetTransaction200ResponseDataTypeEnum = typeof GetTransaction200ResponseDataTypeEnum[keyof typeof GetTransaction200ResponseDataTypeEnum];
+export const GetTransaction200ResponseDataMainTxStatusEnum = {
+    Pending: 'pending',
+    Broadcast: 'broadcast',
+    Confirmed: 'confirmed',
+    Failed: 'failed',
+} as const;
+
+export type GetTransaction200ResponseDataMainTxStatusEnum = typeof GetTransaction200ResponseDataMainTxStatusEnum[keyof typeof GetTransaction200ResponseDataMainTxStatusEnum];
+export const GetTransaction200ResponseDataRefundStatusEnum = {
+    Pending: 'pending',
+    Broadcast: 'broadcast',
+    Confirmed: 'confirmed',
+    Failed: 'failed',
+} as const;
+
+export type GetTransaction200ResponseDataRefundStatusEnum = typeof GetTransaction200ResponseDataRefundStatusEnum[keyof typeof GetTransaction200ResponseDataRefundStatusEnum];
+export const GetTransaction200ResponseDataStatusEnum = {
+    Processing: 'processing',
+    Completed: 'completed',
+    Partial: 'partial',
+    Failed: 'failed',
+} as const;
+
+export type GetTransaction200ResponseDataStatusEnum = typeof GetTransaction200ResponseDataStatusEnum[keyof typeof GetTransaction200ResponseDataStatusEnum];
+
+export interface GetTransactionHistory200Response {
+    'success'?: boolean;
+    'data'?: Array<object>;
+    'pagination'?: GetTransactionHistory200ResponsePagination;
+}
+export interface GetTransactionHistory200ResponsePagination {
+    'page'?: number;
+    'limit'?: number;
+    'count'?: number;
+    'total'?: number;
+    'totalPages'?: number;
+    'hasNextPage'?: boolean;
+    'hasPreviousPage'?: boolean;
 }
 export interface GetUsageStats200Response {
     'stats'?: GetUsageStats200ResponseStats;
@@ -2654,9 +3684,43 @@ export interface GetUserOverview200ResponseFootprint {
     'collectionsInProject'?: number;
     'collections'?: Array<GetOrganizationUsers200ResponseUsersInnerProject>;
 }
+export interface GetUserWallets200Response {
+    'success'?: boolean;
+    'data'?: Array<CreateWallet201ResponseData>;
+}
 export interface GetUsersByRole200Response {
     'users'?: Array<object>;
     'total'?: number;
+}
+export interface GetWalletFeeConfig200Response {
+    'success'?: boolean;
+    'data'?: GetWalletFeeConfig200ResponseData;
+}
+export interface GetWalletFeeConfig200ResponseData {
+    /**
+     * Whether project-level fee is enabled (for non-custodial fee display/calculation)
+     */
+    'enabled'?: boolean;
+    /**
+     * Project fee as decimal (e.g. 0.01 = 1%)
+     */
+    'feePercentage'?: number;
+}
+export interface GetWalletPrivateKey200Response {
+    'success'?: boolean;
+    'data'?: GetWalletPrivateKey200ResponseData;
+    'warning'?: string;
+}
+export interface GetWalletPrivateKey200ResponseData {
+    'walletId'?: string;
+    'currency'?: string;
+    'address'?: string;
+    'privateKey'?: string;
+    'isCustomKey'?: boolean;
+}
+export interface GetWalletWebhookLogs200Response {
+    'success'?: boolean;
+    'data'?: Array<WebhookLog>;
 }
 export interface GetWebhookConfig200Response {
     'success'?: boolean;
@@ -2697,6 +3761,32 @@ export type GetWebhookConfig200ResponseDataTransformationsInnerTypeEnum = typeof
 export interface GetWebhookConfig404Response {
     'success'?: boolean;
     'error'?: string;
+}
+export interface HandleFlutterwaveWebhook200Response {
+    'received'?: boolean;
+}
+export interface HandleFlutterwaveWebhookRequest {
+    /**
+     * Event type (e.g. charge.completed, payment.successful)
+     */
+    'event'?: string;
+    'data'?: HandleFlutterwaveWebhookRequestData;
+}
+export interface HandleFlutterwaveWebhookRequestData {
+    'id'?: number;
+    'tx_ref'?: string;
+    'amount'?: number;
+    'currency'?: string;
+    'status'?: string;
+    'customer'?: HandleFlutterwaveWebhookRequestDataCustomer;
+    /**
+     * orgId, projectId, planId, billingCycle; or isPaymentProcessing true for fiat payment-processing
+     */
+    'meta'?: object;
+}
+export interface HandleFlutterwaveWebhookRequestDataCustomer {
+    'email'?: string;
+    'name'?: string;
 }
 export interface HealthResponse {
     'status'?: HealthResponseStatusEnum;
@@ -2747,7 +3837,7 @@ export interface InitializeOrgPlanCheckoutRequest {
      */
     'planName': InitializeOrgPlanCheckoutRequestPlanNameEnum;
     /**
-     * Yearly = 2 months free (~16.67% discount)
+     * Yearly = 8% discount
      */
     'billingCycle'?: InitializeOrgPlanCheckoutRequestBillingCycleEnum;
     /**
@@ -2887,6 +3977,11 @@ export interface ListCollections200Response {
     'collections'?: Array<Collection>;
     'total'?: number;
 }
+export interface ListNonCustodialAddresses200Response {
+    'success'?: boolean;
+    'data'?: Array<NonCustodialAddress>;
+    'count'?: number;
+}
 export interface ListOAuthProviders200Response {
     'providers'?: Array<ListOAuthProviders200ResponseProvidersInner>;
 }
@@ -2911,6 +4006,15 @@ export interface ListProjects200Response {
 export interface ListRoles200Response {
     'roles'?: Array<object>;
     'total'?: number;
+}
+export interface ListSandboxSessions200Response {
+    'success'?: boolean;
+    'sessions'?: Array<SandboxSession>;
+}
+export interface ListWalletWebhooks200Response {
+    'success'?: boolean;
+    'data'?: Array<WalletWebhook>;
+    'count'?: number;
 }
 export interface LogSecurityEvent200Response {
     'message'?: string;
@@ -3004,25 +4108,6 @@ export interface MarkMessagesAsRead200ResponseData {
 }
 export interface MarkMessagesAsReadRequest {
     'messageIds': Array<string>;
-}
-export interface McpConfigGet200Response {
-    'enabled'?: boolean;
-    'plan'?: string;
-    'allowedPlans'?: Array<string>;
-    /**
-     * True if this org is on the free plan and MCP is temporarily enabled via the launch promo
-     */
-    'freePromoActive'?: boolean;
-    /**
-     * When the free-plan MCP promo ends (null if not active)
-     */
-    'freePromoEndsAt'?: string | null;
-    'endpoint'?: string;
-    'tools'?: Array<McpConfigGet200ResponseToolsInner>;
-}
-export interface McpConfigGet200ResponseToolsInner {
-    'name'?: string;
-    'description'?: string;
 }
 export interface Message {
     '_id'?: string;
@@ -3178,6 +4263,36 @@ export interface MonitoringPerformanceResponseMetrics {
      */
     'latencySource'?: string;
 }
+export interface NonCustodialAddress {
+    '_id'?: string;
+    'address'?: string;
+    'chain'?: NonCustodialAddressChainEnum;
+    'org'?: string;
+    'project'?: string;
+    'derivationPath'?: string | null;
+    'label'?: string | null;
+    'isActive'?: boolean;
+    'registeredAt'?: string;
+    'lastSyncedAt'?: string | null;
+    'createdAt'?: string;
+    'updatedAt'?: string;
+}
+
+export const NonCustodialAddressChainEnum = {
+    Ethereum: 'ethereum',
+    Binance: 'binance',
+    Polygon: 'polygon',
+    Celo: 'celo',
+    Bitcoin: 'bitcoin',
+} as const;
+
+export type NonCustodialAddressChainEnum = typeof NonCustodialAddressChainEnum[keyof typeof NonCustodialAddressChainEnum];
+
+export interface NonCustodialAddressResponse {
+    'success'?: boolean;
+    'message'?: string;
+    'data'?: NonCustodialAddress;
+}
 export interface OTPSendRequest {
     'phone'?: string;
     'email'?: string;
@@ -3268,7 +4383,7 @@ export const OrgDomainEntryOrgConsoleSourceEnum = {
 export type OrgDomainEntryOrgConsoleSourceEnum = typeof OrgDomainEntryOrgConsoleSourceEnum[keyof typeof OrgDomainEntryOrgConsoleSourceEnum];
 
 /**
- * Full allowed-domain row (admin and legacy): includes **`dnsTxtHost`** / **`dnsTxtValue`**, optional edge SSL hints (`edge`), staff-published step-3 TXT (`platformDnsVerification` on the manual path), and unified **`dnsRecords`** when the API builds a checklist. **`routingCnameTarget`** mirrors Fly **`dns_requirements.cname`** when ACME has provisioned, else env fallback. Internal edge custom-hostname state is not returned; use `edge`. Fly ACME requires **`CUSTOM_DOMAIN_FLY_ACME_ENABLED`** plus **`FLY_API_TOKEN`** and app slug; edge SSL (SSL-for-SaaS) and Fly ACME cannot both be enabled on the same deployment. Org-facing routes return the compact **`OrgDomainEntryOrgConsole`** shape instead (no raw `verificationToken` or duplicate TXT keys).
+ * Full allowed-domain row (admin and legacy): includes **`dnsTxtHost`** / **`dnsTxtValue`**, optional edge SSL hints (`edge`), staff-published step-3 TXT (`platformDnsVerification` on the manual path), and unified **`dnsRecords`** when the API builds a checklist. **`routingCnameTarget`** mirrors Fly **`dns_requirements.cname`** when ACME has provisioned, else env fallback. Internal edge custom-hostname state is not returned; use `edge`. Fly ACME requires **`CUSTOM_DOMAIN_FLY_ACME_ENABLED`** plus **`FLY_API_TOKEN`** and app slug; Cloudflare SSL-for-SaaS and Fly ACME cannot both be enabled on the same deployment. Org-facing routes return the compact **`OrgDomainEntryOrgConsole`** shape instead (no raw `verificationToken` or duplicate TXT keys).
  */
 export interface OrgDomainEntryWithDns {
     /**
@@ -3544,9 +4659,37 @@ export interface Plan {
     'interval'?: string;
     'features'?: Array<string>;
 }
+export interface PlatformAdminActivateOrgCustomDomainRequest {
+    /**
+     * Email org billing contact when domain goes live (default true)
+     */
+    'notifyOrg'?: boolean;
+}
+export interface PlatformAdminCustomDomainAddonRequest {
+    'enabled': boolean;
+}
+export interface PlatformAdminDetachMemberRequest {
+    'reason'?: string;
+}
+export interface PlatformAdminDomainDnsRecheckBatchRequest {
+    'maxOrgs'?: number;
+    'recheckOlderThanHours'?: number;
+}
+export interface PlatformAdminPatchOrgLimits200Response {
+    'success': boolean;
+    'orgId': string;
+    /**
+     * Persisted `Org.limits` after merge
+     */
+    'limits': object;
+    /**
+     * Full entitlement map from getEntitlements (plan + overrides)
+     */
+    'effective': object;
+}
 export interface PresignedPostResponse {
     /**
-     * Object key clients should upload to
+     * Object key (S3) clients should upload to
      */
     'key'?: string;
     /**
@@ -3554,7 +4697,7 @@ export interface PresignedPostResponse {
      */
     'url'?: string;
     /**
-     * HTTP method the client must use against `url` (always PUT - the object storage backend does not implement a POST-based upload API)
+     * HTTP method the client must use against `url` (always PUT - R2 does not implement the S3 POST Object API)
      */
     'method'?: PresignedPostResponseMethodEnum;
     /**
@@ -3885,12 +5028,61 @@ export interface RegisterLocalUserRequest {
     'lastName': string;
     'projectId': string;
 }
+export interface RegisterNonCustodialAddressRequest {
+    /**
+     * Public wallet address
+     */
+    'address': string;
+    /**
+     * Blockchain network (EVM, UTXO, or chain-specific). Use bsc or binance for BNB Smart Chain; avalanche for Avalanche C-Chain.
+     */
+    'chain': RegisterNonCustodialAddressRequestChainEnum;
+    /**
+     * HD wallet derivation path (metadata only)
+     */
+    'derivationPath'?: string;
+    /**
+     * Optional label for the address
+     */
+    'label'?: string;
+    /**
+     * Optional project ID
+     */
+    'projectId'?: string;
+}
+
+export const RegisterNonCustodialAddressRequestChainEnum = {
+    Ethereum: 'ethereum',
+    Binance: 'binance',
+    Bsc: 'bsc',
+    Polygon: 'polygon',
+    Arbitrum: 'arbitrum',
+    Optimism: 'optimism',
+    Base: 'base',
+    Avalanche: 'avalanche',
+    Celo: 'celo',
+    Bitcoin: 'bitcoin',
+    Litecoin: 'litecoin',
+    Dogecoin: 'dogecoin',
+    Solana: 'solana',
+    Tron: 'tron',
+    Ripple: 'ripple',
+    Cardano: 'cardano',
+    Ton: 'ton',
+} as const;
+
+export type RegisterNonCustodialAddressRequestChainEnum = typeof RegisterNonCustodialAddressRequestChainEnum[keyof typeof RegisterNonCustodialAddressRequestChainEnum];
+
 export interface RegisterRequest {
     'email': string;
     'password': string;
     'firstName': string;
     'lastName': string;
     'orgName'?: string;
+    /**
+     * Must be true. Required, not just a UI convenience - the server rejects registration with a 400 if this is missing or false (see `middleware/validate.js`\'s `agreedToTerms: Joi.boolean().valid(true).required()`). 
+     */
+    'agreedToTerms': boolean;
 }
 export interface RegisterUser429Response {
     'error'?: string;
@@ -3947,6 +5139,209 @@ export interface RegisterWithRoleRequest {
      */
     'agreedToTerms': boolean;
 }
+/**
+ * Declared relationship metadata between two collections in a project. Field ownership by `type` (see models/Relationship.js): many-to-one/one-to-one store a plain id in `field` on the SOURCE document; one-to-many stores the plain id in `field` on the TARGET document (the physical FK always lives on the \"many\" side); many-to-many stores an array of ids in `field` on the SOURCE document. 
+ */
+export interface Relationship {
+    '_id'?: string;
+    /**
+     * Project id this relationship is declared under.
+     */
+    'project'?: string;
+    'sourceCollection'?: string;
+    'targetCollection'?: string;
+    /**
+     * The id (or, for many-to-many, array-of-ids) field name that carries the reference. Which document it lives on depends on `type` - see the schema description.
+     */
+    'field'?: string;
+    'type'?: RelationshipTypeEnum;
+    'onDelete'?: RelationshipOnDeleteEnum;
+    /**
+     * Field-level relationship permission (Enterprise): an extra, opt-in restriction on who may populate/read this relationship field specifically, enforced by the populate engine in addition to the caller\'s own read permission on targetCollection. Empty (the default) means no additional restriction. When non-empty, a caller must match at least one listed token - a system role (owner/admin/developer/viewer), a project\'s own customRole name, \"authenticated\", \"public\", or \"apikey\" - or this field resolves to null/[] for that caller, even if they can otherwise read targetCollection directly. 
+     */
+    'allowedRoles'?: Array<string>;
+    'createdBy'?: string | null;
+    'createdAt'?: string;
+    'updatedAt'?: string;
+}
+
+export const RelationshipTypeEnum = {
+    OneToOne: 'one-to-one',
+    OneToMany: 'one-to-many',
+    ManyToOne: 'many-to-one',
+    ManyToMany: 'many-to-many',
+} as const;
+
+export type RelationshipTypeEnum = typeof RelationshipTypeEnum[keyof typeof RelationshipTypeEnum];
+export const RelationshipOnDeleteEnum = {
+    Restrict: 'restrict',
+    Cascade: 'cascade',
+    SetNull: 'set-null',
+    NoAction: 'no-action',
+} as const;
+
+export type RelationshipOnDeleteEnum = typeof RelationshipOnDeleteEnum[keyof typeof RelationshipOnDeleteEnum];
+
+export interface RelationshipCreateRequest {
+    'sourceCollection': string;
+    'targetCollection': string;
+    'field': string;
+    'type': RelationshipCreateRequestTypeEnum;
+    'onDelete'?: RelationshipCreateRequestOnDeleteEnum;
+    /**
+     * See the Relationship schema\'s allowedRoles description. Omitted or empty means no additional restriction.
+     */
+    'allowedRoles'?: Array<string>;
+}
+
+export const RelationshipCreateRequestTypeEnum = {
+    OneToOne: 'one-to-one',
+    OneToMany: 'one-to-many',
+    ManyToOne: 'many-to-one',
+    ManyToMany: 'many-to-many',
+} as const;
+
+export type RelationshipCreateRequestTypeEnum = typeof RelationshipCreateRequestTypeEnum[keyof typeof RelationshipCreateRequestTypeEnum];
+export const RelationshipCreateRequestOnDeleteEnum = {
+    Restrict: 'restrict',
+    Cascade: 'cascade',
+    SetNull: 'set-null',
+    NoAction: 'no-action',
+} as const;
+
+export type RelationshipCreateRequestOnDeleteEnum = typeof RelationshipCreateRequestOnDeleteEnum[keyof typeof RelationshipCreateRequestOnDeleteEnum];
+
+export interface RelationshipIndexSuggestion {
+    'relationshipId'?: string;
+    /**
+     * The collection that owns the physical FK field needing an index - the SOURCE collection for many-to-one/one-to-one/many-to-many, the TARGET collection for one-to-many.
+     */
+    'collection'?: string;
+    'field'?: string;
+    'suggestedIndex'?: { [key: string]: number; };
+    'reason'?: string;
+}
+export interface RelationshipIndexSuggestionsResponse {
+    'success'?: boolean;
+    'data'?: Array<RelationshipIndexSuggestion>;
+    'count'?: number;
+}
+export interface RelationshipListResponse {
+    'success'?: boolean;
+    'data'?: Array<Relationship>;
+    'pagination'?: GetPaymentRecords200ResponseDataPagination;
+}
+export interface RelationshipOrphanReportItem {
+    'relationshipId'?: string;
+    'sourceCollection'?: string;
+    'targetCollection'?: string;
+    'field'?: string;
+    'type'?: RelationshipOrphanReportItemTypeEnum;
+    'orphanCount'?: number;
+    /**
+     * Up to maxSamplesPerRelationship (default 50) orphaned id values.
+     */
+    'orphanSamples'?: Array<string>;
+    'truncated'?: boolean;
+    /**
+     * Only present when the relationship\'s source or target collection no longer exists - orphanCount is 0 and orphanSamples empty in that case.
+     */
+    'error'?: RelationshipOrphanReportItemErrorEnum;
+}
+
+export const RelationshipOrphanReportItemTypeEnum = {
+    OneToOne: 'one-to-one',
+    OneToMany: 'one-to-many',
+    ManyToOne: 'many-to-one',
+    ManyToMany: 'many-to-many',
+} as const;
+
+export type RelationshipOrphanReportItemTypeEnum = typeof RelationshipOrphanReportItemTypeEnum[keyof typeof RelationshipOrphanReportItemTypeEnum];
+export const RelationshipOrphanReportItemErrorEnum = {
+    SourceCollectionMissing: 'source_collection_missing',
+    TargetCollectionMissing: 'target_collection_missing',
+} as const;
+
+export type RelationshipOrphanReportItemErrorEnum = typeof RelationshipOrphanReportItemErrorEnum[keyof typeof RelationshipOrphanReportItemErrorEnum];
+
+export interface RelationshipOrphanReportResponse {
+    'success'?: boolean;
+    'data'?: Array<RelationshipOrphanReportItem>;
+    'totalOrphans'?: number;
+}
+export interface RelationshipRepairResponse {
+    'success'?: boolean;
+    'data'?: RelationshipRepairResult;
+    'message'?: string;
+}
+export interface RelationshipRepairResult {
+    'dryRun'?: boolean;
+    'relationshipId'?: string;
+    'sourceCollection'?: string;
+    'targetCollection'?: string;
+    'field'?: string;
+    'onDelete'?: RelationshipRepairResultOnDeleteEnum;
+    /**
+     * Present on a confirmed (non-dry-run) repair - which mutation actually ran.
+     */
+    'action'?: string;
+    'affectedCount'?: number;
+    /**
+     * Present when onDelete is cascade and confirm was true.
+     */
+    'deletedCount'?: number;
+    /**
+     * Present when onDelete is set-null and confirm was true.
+     */
+    'modifiedCount'?: number;
+    /**
+     * True when more source documents were affected than maxAffected (default 5000).
+     */
+    'truncated'?: boolean;
+}
+
+export const RelationshipRepairResultOnDeleteEnum = {
+    Cascade: 'cascade',
+    SetNull: 'set-null',
+} as const;
+
+export type RelationshipRepairResultOnDeleteEnum = typeof RelationshipRepairResultOnDeleteEnum[keyof typeof RelationshipRepairResultOnDeleteEnum];
+
+export interface RelationshipResponse {
+    'success'?: boolean;
+    'data'?: Relationship;
+    'message'?: string;
+}
+/**
+ * sourceCollection and field are immutable once declared - omit them.
+ */
+export interface RelationshipUpdateRequest {
+    'targetCollection'?: string;
+    'type'?: RelationshipUpdateRequestTypeEnum;
+    'onDelete'?: RelationshipUpdateRequestOnDeleteEnum;
+    /**
+     * See the Relationship schema\'s allowedRoles description.
+     */
+    'allowedRoles'?: Array<string>;
+}
+
+export const RelationshipUpdateRequestTypeEnum = {
+    OneToOne: 'one-to-one',
+    OneToMany: 'one-to-many',
+    ManyToOne: 'many-to-one',
+    ManyToMany: 'many-to-many',
+} as const;
+
+export type RelationshipUpdateRequestTypeEnum = typeof RelationshipUpdateRequestTypeEnum[keyof typeof RelationshipUpdateRequestTypeEnum];
+export const RelationshipUpdateRequestOnDeleteEnum = {
+    Restrict: 'restrict',
+    Cascade: 'cascade',
+    SetNull: 'set-null',
+    NoAction: 'no-action',
+} as const;
+
+export type RelationshipUpdateRequestOnDeleteEnum = typeof RelationshipUpdateRequestOnDeleteEnum[keyof typeof RelationshipUpdateRequestOnDeleteEnum];
+
 export interface RemoveParticipantRequest {
     'userId': string;
 }
@@ -3961,6 +5356,9 @@ export interface RemoveReaction200ResponseDataInner {
 }
 export interface RemoveTeamMember200Response {
     'message'?: string;
+}
+export interface RepairRelationshipOrphansRequest {
+    'confirm'?: boolean;
 }
 export interface RequestLocalPasswordResetRequest {
     'email': string;
@@ -4057,6 +5455,17 @@ export const RestoreBackupRequestConfirmationEnum = {
 
 export type RestoreBackupRequestConfirmationEnum = typeof RestoreBackupRequestConfirmationEnum[keyof typeof RestoreBackupRequestConfirmationEnum];
 
+export interface ResumeSandboxSession200Response {
+    'success'?: boolean;
+    'status'?: ResumeSandboxSession200ResponseStatusEnum;
+}
+
+export const ResumeSandboxSession200ResponseStatusEnum = {
+    Running: 'running',
+} as const;
+
+export type ResumeSandboxSession200ResponseStatusEnum = typeof ResumeSandboxSession200ResponseStatusEnum[keyof typeof ResumeSandboxSession200ResponseStatusEnum];
+
 export interface RetryWebhook400Response {
     'error'?: string;
 }
@@ -4078,6 +5487,52 @@ export interface SMSRequest {
     'message': string;
     'from'?: string;
 }
+export interface SandboxSession {
+    /**
+     * Session ObjectId.
+     */
+    '_id'?: string;
+    'language'?: string;
+    'languageVersion'?: string;
+    /**
+     * Current lifecycle state of the session.
+     */
+    'status'?: SandboxSessionStatusEnum;
+    'startedAt'?: string | null;
+    'endedAt'?: string | null;
+    'timeoutAt'?: string | null;
+    /**
+     * Cumulative CPU milliseconds consumed.
+     */
+    'totalCpuMs'?: number;
+    /**
+     * Cumulative RAM byte-seconds consumed.
+     */
+    'totalRamByteSeconds'?: number;
+    /**
+     * Why the session ended (e.g. timeout, explicit_close, idle_suspend). Null if the session is still active. 
+     */
+    'endReason'?: string | null;
+    /**
+     * Docker image tag used for this session.
+     */
+    'image'?: string;
+    /**
+     * Stable HTTPS public URL for the session.
+     */
+    'publicUrl'?: string | null;
+}
+
+export const SandboxSessionStatusEnum = {
+    Booting: 'booting',
+    Running: 'running',
+    Suspended: 'suspended',
+    Ended: 'ended',
+    Error: 'error',
+} as const;
+
+export type SandboxSessionStatusEnum = typeof SandboxSessionStatusEnum[keyof typeof SandboxSessionStatusEnum];
+
 export interface SearchResponse {
     'success'?: boolean;
     'data'?: SearchResponseData;
@@ -4226,7 +5681,7 @@ export interface SimulateFunctionTriggerRequest {
      */
     'trigger'?: object;
     /**
-     * Simulated event context (document, file, webhook, message)
+     * Simulated event context (document, file, webhook, wallet, message)
      */
     'eventContext'?: object;
     /**
@@ -4234,9 +5689,37 @@ export interface SimulateFunctionTriggerRequest {
      */
     'payload'?: object;
 }
+export interface StartBugAnalysisScan503Response {
+    'success'?: boolean;
+    'code'?: string;
+    'message'?: string;
+}
+export interface StartBugAnalysisScanByProjectRequest {
+    'uploadSize'?: number;
+    'runtimeMinutes'?: number;
+}
+export interface StartBugAnalysisScanRequest {
+    'projectId'?: string;
+    /**
+     * Bytes
+     */
+    'uploadSize'?: number;
+    'runtimeMinutes'?: number;
+}
 export interface StorageConfig {
     'buckets'?: Array<string>;
 }
+export interface SuspendSandboxSession200Response {
+    'success'?: boolean;
+    'status'?: SuspendSandboxSession200ResponseStatusEnum;
+}
+
+export const SuspendSandboxSession200ResponseStatusEnum = {
+    Suspended: 'suspended',
+} as const;
+
+export type SuspendSandboxSession200ResponseStatusEnum = typeof SuspendSandboxSession200ResponseStatusEnum[keyof typeof SuspendSandboxSession200ResponseStatusEnum];
+
 export interface SystemStatusResponse {
     'success'?: boolean;
     'data'?: SystemStatusResponseData;
@@ -4274,14 +5757,20 @@ export interface SystemStatusResponseDataStorage {
     'available'?: number;
     'percentage'?: number;
 }
-export interface TestIntegration200Response {
-    'success'?: boolean;
-    'data'?: object;
-}
 export interface TestIntegrationRequest {
     'endpoint'?: string;
     'method'?: string;
     'params'?: object;
+}
+export interface TestWalletWebhook200Response {
+    'success'?: boolean;
+    'data'?: object;
+}
+export interface TestWalletWebhookRequest {
+    'url': string;
+    'secret'?: string;
+    'projectId'?: string;
+    'event'?: string;
 }
 export interface TestWebhookTransformation200Response {
     'success'?: boolean;
@@ -4362,6 +5851,36 @@ export interface TwoFASetupResponse {
     'qrCode'?: string;
     'manualEntryKey'?: string;
 }
+/**
+ * Returned by POST /api/data/projects/{projectId}/tx whenever any operation in the batch fails - the failing operation\'s own status code is reused as the HTTP response status, and no operation in the batch was committed.
+ */
+export interface TxRolledBackResponse {
+    'success'?: boolean;
+    'error'?: string;
+    'rolledBack'?: boolean;
+    'failedOp'?: TxRolledBackResponseFailedOp;
+    /**
+     * The original error response body the failing operation\'s own middleware produced.
+     */
+    'reason'?: object;
+}
+export interface TxRolledBackResponseFailedOp {
+    /**
+     * Zero-based index of the operation that caused the rollback.
+     */
+    'index'?: number;
+    'op'?: TxRolledBackResponseFailedOpOpEnum;
+    'collection'?: string;
+}
+
+export const TxRolledBackResponseFailedOpOpEnum = {
+    Create: 'create',
+    Update: 'update',
+    Delete: 'delete',
+} as const;
+
+export type TxRolledBackResponseFailedOpOpEnum = typeof TxRolledBackResponseFailedOpOpEnum[keyof typeof TxRolledBackResponseFailedOpOpEnum];
+
 export interface UnlinkOAuthProvider200Response {
     'message'?: string;
     'provider'?: string;
@@ -4517,6 +6036,21 @@ export interface UpdateMultiRoleSettingsRequestSettings {
      */
     'dataOwnerField'?: string;
 }
+export interface UpdateNonCustodialAddress200Response {
+    'success'?: boolean;
+    'message'?: string;
+    'data'?: NonCustodialAddressResponse;
+}
+export interface UpdateNonCustodialAddressRequest {
+    /**
+     * Human-readable label for the address
+     */
+    'label'?: string;
+    /**
+     * BIP derivation path (e.g. m/44\'/60\'/0\'/0/0); can be set to null to clear
+     */
+    'derivationPath'?: string;
+}
 export interface UpdateOAuthProviderConfigRequest {
     /**
      * Whether the OAuth provider is enabled
@@ -4661,6 +6195,35 @@ export interface UpdateUserRequest {
     'lastName'?: string;
     'avatar'?: string;
 }
+export interface UpdateWalletFeeConfig200Response {
+    'success'?: boolean;
+    'message'?: string;
+    'data'?: UpdateWalletFeeConfig200ResponseData;
+}
+export interface UpdateWalletFeeConfig200ResponseData {
+    'enabled'?: boolean;
+    'feePercentage'?: number;
+}
+export interface UpdateWalletFeeConfigRequest {
+    /**
+     * Enable or disable project-level fee (for non-custodial fee calculation)
+     */
+    'enabled'?: boolean;
+    /**
+     * Project fee as decimal (e.g. 0.01 = 1%, 0.005 = 0.5%)
+     */
+    'feePercentage'?: number;
+}
+export interface UpdateWalletWebhook200Response {
+    'success'?: boolean;
+    'data'?: WalletWebhook;
+}
+export interface UpdateWalletWebhookRequest {
+    'url'?: string;
+    'events'?: Array<string>;
+    'secret'?: string;
+    'filters'?: object;
+}
 export interface UploadFiles413Response {
     'error'?: string;
     'maxFileUploadBytes'?: number;
@@ -4767,6 +6330,32 @@ export interface UserSummary {
     'lastName'?: string;
     'email'?: string;
 }
+export interface ValidateAddress200Response {
+    'success'?: boolean;
+    'data'?: ValidateAddress200ResponseData;
+}
+export interface ValidateAddress200ResponseData {
+    'isValid'?: boolean;
+    'currency'?: string;
+    'address'?: string;
+}
+export interface ValidateAddressRequest {
+    'currency': ValidateAddressRequestCurrencyEnum;
+    'address': string;
+}
+
+export const ValidateAddressRequestCurrencyEnum = {
+    Btc: 'BTC',
+    Eth: 'ETH',
+    Bnb: 'BNB',
+    Ltc: 'LTC',
+    Sol: 'SOL',
+    Trx: 'TRX',
+    Usdt: 'USDT',
+} as const;
+
+export type ValidateAddressRequestCurrencyEnum = typeof ValidateAddressRequestCurrencyEnum[keyof typeof ValidateAddressRequestCurrencyEnum];
+
 export interface ValidatePasswordResetToken200Response {
     'valid'?: boolean;
 }
@@ -4856,6 +6445,129 @@ export interface VerifyProjectEmailSmtpDomainRequest {
      * If true and checks pass, persist domainVerifiedAt on the project
      */
     'persist'?: boolean;
+}
+export interface WalletBalance {
+    'address'?: string;
+    'chain'?: string;
+    /**
+     * Confirmed balance (string to handle large numbers)
+     */
+    'confirmed'?: string;
+    /**
+     * Unconfirmed balance (string to handle large numbers)
+     */
+    'unconfirmed'?: string;
+    /**
+     * Total balance (string to handle large numbers)
+     */
+    'total'?: string;
+    'currency'?: string;
+    'lastUpdated'?: string;
+}
+export interface WalletTransaction {
+    '_id'?: string;
+    'txHash'?: string;
+    'mainTxHash'?: string;
+    'address'?: string;
+    'chain'?: string;
+    'from'?: string;
+    'to'?: string;
+    'fromAddress'?: string;
+    'toAddress'?: string;
+    /**
+     * Transaction amount (string to handle large numbers)
+     */
+    'amount'?: string;
+    'currency'?: string;
+    'type'?: string;
+    'status'?: WalletTransactionStatusEnum;
+    'mainTxStatus'?: WalletTransactionMainTxStatusEnum;
+    'confirmations'?: number;
+    'blockNumber'?: number | null;
+    'blockHash'?: string | null;
+    /**
+     * Network fee (string to handle large numbers)
+     */
+    'networkFee'?: string;
+    'mainTxConfirmedAt'?: string | null;
+    'createdAt'?: string;
+    'updatedAt'?: string;
+    /**
+     * Parsed token transfer list (incoming and outgoing) when available
+     */
+    'tokenTransfers'?: Array<WalletTransactionTokenTransfersInner>;
+}
+
+export const WalletTransactionStatusEnum = {
+    Pending: 'pending',
+    Completed: 'completed',
+    Failed: 'failed',
+} as const;
+
+export type WalletTransactionStatusEnum = typeof WalletTransactionStatusEnum[keyof typeof WalletTransactionStatusEnum];
+export const WalletTransactionMainTxStatusEnum = {
+    Pending: 'pending',
+    Confirmed: 'confirmed',
+    Failed: 'failed',
+} as const;
+
+export type WalletTransactionMainTxStatusEnum = typeof WalletTransactionMainTxStatusEnum[keyof typeof WalletTransactionMainTxStatusEnum];
+
+export interface WalletTransactionTokenTransfersInner {
+    'tokenAddress'?: string;
+    'from'?: string;
+    'to'?: string;
+    /**
+     * Raw token units (string to preserve precision)
+     */
+    'value'?: string;
+    /**
+     * Human-readable token amount (units)
+     */
+    'formattedAmount'?: string;
+    'tokenSymbol'?: string;
+    'tokenDecimals'?: number;
+    'isIncoming'?: boolean;
+}
+export interface WalletWebhook {
+    '_id'?: string;
+    'url'?: string;
+    'events'?: Array<WalletWebhookEventsEnum>;
+    'filters'?: WalletWebhookFilters;
+    'isActive'?: boolean;
+    'stats'?: WalletWebhookStats;
+    'createdAt'?: string;
+    'updatedAt'?: string;
+}
+
+export const WalletWebhookEventsEnum = {
+    WalletBalanceUpdated: 'wallet.balance.updated',
+    WalletTransactionConfirmed: 'wallet.transaction.confirmed',
+    WalletTransactionFailed: 'wallet.transaction.failed',
+} as const;
+
+export type WalletWebhookEventsEnum = typeof WalletWebhookEventsEnum[keyof typeof WalletWebhookEventsEnum];
+
+export interface WalletWebhookFilters {
+    'addresses'?: Array<string>;
+    'chains'?: Array<WalletWebhookFiltersChainsEnum>;
+}
+
+export const WalletWebhookFiltersChainsEnum = {
+    Ethereum: 'ethereum',
+    Binance: 'binance',
+    Polygon: 'polygon',
+    Celo: 'celo',
+    Bitcoin: 'bitcoin',
+} as const;
+
+export type WalletWebhookFiltersChainsEnum = typeof WalletWebhookFiltersChainsEnum[keyof typeof WalletWebhookFiltersChainsEnum];
+
+export interface WalletWebhookStats {
+    'totalDeliveries'?: number;
+    'successfulDeliveries'?: number;
+    'failedDeliveries'?: number;
+    'lastDeliveryAt'?: string | null;
 }
 export interface WebhookListResponse {
     'webhooks'?: Array<WebhookLog>;
@@ -4973,6 +6685,53 @@ export interface WebhookStatsResponseStatusStatsInner {
      * Average duration in ms for that status bucket
      */
     'avgDuration'?: number | null;
+}
+export interface Withdraw200Response {
+    'success'?: boolean;
+    'message'?: string;
+    'data'?: Withdraw200ResponseData;
+}
+export interface Withdraw200ResponseData {
+    'transactionId'?: string;
+    'status'?: Withdraw200ResponseDataStatusEnum;
+    /**
+     * Signed transaction (hex for EVM/UTXO, base64 for Solana, object for Tron). Send as-is in broadcast body.
+     */
+    'signedTx'?: string;
+    /**
+     * Chain id for broadcast (e.g. ethereum, bitcoin, solana).
+     */
+    'chain'?: string;
+    /**
+     * Sender address; must be registered for org when broadcasting.
+     */
+    'fromAddress'?: string;
+    'currency'?: string;
+    'amount'?: number;
+    'toAddress'?: string;
+    'message'?: string;
+}
+
+export const Withdraw200ResponseDataStatusEnum = {
+    ReadyToBroadcast: 'ready_to_broadcast',
+} as const;
+
+export type Withdraw200ResponseDataStatusEnum = typeof Withdraw200ResponseDataStatusEnum[keyof typeof Withdraw200ResponseDataStatusEnum];
+
+export interface WithdrawRequest {
+    /**
+     * Recipient address (chain-specific format).
+     */
+    'toAddress': string;
+    /**
+     * Amount to send (numeric; currency from wallet).
+     */
+    'amount': number;
+    /**
+     * For USDT wallets only; ETH, BSC, TRX, SOL, or POLYGON.
+     */
+    'network'?: string;
+    'options'?: object;
 }
 
 /**
@@ -5130,7 +6889,7 @@ export const APIKeysApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Regenerate the secret for an API key. The old secret will be invalidated immediately. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Regenerate the secret for an API key. The old secret will be invalidated immediately. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Regenerate API key secret
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -5275,7 +7034,7 @@ export const APIKeysApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Regenerate the secret for an API key. The old secret will be invalidated immediately. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Regenerate the secret for an API key. The old secret will be invalidated immediately. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Regenerate API key secret
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -5350,7 +7109,7 @@ export const APIKeysApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.listApiKeys(options).then((request) => request(axios, basePath));
         },
         /**
-         * Regenerate the secret for an API key. The old secret will be invalidated immediately. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Regenerate the secret for an API key. The old secret will be invalidated immediately. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Regenerate API key secret
          * @param {APIKeysApiRegenerateApiKeyRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -5457,7 +7216,7 @@ export class APIKeysApi extends BaseAPI {
     }
 
     /**
-     * Regenerate the secret for an API key. The old secret will be invalidated immediately. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+     * Regenerate the secret for an API key. The old secret will be invalidated immediately. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
      * @summary Regenerate API key secret
      * @param {APIKeysApiRegenerateApiKeyRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -5770,6 +7529,1850 @@ export class AddOnsApi extends BaseAPI {
 
 
 /**
+ * AdminApi - axios parameter creator
+ */
+export const AdminApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Paginated AuditLog entries. Omit orgId for cross-org recent events. 
+         * @summary List audit log events
+         * @param {string} [orgId] 
+         * @param {string} [action] 
+         * @param {string} [actionPrefix] Prefix match on action (e.g. org.)
+         * @param {string} [resource] 
+         * @param {GetAdminAuditEventsSeverityEnum} [severity] 
+         * @param {number} [page] 
+         * @param {number} [limit] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getAdminAuditEvents: async (orgId?: string, action?: string, actionPrefix?: string, resource?: string, severity?: GetAdminAuditEventsSeverityEnum, page?: number, limit?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/admin/audit/events`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (orgId !== undefined) {
+                localVarQueryParameter['orgId'] = orgId;
+            }
+
+            if (action !== undefined) {
+                localVarQueryParameter['action'] = action;
+            }
+
+            if (actionPrefix !== undefined) {
+                localVarQueryParameter['actionPrefix'] = actionPrefix;
+            }
+
+            if (resource !== undefined) {
+                localVarQueryParameter['resource'] = resource;
+            }
+
+            if (severity !== undefined) {
+                localVarQueryParameter['severity'] = severity;
+            }
+
+            if (page !== undefined) {
+                localVarQueryParameter['page'] = page;
+            }
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Includes limits, usage, effective entitlements (getEntitlements), redacted billing summary, customDomains (from allowedDomains), deploymentType, dedicated, txPlan, settings, enterprise fields. 
+         * @summary Get organization detail with projects and users (Admin)
+         * @param {string} orgId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getDashboardOrganizationDetail: async (orgId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'orgId' is not null or undefined
+            assertParamExists('getDashboardOrganizationDetail', 'orgId', orgId)
+            const localVarPath = `/api/admin/dashboard/organizations/{orgId}`
+                .replace('{orgId}', encodeURIComponent(String(orgId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Customer orgs only (`isPlatformShell` excluded). Default sort by `name` ascending; override with `sort` / `sortDir`. Optional `q` (name/slug substring, or 24-char hex org `_id`), `plan`, `isActive`. If query param `limit` is sent, response is paginated (`page`, `pages`, `total`). Without `limit`, all matching orgs are returned (small deployments). 
+         * @summary List all organizations (Admin)
+         * @param {string} [q] Case-insensitive match on name or slug
+         * @param {GetDashboardOrganizationsPlanEnum} [plan] 
+         * @param {GetDashboardOrganizationsIsActiveEnum} [isActive] 
+         * @param {number} [page] 
+         * @param {number} [limit] When present, enables pagination
+         * @param {GetDashboardOrganizationsSortEnum} [sort] 
+         * @param {GetDashboardOrganizationsSortDirEnum} [sortDir] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getDashboardOrganizations: async (q?: string, plan?: GetDashboardOrganizationsPlanEnum, isActive?: GetDashboardOrganizationsIsActiveEnum, page?: number, limit?: number, sort?: GetDashboardOrganizationsSortEnum, sortDir?: GetDashboardOrganizationsSortDirEnum, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/admin/dashboard/organizations`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (q !== undefined) {
+                localVarQueryParameter['q'] = q;
+            }
+
+            if (plan !== undefined) {
+                localVarQueryParameter['plan'] = plan;
+            }
+
+            if (isActive !== undefined) {
+                localVarQueryParameter['isActive'] = isActive;
+            }
+
+            if (page !== undefined) {
+                localVarQueryParameter['page'] = page;
+            }
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            if (sort !== undefined) {
+                localVarQueryParameter['sort'] = sort;
+            }
+
+            if (sortDir !== undefined) {
+                localVarQueryParameter['sortDir'] = sortDir;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Sets `status` to `active`. When `CUSTOM_DOMAIN_LEGACY_ACTIVATE_FROM_DNS_VERIFIED` is false (strict pipeline), requires `platform_dns_pending_review`. Default legacy mode allows activation from `dns_verified` for backward compatibility.  **Fly ACME default automation:** Org **`verify-platform-dns`** typically sets **`active`** when the Fly certificate is ready; staff **`activate`** is optional (e.g. notifications or edge cases). With **`CUSTOM_DOMAIN_FLY_LEGACY_STAFF_PIPELINE=true`**, org go-live may still require this call unless **`CUSTOM_DOMAIN_FLY_AUTO_ACTIVATE=true`**. 
+         * @summary Mark custom domain live (legacy / non-Fly / manual completion)
+         * @param {string} orgId 
+         * @param {string} hostname 
+         * @param {PlatformAdminActivateOrgCustomDomainRequest} [platformAdminActivateOrgCustomDomainRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminActivateOrgCustomDomain: async (orgId: string, hostname: string, platformAdminActivateOrgCustomDomainRequest?: PlatformAdminActivateOrgCustomDomainRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'orgId' is not null or undefined
+            assertParamExists('platformAdminActivateOrgCustomDomain', 'orgId', orgId)
+            // verify required parameter 'hostname' is not null or undefined
+            assertParamExists('platformAdminActivateOrgCustomDomain', 'hostname', hostname)
+            const localVarPath = `/api/admin/orgs/{orgId}/domains/{hostname}/activate`
+                .replace('{orgId}', encodeURIComponent(String(orgId)))
+                .replace('{hostname}', encodeURIComponent(String(hostname)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(platformAdminActivateOrgCustomDomainRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * **Legacy / manual pipeline:** From `cname_pending_staff` or legacy `dns_verified` → `cname_approved`. Optional **`verifyDns`** checks the public CNAME chain against **`routingCnameTarget`** (Fly **`dns_requirements.cname`** when stored, else **`CUSTOM_DOMAIN_API_CNAME_TARGET`**).  **Not used** on the default Fly ACME deployment: Mudbase **`verify-dns`** advances to **`cname_approved`** when Fly returns DNS requirements and **`CUSTOM_DOMAIN_FLY_LEGACY_STAFF_PIPELINE`** is unset. 
+         * @summary Approve routing CNAME (legacy / non-automated pipeline)
+         * @param {string} orgId 
+         * @param {string} hostname 
+         * @param {AdminApproveOrgDomainCnameRequest} [adminApproveOrgDomainCnameRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminApproveOrgCustomDomainCname: async (orgId: string, hostname: string, adminApproveOrgDomainCnameRequest?: AdminApproveOrgDomainCnameRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'orgId' is not null or undefined
+            assertParamExists('platformAdminApproveOrgCustomDomainCname', 'orgId', orgId)
+            // verify required parameter 'hostname' is not null or undefined
+            assertParamExists('platformAdminApproveOrgCustomDomainCname', 'hostname', hostname)
+            const localVarPath = `/api/admin/orgs/{orgId}/domains/{hostname}/approve-cname`
+                .replace('{orgId}', encodeURIComponent(String(orgId)))
+                .replace('{hostname}', encodeURIComponent(String(hostname)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(adminApproveOrgDomainCnameRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns a payment URL. Enterprise pricing uses org.billing.contractAmountCents unless amountCents or chargeAmountCents is set. Optional sendEmail uses template org_billing_checkout. 
+         * @summary Create checkout link for org (platform admin)
+         * @param {string} orgId 
+         * @param {AdminBillingCheckoutLinkRequest} adminBillingCheckoutLinkRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminCreateBillingCheckoutLink: async (orgId: string, adminBillingCheckoutLinkRequest: AdminBillingCheckoutLinkRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'orgId' is not null or undefined
+            assertParamExists('platformAdminCreateBillingCheckoutLink', 'orgId', orgId)
+            // verify required parameter 'adminBillingCheckoutLinkRequest' is not null or undefined
+            assertParamExists('platformAdminCreateBillingCheckoutLink', 'adminBillingCheckoutLinkRequest', adminBillingCheckoutLinkRequest)
+            const localVarPath = `/api/admin/orgs/{orgId}/billing/checkout-link`
+                .replace('{orgId}', encodeURIComponent(String(orgId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(adminBillingCheckoutLinkRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Same request body as checkout-link. Creates or reuses a platform payment plan, then returns a payment URL with payment_plan set. First charge uses tx_ref prefix mudbase_org_sub_. Renewals for non-mudbase_ references are processed via billing webhooks. Optional sendEmail uses template org_billing_checkout with recurring labeling. 
+         * @summary Create subscription (payment plan) checkout link for org (platform admin)
+         * @param {string} orgId 
+         * @param {AdminBillingCheckoutLinkRequest} adminBillingCheckoutLinkRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminCreateBillingSubscriptionLink: async (orgId: string, adminBillingCheckoutLinkRequest: AdminBillingCheckoutLinkRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'orgId' is not null or undefined
+            assertParamExists('platformAdminCreateBillingSubscriptionLink', 'orgId', orgId)
+            // verify required parameter 'adminBillingCheckoutLinkRequest' is not null or undefined
+            assertParamExists('platformAdminCreateBillingSubscriptionLink', 'adminBillingCheckoutLinkRequest', adminBillingCheckoutLinkRequest)
+            const localVarPath = `/api/admin/orgs/{orgId}/billing/subscription-link`
+                .replace('{orgId}', encodeURIComponent(String(orgId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(adminBillingCheckoutLinkRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Enable/disable Growth/Scale custom domain add-on (JWT admin)
+         * @param {string} orgId 
+         * @param {PlatformAdminCustomDomainAddonRequest} platformAdminCustomDomainAddonRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminCustomDomainAddon: async (orgId: string, platformAdminCustomDomainAddonRequest: PlatformAdminCustomDomainAddonRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'orgId' is not null or undefined
+            assertParamExists('platformAdminCustomDomainAddon', 'orgId', orgId)
+            // verify required parameter 'platformAdminCustomDomainAddonRequest' is not null or undefined
+            assertParamExists('platformAdminCustomDomainAddon', 'platformAdminCustomDomainAddonRequest', platformAdminCustomDomainAddonRequest)
+            const localVarPath = `/api/admin/orgs/{orgId}/custom-domain-addon`
+                .replace('{orgId}', encodeURIComponent(String(orgId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(platformAdminCustomDomainAddonRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Clears user.org and user.project; does not delete the user account.
+         * @summary Detach user from organization (platform admin)
+         * @param {string} orgId 
+         * @param {string} userId 
+         * @param {PlatformAdminDetachMemberRequest} [platformAdminDetachMemberRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminDetachMember: async (orgId: string, userId: string, platformAdminDetachMemberRequest?: PlatformAdminDetachMemberRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'orgId' is not null or undefined
+            assertParamExists('platformAdminDetachMember', 'orgId', orgId)
+            // verify required parameter 'userId' is not null or undefined
+            assertParamExists('platformAdminDetachMember', 'userId', userId)
+            const localVarPath = `/api/admin/orgs/{orgId}/members/{userId}/detach`
+                .replace('{orgId}', encodeURIComponent(String(orgId)))
+                .replace('{userId}', encodeURIComponent(String(userId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(platformAdminDetachMemberRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Batch custom-domain DNS recheck (JWT admin)
+         * @param {PlatformAdminDomainDnsRecheckBatchRequest} [platformAdminDomainDnsRecheckBatchRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminDomainDnsRecheckBatch: async (platformAdminDomainDnsRecheckBatchRequest?: PlatformAdminDomainDnsRecheckBatchRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/admin/domain-dns/recheck-batch`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(platformAdminDomainDnsRecheckBatchRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary List in-memory security events (platform admin)
+         * @param {PlatformAdminGetSecurityEventsWindowEnum} [window] 
+         * @param {string} [type] 
+         * @param {number} [limit] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminGetSecurityEvents: async (window?: PlatformAdminGetSecurityEventsWindowEnum, type?: string, limit?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/admin/security/events`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (window !== undefined) {
+                localVarQueryParameter['window'] = window;
+            }
+
+            if (type !== undefined) {
+                localVarQueryParameter['type'] = type;
+            }
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Set org member role (platform admin)
+         * @param {string} orgId 
+         * @param {string} userId 
+         * @param {AdminMemberRolePatchRequest} adminMemberRolePatchRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminPatchMemberRole: async (orgId: string, userId: string, adminMemberRolePatchRequest: AdminMemberRolePatchRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'orgId' is not null or undefined
+            assertParamExists('platformAdminPatchMemberRole', 'orgId', orgId)
+            // verify required parameter 'userId' is not null or undefined
+            assertParamExists('platformAdminPatchMemberRole', 'userId', userId)
+            // verify required parameter 'adminMemberRolePatchRequest' is not null or undefined
+            assertParamExists('platformAdminPatchMemberRole', 'adminMemberRolePatchRequest', adminMemberRolePatchRequest)
+            const localVarPath = `/api/admin/orgs/{orgId}/members/{userId}/role`
+                .replace('{orgId}', encodeURIComponent(String(orgId)))
+                .replace('{userId}', encodeURIComponent(String(userId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(adminMemberRolePatchRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Patch staff billing contract metadata (platform admin)
+         * @param {string} orgId 
+         * @param {AdminOrgBillingContractPatchRequest} adminOrgBillingContractPatchRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminPatchOrgBillingContract: async (orgId: string, adminOrgBillingContractPatchRequest: AdminOrgBillingContractPatchRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'orgId' is not null or undefined
+            assertParamExists('platformAdminPatchOrgBillingContract', 'orgId', orgId)
+            // verify required parameter 'adminOrgBillingContractPatchRequest' is not null or undefined
+            assertParamExists('platformAdminPatchOrgBillingContract', 'adminOrgBillingContractPatchRequest', adminOrgBillingContractPatchRequest)
+            const localVarPath = `/api/admin/orgs/{orgId}/billing-contract`
+                .replace('{orgId}', encodeURIComponent(String(orgId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(adminOrgBillingContractPatchRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * **Manual step-3 path** (no Fly ACME, or staff override): Sets `platformDnsVerification` and moves `cname_approved` → `platform_dns_pending`. When `resetCustomerPlatformDnsSubmission` is true and status was `platform_dns_pending_review`, returns customer to `platform_dns_pending` and clears their submission timestamp. By default (`notifyOrg` not false), emails **`org.billing.email`** with record type, name, content, and TTL so the customer can add DNS and call **POST .../verify-platform-dns**. Set `CUSTOM_DOMAIN_CONSOLE_URL` for a console link in that email.  **Fly ACME (default):** Not part of the org go-live path; **`dnsRecords`** come from Fly. This endpoint returns **`400` `custom_domain_invalid_state`** unless **`CUSTOM_DOMAIN_FLY_ALLOW_STAFF_PLATFORM_DNS_OVERRIDE=true`** (support-only override). 
+         * @summary Publish platform DNS verification record for the customer (non-Fly / legacy)
+         * @param {string} orgId 
+         * @param {string} hostname 
+         * @param {AdminPlatformDnsVerificationPatchRequest} adminPlatformDnsVerificationPatchRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminPatchOrgCustomDomainPlatformDnsVerification: async (orgId: string, hostname: string, adminPlatformDnsVerificationPatchRequest: AdminPlatformDnsVerificationPatchRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'orgId' is not null or undefined
+            assertParamExists('platformAdminPatchOrgCustomDomainPlatformDnsVerification', 'orgId', orgId)
+            // verify required parameter 'hostname' is not null or undefined
+            assertParamExists('platformAdminPatchOrgCustomDomainPlatformDnsVerification', 'hostname', hostname)
+            // verify required parameter 'adminPlatformDnsVerificationPatchRequest' is not null or undefined
+            assertParamExists('platformAdminPatchOrgCustomDomainPlatformDnsVerification', 'adminPlatformDnsVerificationPatchRequest', adminPlatformDnsVerificationPatchRequest)
+            const localVarPath = `/api/admin/orgs/{orgId}/domains/{hostname}/platform-dns-verification`
+                .replace('{orgId}', encodeURIComponent(String(orgId)))
+                .replace('{hostname}', encodeURIComponent(String(hostname)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(adminPlatformDnsVerificationPatchRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Merges the JSON body into `Org.limits`. Effective caps are `PLANS[plan].limits` merged with overrides (`getEntitlements`). For orgs not on `enterprise`, each finite numeric value must not exceed the Scale plan default for that key. `null` means unlimited (same as plan semantics). Recorded in audit as `org.limits_update`. 
+         * @summary Patch per-org limit overrides
+         * @param {string} orgId 
+         * @param {AdminOrgLimitsPatchRequest} adminOrgLimitsPatchRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminPatchOrgLimits: async (orgId: string, adminOrgLimitsPatchRequest: AdminOrgLimitsPatchRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'orgId' is not null or undefined
+            assertParamExists('platformAdminPatchOrgLimits', 'orgId', orgId)
+            // verify required parameter 'adminOrgLimitsPatchRequest' is not null or undefined
+            assertParamExists('platformAdminPatchOrgLimits', 'adminOrgLimitsPatchRequest', adminOrgLimitsPatchRequest)
+            const localVarPath = `/api/admin/orgs/{orgId}/limits`
+                .replace('{orgId}', encodeURIComponent(String(orgId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(adminOrgLimitsPatchRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Sets plan and resets Org.limits to plan defaults. Applies storage downgrade markers and clears dedicated infra when leaving enterprise. Audit org.admin_plan_change. 
+         * @summary Set organization billing plan (platform admin)
+         * @param {string} orgId 
+         * @param {AdminOrgPlanPatchRequest} adminOrgPlanPatchRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminPatchOrgPlan: async (orgId: string, adminOrgPlanPatchRequest: AdminOrgPlanPatchRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'orgId' is not null or undefined
+            assertParamExists('platformAdminPatchOrgPlan', 'orgId', orgId)
+            // verify required parameter 'adminOrgPlanPatchRequest' is not null or undefined
+            assertParamExists('platformAdminPatchOrgPlan', 'adminOrgPlanPatchRequest', adminOrgPlanPatchRequest)
+            const localVarPath = `/api/admin/orgs/{orgId}/plan`
+                .replace('{orgId}', encodeURIComponent(String(orgId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(adminOrgPlanPatchRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Set organization active flag and platform notes (platform admin)
+         * @param {string} orgId 
+         * @param {AdminOrgStatusPatchRequest} adminOrgStatusPatchRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminPatchOrgStatus: async (orgId: string, adminOrgStatusPatchRequest: AdminOrgStatusPatchRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'orgId' is not null or undefined
+            assertParamExists('platformAdminPatchOrgStatus', 'orgId', orgId)
+            // verify required parameter 'adminOrgStatusPatchRequest' is not null or undefined
+            assertParamExists('platformAdminPatchOrgStatus', 'adminOrgStatusPatchRequest', adminOrgStatusPatchRequest)
+            const localVarPath = `/api/admin/orgs/{orgId}/status`
+                .replace('{orgId}', encodeURIComponent(String(orgId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(adminOrgStatusPatchRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Patch project (platform admin)
+         * @param {string} orgId 
+         * @param {string} projectId 
+         * @param {AdminProjectPatchRequest} adminProjectPatchRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminPatchProject: async (orgId: string, projectId: string, adminProjectPatchRequest: AdminProjectPatchRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'orgId' is not null or undefined
+            assertParamExists('platformAdminPatchProject', 'orgId', orgId)
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('platformAdminPatchProject', 'projectId', projectId)
+            // verify required parameter 'adminProjectPatchRequest' is not null or undefined
+            assertParamExists('platformAdminPatchProject', 'adminProjectPatchRequest', adminProjectPatchRequest)
+            const localVarPath = `/api/admin/orgs/{orgId}/projects/{projectId}`
+                .replace('{orgId}', encodeURIComponent(String(orgId)))
+                .replace('{projectId}', encodeURIComponent(String(projectId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(adminProjectPatchRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Same as POST /internal/provision-enterprise; orgId from path.
+         * @summary Provision enterprise dedicated endpoints (JWT admin)
+         * @param {string} orgId 
+         * @param {AdminProvisionEnterpriseBody} adminProvisionEnterpriseBody 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminProvisionEnterprise: async (orgId: string, adminProvisionEnterpriseBody: AdminProvisionEnterpriseBody, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'orgId' is not null or undefined
+            assertParamExists('platformAdminProvisionEnterprise', 'orgId', orgId)
+            // verify required parameter 'adminProvisionEnterpriseBody' is not null or undefined
+            assertParamExists('platformAdminProvisionEnterprise', 'adminProvisionEnterpriseBody', adminProvisionEnterpriseBody)
+            const localVarPath = `/api/admin/orgs/{orgId}/provision-enterprise`
+                .replace('{orgId}', encodeURIComponent(String(orgId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(adminProvisionEnterpriseBody, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * AdminApi - functional programming interface
+ */
+export const AdminApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = AdminApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Paginated AuditLog entries. Omit orgId for cross-org recent events. 
+         * @summary List audit log events
+         * @param {string} [orgId] 
+         * @param {string} [action] 
+         * @param {string} [actionPrefix] Prefix match on action (e.g. org.)
+         * @param {string} [resource] 
+         * @param {GetAdminAuditEventsSeverityEnum} [severity] 
+         * @param {number} [page] 
+         * @param {number} [limit] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getAdminAuditEvents(orgId?: string, action?: string, actionPrefix?: string, resource?: string, severity?: GetAdminAuditEventsSeverityEnum, page?: number, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetAdminAuditEvents200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getAdminAuditEvents(orgId, action, actionPrefix, resource, severity, page, limit, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.getAdminAuditEvents']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Includes limits, usage, effective entitlements (getEntitlements), redacted billing summary, customDomains (from allowedDomains), deploymentType, dedicated, txPlan, settings, enterprise fields. 
+         * @summary Get organization detail with projects and users (Admin)
+         * @param {string} orgId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getDashboardOrganizationDetail(orgId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetDashboardOrganizationDetail200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getDashboardOrganizationDetail(orgId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.getDashboardOrganizationDetail']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Customer orgs only (`isPlatformShell` excluded). Default sort by `name` ascending; override with `sort` / `sortDir`. Optional `q` (name/slug substring, or 24-char hex org `_id`), `plan`, `isActive`. If query param `limit` is sent, response is paginated (`page`, `pages`, `total`). Without `limit`, all matching orgs are returned (small deployments). 
+         * @summary List all organizations (Admin)
+         * @param {string} [q] Case-insensitive match on name or slug
+         * @param {GetDashboardOrganizationsPlanEnum} [plan] 
+         * @param {GetDashboardOrganizationsIsActiveEnum} [isActive] 
+         * @param {number} [page] 
+         * @param {number} [limit] When present, enables pagination
+         * @param {GetDashboardOrganizationsSortEnum} [sort] 
+         * @param {GetDashboardOrganizationsSortDirEnum} [sortDir] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getDashboardOrganizations(q?: string, plan?: GetDashboardOrganizationsPlanEnum, isActive?: GetDashboardOrganizationsIsActiveEnum, page?: number, limit?: number, sort?: GetDashboardOrganizationsSortEnum, sortDir?: GetDashboardOrganizationsSortDirEnum, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetDashboardOrganizations200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getDashboardOrganizations(q, plan, isActive, page, limit, sort, sortDir, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.getDashboardOrganizations']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Sets `status` to `active`. When `CUSTOM_DOMAIN_LEGACY_ACTIVATE_FROM_DNS_VERIFIED` is false (strict pipeline), requires `platform_dns_pending_review`. Default legacy mode allows activation from `dns_verified` for backward compatibility.  **Fly ACME default automation:** Org **`verify-platform-dns`** typically sets **`active`** when the Fly certificate is ready; staff **`activate`** is optional (e.g. notifications or edge cases). With **`CUSTOM_DOMAIN_FLY_LEGACY_STAFF_PIPELINE=true`**, org go-live may still require this call unless **`CUSTOM_DOMAIN_FLY_AUTO_ACTIVATE=true`**. 
+         * @summary Mark custom domain live (legacy / non-Fly / manual completion)
+         * @param {string} orgId 
+         * @param {string} hostname 
+         * @param {PlatformAdminActivateOrgCustomDomainRequest} [platformAdminActivateOrgCustomDomainRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async platformAdminActivateOrgCustomDomain(orgId: string, hostname: string, platformAdminActivateOrgCustomDomainRequest?: PlatformAdminActivateOrgCustomDomainRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AdminCustomDomainMutationResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.platformAdminActivateOrgCustomDomain(orgId, hostname, platformAdminActivateOrgCustomDomainRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.platformAdminActivateOrgCustomDomain']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * **Legacy / manual pipeline:** From `cname_pending_staff` or legacy `dns_verified` → `cname_approved`. Optional **`verifyDns`** checks the public CNAME chain against **`routingCnameTarget`** (Fly **`dns_requirements.cname`** when stored, else **`CUSTOM_DOMAIN_API_CNAME_TARGET`**).  **Not used** on the default Fly ACME deployment: Mudbase **`verify-dns`** advances to **`cname_approved`** when Fly returns DNS requirements and **`CUSTOM_DOMAIN_FLY_LEGACY_STAFF_PIPELINE`** is unset. 
+         * @summary Approve routing CNAME (legacy / non-automated pipeline)
+         * @param {string} orgId 
+         * @param {string} hostname 
+         * @param {AdminApproveOrgDomainCnameRequest} [adminApproveOrgDomainCnameRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async platformAdminApproveOrgCustomDomainCname(orgId: string, hostname: string, adminApproveOrgDomainCnameRequest?: AdminApproveOrgDomainCnameRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AdminCustomDomainMutationResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.platformAdminApproveOrgCustomDomainCname(orgId, hostname, adminApproveOrgDomainCnameRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.platformAdminApproveOrgCustomDomainCname']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns a payment URL. Enterprise pricing uses org.billing.contractAmountCents unless amountCents or chargeAmountCents is set. Optional sendEmail uses template org_billing_checkout. 
+         * @summary Create checkout link for org (platform admin)
+         * @param {string} orgId 
+         * @param {AdminBillingCheckoutLinkRequest} adminBillingCheckoutLinkRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async platformAdminCreateBillingCheckoutLink(orgId: string, adminBillingCheckoutLinkRequest: AdminBillingCheckoutLinkRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.platformAdminCreateBillingCheckoutLink(orgId, adminBillingCheckoutLinkRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.platformAdminCreateBillingCheckoutLink']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Same request body as checkout-link. Creates or reuses a platform payment plan, then returns a payment URL with payment_plan set. First charge uses tx_ref prefix mudbase_org_sub_. Renewals for non-mudbase_ references are processed via billing webhooks. Optional sendEmail uses template org_billing_checkout with recurring labeling. 
+         * @summary Create subscription (payment plan) checkout link for org (platform admin)
+         * @param {string} orgId 
+         * @param {AdminBillingCheckoutLinkRequest} adminBillingCheckoutLinkRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async platformAdminCreateBillingSubscriptionLink(orgId: string, adminBillingCheckoutLinkRequest: AdminBillingCheckoutLinkRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.platformAdminCreateBillingSubscriptionLink(orgId, adminBillingCheckoutLinkRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.platformAdminCreateBillingSubscriptionLink']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Enable/disable Growth/Scale custom domain add-on (JWT admin)
+         * @param {string} orgId 
+         * @param {PlatformAdminCustomDomainAddonRequest} platformAdminCustomDomainAddonRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async platformAdminCustomDomainAddon(orgId: string, platformAdminCustomDomainAddonRequest: PlatformAdminCustomDomainAddonRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.platformAdminCustomDomainAddon(orgId, platformAdminCustomDomainAddonRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.platformAdminCustomDomainAddon']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Clears user.org and user.project; does not delete the user account.
+         * @summary Detach user from organization (platform admin)
+         * @param {string} orgId 
+         * @param {string} userId 
+         * @param {PlatformAdminDetachMemberRequest} [platformAdminDetachMemberRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async platformAdminDetachMember(orgId: string, userId: string, platformAdminDetachMemberRequest?: PlatformAdminDetachMemberRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.platformAdminDetachMember(orgId, userId, platformAdminDetachMemberRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.platformAdminDetachMember']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Batch custom-domain DNS recheck (JWT admin)
+         * @param {PlatformAdminDomainDnsRecheckBatchRequest} [platformAdminDomainDnsRecheckBatchRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async platformAdminDomainDnsRecheckBatch(platformAdminDomainDnsRecheckBatchRequest?: PlatformAdminDomainDnsRecheckBatchRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.platformAdminDomainDnsRecheckBatch(platformAdminDomainDnsRecheckBatchRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.platformAdminDomainDnsRecheckBatch']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary List in-memory security events (platform admin)
+         * @param {PlatformAdminGetSecurityEventsWindowEnum} [window] 
+         * @param {string} [type] 
+         * @param {number} [limit] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async platformAdminGetSecurityEvents(window?: PlatformAdminGetSecurityEventsWindowEnum, type?: string, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.platformAdminGetSecurityEvents(window, type, limit, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.platformAdminGetSecurityEvents']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Set org member role (platform admin)
+         * @param {string} orgId 
+         * @param {string} userId 
+         * @param {AdminMemberRolePatchRequest} adminMemberRolePatchRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async platformAdminPatchMemberRole(orgId: string, userId: string, adminMemberRolePatchRequest: AdminMemberRolePatchRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.platformAdminPatchMemberRole(orgId, userId, adminMemberRolePatchRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.platformAdminPatchMemberRole']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Patch staff billing contract metadata (platform admin)
+         * @param {string} orgId 
+         * @param {AdminOrgBillingContractPatchRequest} adminOrgBillingContractPatchRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async platformAdminPatchOrgBillingContract(orgId: string, adminOrgBillingContractPatchRequest: AdminOrgBillingContractPatchRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.platformAdminPatchOrgBillingContract(orgId, adminOrgBillingContractPatchRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.platformAdminPatchOrgBillingContract']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * **Manual step-3 path** (no Fly ACME, or staff override): Sets `platformDnsVerification` and moves `cname_approved` → `platform_dns_pending`. When `resetCustomerPlatformDnsSubmission` is true and status was `platform_dns_pending_review`, returns customer to `platform_dns_pending` and clears their submission timestamp. By default (`notifyOrg` not false), emails **`org.billing.email`** with record type, name, content, and TTL so the customer can add DNS and call **POST .../verify-platform-dns**. Set `CUSTOM_DOMAIN_CONSOLE_URL` for a console link in that email.  **Fly ACME (default):** Not part of the org go-live path; **`dnsRecords`** come from Fly. This endpoint returns **`400` `custom_domain_invalid_state`** unless **`CUSTOM_DOMAIN_FLY_ALLOW_STAFF_PLATFORM_DNS_OVERRIDE=true`** (support-only override). 
+         * @summary Publish platform DNS verification record for the customer (non-Fly / legacy)
+         * @param {string} orgId 
+         * @param {string} hostname 
+         * @param {AdminPlatformDnsVerificationPatchRequest} adminPlatformDnsVerificationPatchRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async platformAdminPatchOrgCustomDomainPlatformDnsVerification(orgId: string, hostname: string, adminPlatformDnsVerificationPatchRequest: AdminPlatformDnsVerificationPatchRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AdminCustomDomainMutationResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.platformAdminPatchOrgCustomDomainPlatformDnsVerification(orgId, hostname, adminPlatformDnsVerificationPatchRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.platformAdminPatchOrgCustomDomainPlatformDnsVerification']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Merges the JSON body into `Org.limits`. Effective caps are `PLANS[plan].limits` merged with overrides (`getEntitlements`). For orgs not on `enterprise`, each finite numeric value must not exceed the Scale plan default for that key. `null` means unlimited (same as plan semantics). Recorded in audit as `org.limits_update`. 
+         * @summary Patch per-org limit overrides
+         * @param {string} orgId 
+         * @param {AdminOrgLimitsPatchRequest} adminOrgLimitsPatchRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async platformAdminPatchOrgLimits(orgId: string, adminOrgLimitsPatchRequest: AdminOrgLimitsPatchRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PlatformAdminPatchOrgLimits200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.platformAdminPatchOrgLimits(orgId, adminOrgLimitsPatchRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.platformAdminPatchOrgLimits']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Sets plan and resets Org.limits to plan defaults. Applies storage downgrade markers and clears dedicated infra when leaving enterprise. Audit org.admin_plan_change. 
+         * @summary Set organization billing plan (platform admin)
+         * @param {string} orgId 
+         * @param {AdminOrgPlanPatchRequest} adminOrgPlanPatchRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async platformAdminPatchOrgPlan(orgId: string, adminOrgPlanPatchRequest: AdminOrgPlanPatchRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.platformAdminPatchOrgPlan(orgId, adminOrgPlanPatchRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.platformAdminPatchOrgPlan']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Set organization active flag and platform notes (platform admin)
+         * @param {string} orgId 
+         * @param {AdminOrgStatusPatchRequest} adminOrgStatusPatchRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async platformAdminPatchOrgStatus(orgId: string, adminOrgStatusPatchRequest: AdminOrgStatusPatchRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.platformAdminPatchOrgStatus(orgId, adminOrgStatusPatchRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.platformAdminPatchOrgStatus']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Patch project (platform admin)
+         * @param {string} orgId 
+         * @param {string} projectId 
+         * @param {AdminProjectPatchRequest} adminProjectPatchRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async platformAdminPatchProject(orgId: string, projectId: string, adminProjectPatchRequest: AdminProjectPatchRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.platformAdminPatchProject(orgId, projectId, adminProjectPatchRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.platformAdminPatchProject']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Same as POST /internal/provision-enterprise; orgId from path.
+         * @summary Provision enterprise dedicated endpoints (JWT admin)
+         * @param {string} orgId 
+         * @param {AdminProvisionEnterpriseBody} adminProvisionEnterpriseBody 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async platformAdminProvisionEnterprise(orgId: string, adminProvisionEnterpriseBody: AdminProvisionEnterpriseBody, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.platformAdminProvisionEnterprise(orgId, adminProvisionEnterpriseBody, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AdminApi.platformAdminProvisionEnterprise']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * AdminApi - factory interface
+ */
+export const AdminApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = AdminApiFp(configuration)
+    return {
+        /**
+         * Paginated AuditLog entries. Omit orgId for cross-org recent events. 
+         * @summary List audit log events
+         * @param {AdminApiGetAdminAuditEventsRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getAdminAuditEvents(requestParameters: AdminApiGetAdminAuditEventsRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<GetAdminAuditEvents200Response> {
+            return localVarFp.getAdminAuditEvents(requestParameters.orgId, requestParameters.action, requestParameters.actionPrefix, requestParameters.resource, requestParameters.severity, requestParameters.page, requestParameters.limit, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Includes limits, usage, effective entitlements (getEntitlements), redacted billing summary, customDomains (from allowedDomains), deploymentType, dedicated, txPlan, settings, enterprise fields. 
+         * @summary Get organization detail with projects and users (Admin)
+         * @param {AdminApiGetDashboardOrganizationDetailRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getDashboardOrganizationDetail(requestParameters: AdminApiGetDashboardOrganizationDetailRequest, options?: RawAxiosRequestConfig): AxiosPromise<GetDashboardOrganizationDetail200Response> {
+            return localVarFp.getDashboardOrganizationDetail(requestParameters.orgId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Customer orgs only (`isPlatformShell` excluded). Default sort by `name` ascending; override with `sort` / `sortDir`. Optional `q` (name/slug substring, or 24-char hex org `_id`), `plan`, `isActive`. If query param `limit` is sent, response is paginated (`page`, `pages`, `total`). Without `limit`, all matching orgs are returned (small deployments). 
+         * @summary List all organizations (Admin)
+         * @param {AdminApiGetDashboardOrganizationsRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getDashboardOrganizations(requestParameters: AdminApiGetDashboardOrganizationsRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<GetDashboardOrganizations200Response> {
+            return localVarFp.getDashboardOrganizations(requestParameters.q, requestParameters.plan, requestParameters.isActive, requestParameters.page, requestParameters.limit, requestParameters.sort, requestParameters.sortDir, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Sets `status` to `active`. When `CUSTOM_DOMAIN_LEGACY_ACTIVATE_FROM_DNS_VERIFIED` is false (strict pipeline), requires `platform_dns_pending_review`. Default legacy mode allows activation from `dns_verified` for backward compatibility.  **Fly ACME default automation:** Org **`verify-platform-dns`** typically sets **`active`** when the Fly certificate is ready; staff **`activate`** is optional (e.g. notifications or edge cases). With **`CUSTOM_DOMAIN_FLY_LEGACY_STAFF_PIPELINE=true`**, org go-live may still require this call unless **`CUSTOM_DOMAIN_FLY_AUTO_ACTIVATE=true`**. 
+         * @summary Mark custom domain live (legacy / non-Fly / manual completion)
+         * @param {AdminApiPlatformAdminActivateOrgCustomDomainRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminActivateOrgCustomDomain(requestParameters: AdminApiPlatformAdminActivateOrgCustomDomainRequest, options?: RawAxiosRequestConfig): AxiosPromise<AdminCustomDomainMutationResponse> {
+            return localVarFp.platformAdminActivateOrgCustomDomain(requestParameters.orgId, requestParameters.hostname, requestParameters.platformAdminActivateOrgCustomDomainRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * **Legacy / manual pipeline:** From `cname_pending_staff` or legacy `dns_verified` → `cname_approved`. Optional **`verifyDns`** checks the public CNAME chain against **`routingCnameTarget`** (Fly **`dns_requirements.cname`** when stored, else **`CUSTOM_DOMAIN_API_CNAME_TARGET`**).  **Not used** on the default Fly ACME deployment: Mudbase **`verify-dns`** advances to **`cname_approved`** when Fly returns DNS requirements and **`CUSTOM_DOMAIN_FLY_LEGACY_STAFF_PIPELINE`** is unset. 
+         * @summary Approve routing CNAME (legacy / non-automated pipeline)
+         * @param {AdminApiPlatformAdminApproveOrgCustomDomainCnameRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminApproveOrgCustomDomainCname(requestParameters: AdminApiPlatformAdminApproveOrgCustomDomainCnameRequest, options?: RawAxiosRequestConfig): AxiosPromise<AdminCustomDomainMutationResponse> {
+            return localVarFp.platformAdminApproveOrgCustomDomainCname(requestParameters.orgId, requestParameters.hostname, requestParameters.adminApproveOrgDomainCnameRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns a payment URL. Enterprise pricing uses org.billing.contractAmountCents unless amountCents or chargeAmountCents is set. Optional sendEmail uses template org_billing_checkout. 
+         * @summary Create checkout link for org (platform admin)
+         * @param {AdminApiPlatformAdminCreateBillingCheckoutLinkRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminCreateBillingCheckoutLink(requestParameters: AdminApiPlatformAdminCreateBillingCheckoutLinkRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.platformAdminCreateBillingCheckoutLink(requestParameters.orgId, requestParameters.adminBillingCheckoutLinkRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Same request body as checkout-link. Creates or reuses a platform payment plan, then returns a payment URL with payment_plan set. First charge uses tx_ref prefix mudbase_org_sub_. Renewals for non-mudbase_ references are processed via billing webhooks. Optional sendEmail uses template org_billing_checkout with recurring labeling. 
+         * @summary Create subscription (payment plan) checkout link for org (platform admin)
+         * @param {AdminApiPlatformAdminCreateBillingSubscriptionLinkRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminCreateBillingSubscriptionLink(requestParameters: AdminApiPlatformAdminCreateBillingSubscriptionLinkRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.platformAdminCreateBillingSubscriptionLink(requestParameters.orgId, requestParameters.adminBillingCheckoutLinkRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Enable/disable Growth/Scale custom domain add-on (JWT admin)
+         * @param {AdminApiPlatformAdminCustomDomainAddonRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminCustomDomainAddon(requestParameters: AdminApiPlatformAdminCustomDomainAddonRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.platformAdminCustomDomainAddon(requestParameters.orgId, requestParameters.platformAdminCustomDomainAddonRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Clears user.org and user.project; does not delete the user account.
+         * @summary Detach user from organization (platform admin)
+         * @param {AdminApiPlatformAdminDetachMemberRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminDetachMember(requestParameters: AdminApiPlatformAdminDetachMemberRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.platformAdminDetachMember(requestParameters.orgId, requestParameters.userId, requestParameters.platformAdminDetachMemberRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Batch custom-domain DNS recheck (JWT admin)
+         * @param {AdminApiPlatformAdminDomainDnsRecheckBatchRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminDomainDnsRecheckBatch(requestParameters: AdminApiPlatformAdminDomainDnsRecheckBatchRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.platformAdminDomainDnsRecheckBatch(requestParameters.platformAdminDomainDnsRecheckBatchRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary List in-memory security events (platform admin)
+         * @param {AdminApiPlatformAdminGetSecurityEventsRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminGetSecurityEvents(requestParameters: AdminApiPlatformAdminGetSecurityEventsRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.platformAdminGetSecurityEvents(requestParameters.window, requestParameters.type, requestParameters.limit, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Set org member role (platform admin)
+         * @param {AdminApiPlatformAdminPatchMemberRoleRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminPatchMemberRole(requestParameters: AdminApiPlatformAdminPatchMemberRoleRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.platformAdminPatchMemberRole(requestParameters.orgId, requestParameters.userId, requestParameters.adminMemberRolePatchRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Patch staff billing contract metadata (platform admin)
+         * @param {AdminApiPlatformAdminPatchOrgBillingContractRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminPatchOrgBillingContract(requestParameters: AdminApiPlatformAdminPatchOrgBillingContractRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.platformAdminPatchOrgBillingContract(requestParameters.orgId, requestParameters.adminOrgBillingContractPatchRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * **Manual step-3 path** (no Fly ACME, or staff override): Sets `platformDnsVerification` and moves `cname_approved` → `platform_dns_pending`. When `resetCustomerPlatformDnsSubmission` is true and status was `platform_dns_pending_review`, returns customer to `platform_dns_pending` and clears their submission timestamp. By default (`notifyOrg` not false), emails **`org.billing.email`** with record type, name, content, and TTL so the customer can add DNS and call **POST .../verify-platform-dns**. Set `CUSTOM_DOMAIN_CONSOLE_URL` for a console link in that email.  **Fly ACME (default):** Not part of the org go-live path; **`dnsRecords`** come from Fly. This endpoint returns **`400` `custom_domain_invalid_state`** unless **`CUSTOM_DOMAIN_FLY_ALLOW_STAFF_PLATFORM_DNS_OVERRIDE=true`** (support-only override). 
+         * @summary Publish platform DNS verification record for the customer (non-Fly / legacy)
+         * @param {AdminApiPlatformAdminPatchOrgCustomDomainPlatformDnsVerificationRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminPatchOrgCustomDomainPlatformDnsVerification(requestParameters: AdminApiPlatformAdminPatchOrgCustomDomainPlatformDnsVerificationRequest, options?: RawAxiosRequestConfig): AxiosPromise<AdminCustomDomainMutationResponse> {
+            return localVarFp.platformAdminPatchOrgCustomDomainPlatformDnsVerification(requestParameters.orgId, requestParameters.hostname, requestParameters.adminPlatformDnsVerificationPatchRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Merges the JSON body into `Org.limits`. Effective caps are `PLANS[plan].limits` merged with overrides (`getEntitlements`). For orgs not on `enterprise`, each finite numeric value must not exceed the Scale plan default for that key. `null` means unlimited (same as plan semantics). Recorded in audit as `org.limits_update`. 
+         * @summary Patch per-org limit overrides
+         * @param {AdminApiPlatformAdminPatchOrgLimitsRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminPatchOrgLimits(requestParameters: AdminApiPlatformAdminPatchOrgLimitsRequest, options?: RawAxiosRequestConfig): AxiosPromise<PlatformAdminPatchOrgLimits200Response> {
+            return localVarFp.platformAdminPatchOrgLimits(requestParameters.orgId, requestParameters.adminOrgLimitsPatchRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Sets plan and resets Org.limits to plan defaults. Applies storage downgrade markers and clears dedicated infra when leaving enterprise. Audit org.admin_plan_change. 
+         * @summary Set organization billing plan (platform admin)
+         * @param {AdminApiPlatformAdminPatchOrgPlanRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminPatchOrgPlan(requestParameters: AdminApiPlatformAdminPatchOrgPlanRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.platformAdminPatchOrgPlan(requestParameters.orgId, requestParameters.adminOrgPlanPatchRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Set organization active flag and platform notes (platform admin)
+         * @param {AdminApiPlatformAdminPatchOrgStatusRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminPatchOrgStatus(requestParameters: AdminApiPlatformAdminPatchOrgStatusRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.platformAdminPatchOrgStatus(requestParameters.orgId, requestParameters.adminOrgStatusPatchRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Patch project (platform admin)
+         * @param {AdminApiPlatformAdminPatchProjectRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminPatchProject(requestParameters: AdminApiPlatformAdminPatchProjectRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.platformAdminPatchProject(requestParameters.orgId, requestParameters.projectId, requestParameters.adminProjectPatchRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Same as POST /internal/provision-enterprise; orgId from path.
+         * @summary Provision enterprise dedicated endpoints (JWT admin)
+         * @param {AdminApiPlatformAdminProvisionEnterpriseRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        platformAdminProvisionEnterprise(requestParameters: AdminApiPlatformAdminProvisionEnterpriseRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.platformAdminProvisionEnterprise(requestParameters.orgId, requestParameters.adminProvisionEnterpriseBody, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * Request parameters for getAdminAuditEvents operation in AdminApi.
+ */
+export interface AdminApiGetAdminAuditEventsRequest {
+    readonly orgId?: string
+
+    readonly action?: string
+
+    /**
+     * Prefix match on action (e.g. org.)
+     */
+    readonly actionPrefix?: string
+
+    readonly resource?: string
+
+    readonly severity?: GetAdminAuditEventsSeverityEnum
+
+    readonly page?: number
+
+    readonly limit?: number
+}
+
+/**
+ * Request parameters for getDashboardOrganizationDetail operation in AdminApi.
+ */
+export interface AdminApiGetDashboardOrganizationDetailRequest {
+    readonly orgId: string
+}
+
+/**
+ * Request parameters for getDashboardOrganizations operation in AdminApi.
+ */
+export interface AdminApiGetDashboardOrganizationsRequest {
+    /**
+     * Case-insensitive match on name or slug
+     */
+    readonly q?: string
+
+    readonly plan?: GetDashboardOrganizationsPlanEnum
+
+    readonly isActive?: GetDashboardOrganizationsIsActiveEnum
+
+    readonly page?: number
+
+    /**
+     * When present, enables pagination
+     */
+    readonly limit?: number
+
+    readonly sort?: GetDashboardOrganizationsSortEnum
+
+    readonly sortDir?: GetDashboardOrganizationsSortDirEnum
+}
+
+/**
+ * Request parameters for platformAdminActivateOrgCustomDomain operation in AdminApi.
+ */
+export interface AdminApiPlatformAdminActivateOrgCustomDomainRequest {
+    readonly orgId: string
+
+    readonly hostname: string
+
+    readonly platformAdminActivateOrgCustomDomainRequest?: PlatformAdminActivateOrgCustomDomainRequest
+}
+
+/**
+ * Request parameters for platformAdminApproveOrgCustomDomainCname operation in AdminApi.
+ */
+export interface AdminApiPlatformAdminApproveOrgCustomDomainCnameRequest {
+    readonly orgId: string
+
+    readonly hostname: string
+
+    readonly adminApproveOrgDomainCnameRequest?: AdminApproveOrgDomainCnameRequest
+}
+
+/**
+ * Request parameters for platformAdminCreateBillingCheckoutLink operation in AdminApi.
+ */
+export interface AdminApiPlatformAdminCreateBillingCheckoutLinkRequest {
+    readonly orgId: string
+
+    readonly adminBillingCheckoutLinkRequest: AdminBillingCheckoutLinkRequest
+}
+
+/**
+ * Request parameters for platformAdminCreateBillingSubscriptionLink operation in AdminApi.
+ */
+export interface AdminApiPlatformAdminCreateBillingSubscriptionLinkRequest {
+    readonly orgId: string
+
+    readonly adminBillingCheckoutLinkRequest: AdminBillingCheckoutLinkRequest
+}
+
+/**
+ * Request parameters for platformAdminCustomDomainAddon operation in AdminApi.
+ */
+export interface AdminApiPlatformAdminCustomDomainAddonRequest {
+    readonly orgId: string
+
+    readonly platformAdminCustomDomainAddonRequest: PlatformAdminCustomDomainAddonRequest
+}
+
+/**
+ * Request parameters for platformAdminDetachMember operation in AdminApi.
+ */
+export interface AdminApiPlatformAdminDetachMemberRequest {
+    readonly orgId: string
+
+    readonly userId: string
+
+    readonly platformAdminDetachMemberRequest?: PlatformAdminDetachMemberRequest
+}
+
+/**
+ * Request parameters for platformAdminDomainDnsRecheckBatch operation in AdminApi.
+ */
+export interface AdminApiPlatformAdminDomainDnsRecheckBatchRequest {
+    readonly platformAdminDomainDnsRecheckBatchRequest?: PlatformAdminDomainDnsRecheckBatchRequest
+}
+
+/**
+ * Request parameters for platformAdminGetSecurityEvents operation in AdminApi.
+ */
+export interface AdminApiPlatformAdminGetSecurityEventsRequest {
+    readonly window?: PlatformAdminGetSecurityEventsWindowEnum
+
+    readonly type?: string
+
+    readonly limit?: number
+}
+
+/**
+ * Request parameters for platformAdminPatchMemberRole operation in AdminApi.
+ */
+export interface AdminApiPlatformAdminPatchMemberRoleRequest {
+    readonly orgId: string
+
+    readonly userId: string
+
+    readonly adminMemberRolePatchRequest: AdminMemberRolePatchRequest
+}
+
+/**
+ * Request parameters for platformAdminPatchOrgBillingContract operation in AdminApi.
+ */
+export interface AdminApiPlatformAdminPatchOrgBillingContractRequest {
+    readonly orgId: string
+
+    readonly adminOrgBillingContractPatchRequest: AdminOrgBillingContractPatchRequest
+}
+
+/**
+ * Request parameters for platformAdminPatchOrgCustomDomainPlatformDnsVerification operation in AdminApi.
+ */
+export interface AdminApiPlatformAdminPatchOrgCustomDomainPlatformDnsVerificationRequest {
+    readonly orgId: string
+
+    readonly hostname: string
+
+    readonly adminPlatformDnsVerificationPatchRequest: AdminPlatformDnsVerificationPatchRequest
+}
+
+/**
+ * Request parameters for platformAdminPatchOrgLimits operation in AdminApi.
+ */
+export interface AdminApiPlatformAdminPatchOrgLimitsRequest {
+    readonly orgId: string
+
+    readonly adminOrgLimitsPatchRequest: AdminOrgLimitsPatchRequest
+}
+
+/**
+ * Request parameters for platformAdminPatchOrgPlan operation in AdminApi.
+ */
+export interface AdminApiPlatformAdminPatchOrgPlanRequest {
+    readonly orgId: string
+
+    readonly adminOrgPlanPatchRequest: AdminOrgPlanPatchRequest
+}
+
+/**
+ * Request parameters for platformAdminPatchOrgStatus operation in AdminApi.
+ */
+export interface AdminApiPlatformAdminPatchOrgStatusRequest {
+    readonly orgId: string
+
+    readonly adminOrgStatusPatchRequest: AdminOrgStatusPatchRequest
+}
+
+/**
+ * Request parameters for platformAdminPatchProject operation in AdminApi.
+ */
+export interface AdminApiPlatformAdminPatchProjectRequest {
+    readonly orgId: string
+
+    readonly projectId: string
+
+    readonly adminProjectPatchRequest: AdminProjectPatchRequest
+}
+
+/**
+ * Request parameters for platformAdminProvisionEnterprise operation in AdminApi.
+ */
+export interface AdminApiPlatformAdminProvisionEnterpriseRequest {
+    readonly orgId: string
+
+    readonly adminProvisionEnterpriseBody: AdminProvisionEnterpriseBody
+}
+
+/**
+ * AdminApi - object-oriented interface
+ */
+export class AdminApi extends BaseAPI {
+    /**
+     * Paginated AuditLog entries. Omit orgId for cross-org recent events. 
+     * @summary List audit log events
+     * @param {AdminApiGetAdminAuditEventsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public getAdminAuditEvents(requestParameters: AdminApiGetAdminAuditEventsRequest = {}, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).getAdminAuditEvents(requestParameters.orgId, requestParameters.action, requestParameters.actionPrefix, requestParameters.resource, requestParameters.severity, requestParameters.page, requestParameters.limit, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Includes limits, usage, effective entitlements (getEntitlements), redacted billing summary, customDomains (from allowedDomains), deploymentType, dedicated, txPlan, settings, enterprise fields. 
+     * @summary Get organization detail with projects and users (Admin)
+     * @param {AdminApiGetDashboardOrganizationDetailRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public getDashboardOrganizationDetail(requestParameters: AdminApiGetDashboardOrganizationDetailRequest, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).getDashboardOrganizationDetail(requestParameters.orgId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Customer orgs only (`isPlatformShell` excluded). Default sort by `name` ascending; override with `sort` / `sortDir`. Optional `q` (name/slug substring, or 24-char hex org `_id`), `plan`, `isActive`. If query param `limit` is sent, response is paginated (`page`, `pages`, `total`). Without `limit`, all matching orgs are returned (small deployments). 
+     * @summary List all organizations (Admin)
+     * @param {AdminApiGetDashboardOrganizationsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public getDashboardOrganizations(requestParameters: AdminApiGetDashboardOrganizationsRequest = {}, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).getDashboardOrganizations(requestParameters.q, requestParameters.plan, requestParameters.isActive, requestParameters.page, requestParameters.limit, requestParameters.sort, requestParameters.sortDir, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Sets `status` to `active`. When `CUSTOM_DOMAIN_LEGACY_ACTIVATE_FROM_DNS_VERIFIED` is false (strict pipeline), requires `platform_dns_pending_review`. Default legacy mode allows activation from `dns_verified` for backward compatibility.  **Fly ACME default automation:** Org **`verify-platform-dns`** typically sets **`active`** when the Fly certificate is ready; staff **`activate`** is optional (e.g. notifications or edge cases). With **`CUSTOM_DOMAIN_FLY_LEGACY_STAFF_PIPELINE=true`**, org go-live may still require this call unless **`CUSTOM_DOMAIN_FLY_AUTO_ACTIVATE=true`**. 
+     * @summary Mark custom domain live (legacy / non-Fly / manual completion)
+     * @param {AdminApiPlatformAdminActivateOrgCustomDomainRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public platformAdminActivateOrgCustomDomain(requestParameters: AdminApiPlatformAdminActivateOrgCustomDomainRequest, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).platformAdminActivateOrgCustomDomain(requestParameters.orgId, requestParameters.hostname, requestParameters.platformAdminActivateOrgCustomDomainRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * **Legacy / manual pipeline:** From `cname_pending_staff` or legacy `dns_verified` → `cname_approved`. Optional **`verifyDns`** checks the public CNAME chain against **`routingCnameTarget`** (Fly **`dns_requirements.cname`** when stored, else **`CUSTOM_DOMAIN_API_CNAME_TARGET`**).  **Not used** on the default Fly ACME deployment: Mudbase **`verify-dns`** advances to **`cname_approved`** when Fly returns DNS requirements and **`CUSTOM_DOMAIN_FLY_LEGACY_STAFF_PIPELINE`** is unset. 
+     * @summary Approve routing CNAME (legacy / non-automated pipeline)
+     * @param {AdminApiPlatformAdminApproveOrgCustomDomainCnameRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public platformAdminApproveOrgCustomDomainCname(requestParameters: AdminApiPlatformAdminApproveOrgCustomDomainCnameRequest, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).platformAdminApproveOrgCustomDomainCname(requestParameters.orgId, requestParameters.hostname, requestParameters.adminApproveOrgDomainCnameRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns a payment URL. Enterprise pricing uses org.billing.contractAmountCents unless amountCents or chargeAmountCents is set. Optional sendEmail uses template org_billing_checkout. 
+     * @summary Create checkout link for org (platform admin)
+     * @param {AdminApiPlatformAdminCreateBillingCheckoutLinkRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public platformAdminCreateBillingCheckoutLink(requestParameters: AdminApiPlatformAdminCreateBillingCheckoutLinkRequest, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).platformAdminCreateBillingCheckoutLink(requestParameters.orgId, requestParameters.adminBillingCheckoutLinkRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Same request body as checkout-link. Creates or reuses a platform payment plan, then returns a payment URL with payment_plan set. First charge uses tx_ref prefix mudbase_org_sub_. Renewals for non-mudbase_ references are processed via billing webhooks. Optional sendEmail uses template org_billing_checkout with recurring labeling. 
+     * @summary Create subscription (payment plan) checkout link for org (platform admin)
+     * @param {AdminApiPlatformAdminCreateBillingSubscriptionLinkRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public platformAdminCreateBillingSubscriptionLink(requestParameters: AdminApiPlatformAdminCreateBillingSubscriptionLinkRequest, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).platformAdminCreateBillingSubscriptionLink(requestParameters.orgId, requestParameters.adminBillingCheckoutLinkRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Enable/disable Growth/Scale custom domain add-on (JWT admin)
+     * @param {AdminApiPlatformAdminCustomDomainAddonRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public platformAdminCustomDomainAddon(requestParameters: AdminApiPlatformAdminCustomDomainAddonRequest, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).platformAdminCustomDomainAddon(requestParameters.orgId, requestParameters.platformAdminCustomDomainAddonRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Clears user.org and user.project; does not delete the user account.
+     * @summary Detach user from organization (platform admin)
+     * @param {AdminApiPlatformAdminDetachMemberRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public platformAdminDetachMember(requestParameters: AdminApiPlatformAdminDetachMemberRequest, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).platformAdminDetachMember(requestParameters.orgId, requestParameters.userId, requestParameters.platformAdminDetachMemberRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Batch custom-domain DNS recheck (JWT admin)
+     * @param {AdminApiPlatformAdminDomainDnsRecheckBatchRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public platformAdminDomainDnsRecheckBatch(requestParameters: AdminApiPlatformAdminDomainDnsRecheckBatchRequest = {}, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).platformAdminDomainDnsRecheckBatch(requestParameters.platformAdminDomainDnsRecheckBatchRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary List in-memory security events (platform admin)
+     * @param {AdminApiPlatformAdminGetSecurityEventsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public platformAdminGetSecurityEvents(requestParameters: AdminApiPlatformAdminGetSecurityEventsRequest = {}, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).platformAdminGetSecurityEvents(requestParameters.window, requestParameters.type, requestParameters.limit, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Set org member role (platform admin)
+     * @param {AdminApiPlatformAdminPatchMemberRoleRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public platformAdminPatchMemberRole(requestParameters: AdminApiPlatformAdminPatchMemberRoleRequest, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).platformAdminPatchMemberRole(requestParameters.orgId, requestParameters.userId, requestParameters.adminMemberRolePatchRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Patch staff billing contract metadata (platform admin)
+     * @param {AdminApiPlatformAdminPatchOrgBillingContractRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public platformAdminPatchOrgBillingContract(requestParameters: AdminApiPlatformAdminPatchOrgBillingContractRequest, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).platformAdminPatchOrgBillingContract(requestParameters.orgId, requestParameters.adminOrgBillingContractPatchRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * **Manual step-3 path** (no Fly ACME, or staff override): Sets `platformDnsVerification` and moves `cname_approved` → `platform_dns_pending`. When `resetCustomerPlatformDnsSubmission` is true and status was `platform_dns_pending_review`, returns customer to `platform_dns_pending` and clears their submission timestamp. By default (`notifyOrg` not false), emails **`org.billing.email`** with record type, name, content, and TTL so the customer can add DNS and call **POST .../verify-platform-dns**. Set `CUSTOM_DOMAIN_CONSOLE_URL` for a console link in that email.  **Fly ACME (default):** Not part of the org go-live path; **`dnsRecords`** come from Fly. This endpoint returns **`400` `custom_domain_invalid_state`** unless **`CUSTOM_DOMAIN_FLY_ALLOW_STAFF_PLATFORM_DNS_OVERRIDE=true`** (support-only override). 
+     * @summary Publish platform DNS verification record for the customer (non-Fly / legacy)
+     * @param {AdminApiPlatformAdminPatchOrgCustomDomainPlatformDnsVerificationRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public platformAdminPatchOrgCustomDomainPlatformDnsVerification(requestParameters: AdminApiPlatformAdminPatchOrgCustomDomainPlatformDnsVerificationRequest, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).platformAdminPatchOrgCustomDomainPlatformDnsVerification(requestParameters.orgId, requestParameters.hostname, requestParameters.adminPlatformDnsVerificationPatchRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Merges the JSON body into `Org.limits`. Effective caps are `PLANS[plan].limits` merged with overrides (`getEntitlements`). For orgs not on `enterprise`, each finite numeric value must not exceed the Scale plan default for that key. `null` means unlimited (same as plan semantics). Recorded in audit as `org.limits_update`. 
+     * @summary Patch per-org limit overrides
+     * @param {AdminApiPlatformAdminPatchOrgLimitsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public platformAdminPatchOrgLimits(requestParameters: AdminApiPlatformAdminPatchOrgLimitsRequest, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).platformAdminPatchOrgLimits(requestParameters.orgId, requestParameters.adminOrgLimitsPatchRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Sets plan and resets Org.limits to plan defaults. Applies storage downgrade markers and clears dedicated infra when leaving enterprise. Audit org.admin_plan_change. 
+     * @summary Set organization billing plan (platform admin)
+     * @param {AdminApiPlatformAdminPatchOrgPlanRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public platformAdminPatchOrgPlan(requestParameters: AdminApiPlatformAdminPatchOrgPlanRequest, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).platformAdminPatchOrgPlan(requestParameters.orgId, requestParameters.adminOrgPlanPatchRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Set organization active flag and platform notes (platform admin)
+     * @param {AdminApiPlatformAdminPatchOrgStatusRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public platformAdminPatchOrgStatus(requestParameters: AdminApiPlatformAdminPatchOrgStatusRequest, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).platformAdminPatchOrgStatus(requestParameters.orgId, requestParameters.adminOrgStatusPatchRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Patch project (platform admin)
+     * @param {AdminApiPlatformAdminPatchProjectRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public platformAdminPatchProject(requestParameters: AdminApiPlatformAdminPatchProjectRequest, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).platformAdminPatchProject(requestParameters.orgId, requestParameters.projectId, requestParameters.adminProjectPatchRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Same as POST /internal/provision-enterprise; orgId from path.
+     * @summary Provision enterprise dedicated endpoints (JWT admin)
+     * @param {AdminApiPlatformAdminProvisionEnterpriseRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public platformAdminProvisionEnterprise(requestParameters: AdminApiPlatformAdminProvisionEnterpriseRequest, options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration).platformAdminProvisionEnterprise(requestParameters.orgId, requestParameters.adminProvisionEnterpriseBody, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+export const GetAdminAuditEventsSeverityEnum = {
+    Low: 'low',
+    Medium: 'medium',
+    High: 'high',
+    Critical: 'critical',
+} as const;
+export type GetAdminAuditEventsSeverityEnum = typeof GetAdminAuditEventsSeverityEnum[keyof typeof GetAdminAuditEventsSeverityEnum];
+export const GetDashboardOrganizationsPlanEnum = {
+    Free: 'free',
+    Basic: 'basic',
+    Starter: 'starter',
+    Growth: 'growth',
+    Scale: 'scale',
+    Enterprise: 'enterprise',
+} as const;
+export type GetDashboardOrganizationsPlanEnum = typeof GetDashboardOrganizationsPlanEnum[keyof typeof GetDashboardOrganizationsPlanEnum];
+export const GetDashboardOrganizationsIsActiveEnum = {
+    True: 'true',
+    False: 'false',
+} as const;
+export type GetDashboardOrganizationsIsActiveEnum = typeof GetDashboardOrganizationsIsActiveEnum[keyof typeof GetDashboardOrganizationsIsActiveEnum];
+export const GetDashboardOrganizationsSortEnum = {
+    Name: 'name',
+    CreatedAt: 'createdAt',
+    Slug: 'slug',
+    Plan: 'plan',
+} as const;
+export type GetDashboardOrganizationsSortEnum = typeof GetDashboardOrganizationsSortEnum[keyof typeof GetDashboardOrganizationsSortEnum];
+export const GetDashboardOrganizationsSortDirEnum = {
+    Asc: 'asc',
+    Desc: 'desc',
+} as const;
+export type GetDashboardOrganizationsSortDirEnum = typeof GetDashboardOrganizationsSortDirEnum[keyof typeof GetDashboardOrganizationsSortDirEnum];
+export const PlatformAdminGetSecurityEventsWindowEnum = {
+    _1h: '1h',
+    _24h: '24h',
+    _7d: '7d',
+} as const;
+export type PlatformAdminGetSecurityEventsWindowEnum = typeof PlatformAdminGetSecurityEventsWindowEnum[keyof typeof PlatformAdminGetSecurityEventsWindowEnum];
+
+
+/**
  * AuthenticationApi - axios parameter creator
  */
 export const AuthenticationApiAxiosParamCreator = function (configuration?: Configuration) {
@@ -5803,6 +9406,49 @@ export const AuthenticationApiAxiosParamCreator = function (configuration?: Conf
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(acceptInviteRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Submit the new-user onboarding profile (contact phone and \"how did you hear about us?\" attribution) required before this account can create its first project.  `REQUIRE_ONBOARDING_PROFILE` (`config/onboardingProfile.js`) defaults ON: a brand-new owner - whether they registered with email/password or first-logged-in via OAuth - can sign in and read data immediately, but `POST /api/projects` (create project) returns `403 { \"code\": \"ONBOARDING_INCOMPLETE\" }` until this endpoint is called. `GET /api/auth/session` and the register/login responses expose the same `onboarding` object (`needsProfile`, `required`, `gatedActions`) so a client can tell up front whether this call is needed.  The phone is collected for outreach only - it is never verified and never gates access. `attributionSource` is the free-text or picklist answer to \"how did you hear about us?\". Idempotent-friendly: calling this again after onboarding is already complete simply re-stores the phone/attribution and leaves `onboardingComplete: true`. 
+         * @summary Complete new-user onboarding profile
+         * @param {CompleteOnboardingRequest} completeOnboardingRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        completeOnboarding: async (completeOnboardingRequest: CompleteOnboardingRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'completeOnboardingRequest' is not null or undefined
+            assertParamExists('completeOnboarding', 'completeOnboardingRequest', completeOnboardingRequest)
+            const localVarPath = `/api/auth/complete-onboarding`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(completeOnboardingRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -6888,6 +10534,19 @@ export const AuthenticationApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Submit the new-user onboarding profile (contact phone and \"how did you hear about us?\" attribution) required before this account can create its first project.  `REQUIRE_ONBOARDING_PROFILE` (`config/onboardingProfile.js`) defaults ON: a brand-new owner - whether they registered with email/password or first-logged-in via OAuth - can sign in and read data immediately, but `POST /api/projects` (create project) returns `403 { \"code\": \"ONBOARDING_INCOMPLETE\" }` until this endpoint is called. `GET /api/auth/session` and the register/login responses expose the same `onboarding` object (`needsProfile`, `required`, `gatedActions`) so a client can tell up front whether this call is needed.  The phone is collected for outreach only - it is never verified and never gates access. `attributionSource` is the free-text or picklist answer to \"how did you hear about us?\". Idempotent-friendly: calling this again after onboarding is already complete simply re-stores the phone/attribution and leaves `onboardingComplete: true`. 
+         * @summary Complete new-user onboarding profile
+         * @param {CompleteOnboardingRequest} completeOnboardingRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async completeOnboarding(completeOnboardingRequest: CompleteOnboardingRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<CompleteOnboardingResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.completeOnboarding(completeOnboardingRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AuthenticationApi.completeOnboarding']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Set new password using the OTP sent to the user\'s email. Call after POST /api/auth/local/password-reset with projectId. Rate limited (OTP limit). If the user\'s email was not yet verified, it is marked as verified upon successful reset. 
          * @summary Confirm password reset with OTP (project-based)
          * @param {ConfirmLocalPasswordResetWithOtpRequest} confirmLocalPasswordResetWithOtpRequest 
@@ -7286,6 +10945,16 @@ export const AuthenticationApiFactory = function (configuration?: Configuration,
             return localVarFp.acceptInvite(requestParameters.acceptInviteRequest, options).then((request) => request(axios, basePath));
         },
         /**
+         * Submit the new-user onboarding profile (contact phone and \"how did you hear about us?\" attribution) required before this account can create its first project.  `REQUIRE_ONBOARDING_PROFILE` (`config/onboardingProfile.js`) defaults ON: a brand-new owner - whether they registered with email/password or first-logged-in via OAuth - can sign in and read data immediately, but `POST /api/projects` (create project) returns `403 { \"code\": \"ONBOARDING_INCOMPLETE\" }` until this endpoint is called. `GET /api/auth/session` and the register/login responses expose the same `onboarding` object (`needsProfile`, `required`, `gatedActions`) so a client can tell up front whether this call is needed.  The phone is collected for outreach only - it is never verified and never gates access. `attributionSource` is the free-text or picklist answer to \"how did you hear about us?\". Idempotent-friendly: calling this again after onboarding is already complete simply re-stores the phone/attribution and leaves `onboardingComplete: true`. 
+         * @summary Complete new-user onboarding profile
+         * @param {AuthenticationApiCompleteOnboardingRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        completeOnboarding(requestParameters: AuthenticationApiCompleteOnboardingRequest, options?: RawAxiosRequestConfig): AxiosPromise<CompleteOnboardingResponse> {
+            return localVarFp.completeOnboarding(requestParameters.completeOnboardingRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Set new password using the OTP sent to the user\'s email. Call after POST /api/auth/local/password-reset with projectId. Rate limited (OTP limit). If the user\'s email was not yet verified, it is marked as verified upon successful reset. 
          * @summary Confirm password reset with OTP (project-based)
          * @param {AuthenticationApiConfirmLocalPasswordResetWithOtpRequest} requestParameters Request parameters.
@@ -7581,6 +11250,13 @@ export interface AuthenticationApiAcceptInviteRequest {
 }
 
 /**
+ * Request parameters for completeOnboarding operation in AuthenticationApi.
+ */
+export interface AuthenticationApiCompleteOnboardingRequest {
+    readonly completeOnboardingRequest: CompleteOnboardingRequest
+}
+
+/**
  * Request parameters for confirmLocalPasswordResetWithOtp operation in AuthenticationApi.
  */
 export interface AuthenticationApiConfirmLocalPasswordResetWithOtpRequest {
@@ -7787,6 +11463,17 @@ export class AuthenticationApi extends BaseAPI {
      */
     public acceptInvite(requestParameters: AuthenticationApiAcceptInviteRequest, options?: RawAxiosRequestConfig) {
         return AuthenticationApiFp(this.configuration).acceptInvite(requestParameters.acceptInviteRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Submit the new-user onboarding profile (contact phone and \"how did you hear about us?\" attribution) required before this account can create its first project.  `REQUIRE_ONBOARDING_PROFILE` (`config/onboardingProfile.js`) defaults ON: a brand-new owner - whether they registered with email/password or first-logged-in via OAuth - can sign in and read data immediately, but `POST /api/projects` (create project) returns `403 { \"code\": \"ONBOARDING_INCOMPLETE\" }` until this endpoint is called. `GET /api/auth/session` and the register/login responses expose the same `onboarding` object (`needsProfile`, `required`, `gatedActions`) so a client can tell up front whether this call is needed.  The phone is collected for outreach only - it is never verified and never gates access. `attributionSource` is the free-text or picklist answer to \"how did you hear about us?\". Idempotent-friendly: calling this again after onboarding is already complete simply re-stores the phone/attribution and leaves `onboardingComplete: true`. 
+     * @summary Complete new-user onboarding profile
+     * @param {AuthenticationApiCompleteOnboardingRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public completeOnboarding(requestParameters: AuthenticationApiCompleteOnboardingRequest, options?: RawAxiosRequestConfig) {
+        return AuthenticationApiFp(this.configuration).completeOnboarding(requestParameters.completeOnboardingRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -9383,7 +13070,7 @@ export const BillingApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * **Org-level BaaS plan catalog** (source of truth in paymentService.js). Returns Free, Starter ($29), Growth ($69), Scale ($199), Enterprise. Use for pricing page and to get plan ids for POST /api/billing/org/checkout. Public; no auth required. Each plan includes id (free|starter|growth|scale|enterprise), name, description, price (cents), priceYearly (cents, 2 months free), currency, limits, overages, enforcement. 
+         * **Org-level BaaS plan catalog** (source of truth in paymentService.js). Returns Free, Starter ($29), Growth ($69), Scale ($199), Enterprise. Use for pricing page and to get plan ids for POST /api/billing/org/checkout. Public; no auth required. Each plan includes id (free|starter|growth|scale|enterprise), name, description, price (cents), priceYearly (cents, 8% off), currency, limits, overages, enforcement. 
          * @summary Get subscription tiers (org-level BaaS plans)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -9448,6 +13135,41 @@ export const BillingApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Receives payment gateway webhook events (charge.completed, payment.successful). No auth; verified by verif-hash header. - Subscription billing: meta without isPaymentProcessing triggers verifyPaymentAndCreateSubscription (mudbase_xxx refs). - Payment processing: meta.isPaymentProcessing === true triggers fiat payment record (mudbase_fiat_xxx refs); org share goes to org subaccount, platform fee to main or configured subaccounts. 
+         * @summary Payment gateway webhook
+         * @param {HandleFlutterwaveWebhookRequest} handleFlutterwaveWebhookRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        handleFlutterwaveWebhook: async (handleFlutterwaveWebhookRequest: HandleFlutterwaveWebhookRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'handleFlutterwaveWebhookRequest' is not null or undefined
+            assertParamExists('handleFlutterwaveWebhook', 'handleFlutterwaveWebhookRequest', handleFlutterwaveWebhookRequest)
+            const localVarPath = `/api/billing/webhooks/flutterwave`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(handleFlutterwaveWebhookRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -10027,7 +13749,7 @@ export const BillingApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * **Org-level BaaS plan catalog** (source of truth in paymentService.js). Returns Free, Starter ($29), Growth ($69), Scale ($199), Enterprise. Use for pricing page and to get plan ids for POST /api/billing/org/checkout. Public; no auth required. Each plan includes id (free|starter|growth|scale|enterprise), name, description, price (cents), priceYearly (cents, 2 months free), currency, limits, overages, enforcement. 
+         * **Org-level BaaS plan catalog** (source of truth in paymentService.js). Returns Free, Starter ($29), Growth ($69), Scale ($199), Enterprise. Use for pricing page and to get plan ids for POST /api/billing/org/checkout. Public; no auth required. Each plan includes id (free|starter|growth|scale|enterprise), name, description, price (cents), priceYearly (cents, 8% off), currency, limits, overages, enforcement. 
          * @summary Get subscription tiers (org-level BaaS plans)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -10049,6 +13771,19 @@ export const BillingApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getSubscriptions(projectId, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['BillingApi.getSubscriptions']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Receives payment gateway webhook events (charge.completed, payment.successful). No auth; verified by verif-hash header. - Subscription billing: meta without isPaymentProcessing triggers verifyPaymentAndCreateSubscription (mudbase_xxx refs). - Payment processing: meta.isPaymentProcessing === true triggers fiat payment record (mudbase_fiat_xxx refs); org share goes to org subaccount, platform fee to main or configured subaccounts. 
+         * @summary Payment gateway webhook
+         * @param {HandleFlutterwaveWebhookRequest} handleFlutterwaveWebhookRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async handleFlutterwaveWebhook(handleFlutterwaveWebhookRequest: HandleFlutterwaveWebhookRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<HandleFlutterwaveWebhook200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.handleFlutterwaveWebhook(handleFlutterwaveWebhookRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['BillingApi.handleFlutterwaveWebhook']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -10348,7 +14083,7 @@ export const BillingApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.getSubscriptionTierById(requestParameters.planId, options).then((request) => request(axios, basePath));
         },
         /**
-         * **Org-level BaaS plan catalog** (source of truth in paymentService.js). Returns Free, Starter ($29), Growth ($69), Scale ($199), Enterprise. Use for pricing page and to get plan ids for POST /api/billing/org/checkout. Public; no auth required. Each plan includes id (free|starter|growth|scale|enterprise), name, description, price (cents), priceYearly (cents, 2 months free), currency, limits, overages, enforcement. 
+         * **Org-level BaaS plan catalog** (source of truth in paymentService.js). Returns Free, Starter ($29), Growth ($69), Scale ($199), Enterprise. Use for pricing page and to get plan ids for POST /api/billing/org/checkout. Public; no auth required. Each plan includes id (free|starter|growth|scale|enterprise), name, description, price (cents), priceYearly (cents, 8% off), currency, limits, overages, enforcement. 
          * @summary Get subscription tiers (org-level BaaS plans)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -10365,6 +14100,16 @@ export const BillingApiFactory = function (configuration?: Configuration, basePa
          */
         getSubscriptions(requestParameters: BillingApiGetSubscriptionsRequest, options?: RawAxiosRequestConfig): AxiosPromise<GetSubscriptions200Response> {
             return localVarFp.getSubscriptions(requestParameters.projectId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Receives payment gateway webhook events (charge.completed, payment.successful). No auth; verified by verif-hash header. - Subscription billing: meta without isPaymentProcessing triggers verifyPaymentAndCreateSubscription (mudbase_xxx refs). - Payment processing: meta.isPaymentProcessing === true triggers fiat payment record (mudbase_fiat_xxx refs); org share goes to org subaccount, platform fee to main or configured subaccounts. 
+         * @summary Payment gateway webhook
+         * @param {BillingApiHandleFlutterwaveWebhookRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        handleFlutterwaveWebhook(requestParameters: BillingApiHandleFlutterwaveWebhookRequest, options?: RawAxiosRequestConfig): AxiosPromise<HandleFlutterwaveWebhook200Response> {
+            return localVarFp.handleFlutterwaveWebhook(requestParameters.handleFlutterwaveWebhookRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * **Org plan payment flow — Step 2.** Creates a payment link for the authenticated org to subscribe to a BaaS plan (starter, growth, scale). Enterprise has no price; use contact-sales flow. Redirect the user to the returned link; after payment, call POST /api/billing/org/verify-payment with the tx_ref from the redirect. Requires org-level JWT. 
@@ -10622,6 +14367,13 @@ export interface BillingApiGetSubscriptionTierByIdRequest {
  */
 export interface BillingApiGetSubscriptionsRequest {
     readonly projectId: string
+}
+
+/**
+ * Request parameters for handleFlutterwaveWebhook operation in BillingApi.
+ */
+export interface BillingApiHandleFlutterwaveWebhookRequest {
+    readonly handleFlutterwaveWebhookRequest: HandleFlutterwaveWebhookRequest
 }
 
 /**
@@ -10909,7 +14661,7 @@ export class BillingApi extends BaseAPI {
     }
 
     /**
-     * **Org-level BaaS plan catalog** (source of truth in paymentService.js). Returns Free, Starter ($29), Growth ($69), Scale ($199), Enterprise. Use for pricing page and to get plan ids for POST /api/billing/org/checkout. Public; no auth required. Each plan includes id (free|starter|growth|scale|enterprise), name, description, price (cents), priceYearly (cents, 2 months free), currency, limits, overages, enforcement. 
+     * **Org-level BaaS plan catalog** (source of truth in paymentService.js). Returns Free, Starter ($29), Growth ($69), Scale ($199), Enterprise. Use for pricing page and to get plan ids for POST /api/billing/org/checkout. Public; no auth required. Each plan includes id (free|starter|growth|scale|enterprise), name, description, price (cents), priceYearly (cents, 8% off), currency, limits, overages, enforcement. 
      * @summary Get subscription tiers (org-level BaaS plans)
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -10927,6 +14679,17 @@ export class BillingApi extends BaseAPI {
      */
     public getSubscriptions(requestParameters: BillingApiGetSubscriptionsRequest, options?: RawAxiosRequestConfig) {
         return BillingApiFp(this.configuration).getSubscriptions(requestParameters.projectId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Receives payment gateway webhook events (charge.completed, payment.successful). No auth; verified by verif-hash header. - Subscription billing: meta without isPaymentProcessing triggers verifyPaymentAndCreateSubscription (mudbase_xxx refs). - Payment processing: meta.isPaymentProcessing === true triggers fiat payment record (mudbase_fiat_xxx refs); org share goes to org subaccount, platform fee to main or configured subaccounts. 
+     * @summary Payment gateway webhook
+     * @param {BillingApiHandleFlutterwaveWebhookRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public handleFlutterwaveWebhook(requestParameters: BillingApiHandleFlutterwaveWebhookRequest, options?: RawAxiosRequestConfig) {
+        return BillingApiFp(this.configuration).handleFlutterwaveWebhook(requestParameters.handleFlutterwaveWebhookRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -11101,6 +14864,9 @@ export const BucketsApiAxiosParamCreator = function (configuration?: Configurati
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -11195,6 +14961,9 @@ export const BucketsApiAxiosParamCreator = function (configuration?: Configurati
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -11255,6 +15024,9 @@ export const BucketsApiAxiosParamCreator = function (configuration?: Configurati
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -11531,6 +15303,209 @@ export class BucketsApi extends BaseAPI {
 
 
 /**
+ * BugAnalysisApi - axios parameter creator
+ */
+export const BugAnalysisApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Start a bug analysis scan. Checks plan limit (scans/month, upload size, runtime) before starting. Currently returns 503 COMING_SOON until the feature is implemented; usage will not be charged until then. 
+         * @summary Start bug analysis scan (org-level)
+         * @param {StartBugAnalysisScanRequest} [startBugAnalysisScanRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        startBugAnalysisScan: async (startBugAnalysisScanRequest?: StartBugAnalysisScanRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/bug-analysis/scan`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(startBugAnalysisScanRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Same as POST /api/bug-analysis/scan with projectId in path; validates project access. Returns 503 COMING_SOON until implemented.
+         * @summary Start bug analysis scan (project-scoped)
+         * @param {string} projectId 
+         * @param {StartBugAnalysisScanByProjectRequest} [startBugAnalysisScanByProjectRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        startBugAnalysisScanByProject: async (projectId: string, startBugAnalysisScanByProjectRequest?: StartBugAnalysisScanByProjectRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('startBugAnalysisScanByProject', 'projectId', projectId)
+            const localVarPath = `/api/bug-analysis/scan/{projectId}`
+                .replace('{projectId}', encodeURIComponent(String(projectId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(startBugAnalysisScanByProjectRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * BugAnalysisApi - functional programming interface
+ */
+export const BugAnalysisApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = BugAnalysisApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Start a bug analysis scan. Checks plan limit (scans/month, upload size, runtime) before starting. Currently returns 503 COMING_SOON until the feature is implemented; usage will not be charged until then. 
+         * @summary Start bug analysis scan (org-level)
+         * @param {StartBugAnalysisScanRequest} [startBugAnalysisScanRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async startBugAnalysisScan(startBugAnalysisScanRequest?: StartBugAnalysisScanRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.startBugAnalysisScan(startBugAnalysisScanRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['BugAnalysisApi.startBugAnalysisScan']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Same as POST /api/bug-analysis/scan with projectId in path; validates project access. Returns 503 COMING_SOON until implemented.
+         * @summary Start bug analysis scan (project-scoped)
+         * @param {string} projectId 
+         * @param {StartBugAnalysisScanByProjectRequest} [startBugAnalysisScanByProjectRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async startBugAnalysisScanByProject(projectId: string, startBugAnalysisScanByProjectRequest?: StartBugAnalysisScanByProjectRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.startBugAnalysisScanByProject(projectId, startBugAnalysisScanByProjectRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['BugAnalysisApi.startBugAnalysisScanByProject']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * BugAnalysisApi - factory interface
+ */
+export const BugAnalysisApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = BugAnalysisApiFp(configuration)
+    return {
+        /**
+         * Start a bug analysis scan. Checks plan limit (scans/month, upload size, runtime) before starting. Currently returns 503 COMING_SOON until the feature is implemented; usage will not be charged until then. 
+         * @summary Start bug analysis scan (org-level)
+         * @param {BugAnalysisApiStartBugAnalysisScanRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        startBugAnalysisScan(requestParameters: BugAnalysisApiStartBugAnalysisScanRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.startBugAnalysisScan(requestParameters.startBugAnalysisScanRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Same as POST /api/bug-analysis/scan with projectId in path; validates project access. Returns 503 COMING_SOON until implemented.
+         * @summary Start bug analysis scan (project-scoped)
+         * @param {BugAnalysisApiStartBugAnalysisScanByProjectRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        startBugAnalysisScanByProject(requestParameters: BugAnalysisApiStartBugAnalysisScanByProjectRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.startBugAnalysisScanByProject(requestParameters.projectId, requestParameters.startBugAnalysisScanByProjectRequest, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * Request parameters for startBugAnalysisScan operation in BugAnalysisApi.
+ */
+export interface BugAnalysisApiStartBugAnalysisScanRequest {
+    readonly startBugAnalysisScanRequest?: StartBugAnalysisScanRequest
+}
+
+/**
+ * Request parameters for startBugAnalysisScanByProject operation in BugAnalysisApi.
+ */
+export interface BugAnalysisApiStartBugAnalysisScanByProjectRequest {
+    readonly projectId: string
+
+    readonly startBugAnalysisScanByProjectRequest?: StartBugAnalysisScanByProjectRequest
+}
+
+/**
+ * BugAnalysisApi - object-oriented interface
+ */
+export class BugAnalysisApi extends BaseAPI {
+    /**
+     * Start a bug analysis scan. Checks plan limit (scans/month, upload size, runtime) before starting. Currently returns 503 COMING_SOON until the feature is implemented; usage will not be charged until then. 
+     * @summary Start bug analysis scan (org-level)
+     * @param {BugAnalysisApiStartBugAnalysisScanRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public startBugAnalysisScan(requestParameters: BugAnalysisApiStartBugAnalysisScanRequest = {}, options?: RawAxiosRequestConfig) {
+        return BugAnalysisApiFp(this.configuration).startBugAnalysisScan(requestParameters.startBugAnalysisScanRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Same as POST /api/bug-analysis/scan with projectId in path; validates project access. Returns 503 COMING_SOON until implemented.
+     * @summary Start bug analysis scan (project-scoped)
+     * @param {BugAnalysisApiStartBugAnalysisScanByProjectRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public startBugAnalysisScanByProject(requestParameters: BugAnalysisApiStartBugAnalysisScanByProjectRequest, options?: RawAxiosRequestConfig) {
+        return BugAnalysisApiFp(this.configuration).startBugAnalysisScanByProject(requestParameters.projectId, requestParameters.startBugAnalysisScanByProjectRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
  * ChatApi - axios parameter creator
  */
 export const ChatApiAxiosParamCreator = function (configuration?: Configuration) {
@@ -11568,6 +15543,9 @@ export const ChatApiAxiosParamCreator = function (configuration?: Configuration)
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -11624,6 +15602,9 @@ export const ChatApiAxiosParamCreator = function (configuration?: Configuration)
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -11670,6 +15651,9 @@ export const ChatApiAxiosParamCreator = function (configuration?: Configuration)
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -11722,6 +15706,9 @@ export const ChatApiAxiosParamCreator = function (configuration?: Configuration)
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -11776,6 +15763,9 @@ export const ChatApiAxiosParamCreator = function (configuration?: Configuration)
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -11824,6 +15814,9 @@ export const ChatApiAxiosParamCreator = function (configuration?: Configuration)
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -11869,6 +15862,9 @@ export const ChatApiAxiosParamCreator = function (configuration?: Configuration)
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -11919,6 +15915,9 @@ export const ChatApiAxiosParamCreator = function (configuration?: Configuration)
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -11984,6 +15983,9 @@ export const ChatApiAxiosParamCreator = function (configuration?: Configuration)
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -12041,6 +16043,9 @@ export const ChatApiAxiosParamCreator = function (configuration?: Configuration)
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -12087,6 +16092,9 @@ export const ChatApiAxiosParamCreator = function (configuration?: Configuration)
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -12138,6 +16146,9 @@ export const ChatApiAxiosParamCreator = function (configuration?: Configuration)
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -12194,6 +16205,9 @@ export const ChatApiAxiosParamCreator = function (configuration?: Configuration)
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -12244,6 +16258,9 @@ export const ChatApiAxiosParamCreator = function (configuration?: Configuration)
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -12989,6 +17006,9 @@ export const CollectionsApiAxiosParamCreator = function (configuration?: Configu
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -13037,6 +17057,9 @@ export const CollectionsApiAxiosParamCreator = function (configuration?: Configu
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -13083,6 +17106,9 @@ export const CollectionsApiAxiosParamCreator = function (configuration?: Configu
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -13124,6 +17150,9 @@ export const CollectionsApiAxiosParamCreator = function (configuration?: Configu
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -13173,6 +17202,9 @@ export const CollectionsApiAxiosParamCreator = function (configuration?: Configu
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -13939,27 +17971,64 @@ export class ComplianceApi extends BaseAPI {
 
 
 /**
- * Comma-joins a populate value for the `?populate=` query param on DataApi's getData/listData
- * (declared-relationship populate, see relationshipService.js on the server). Accepts a single
- * key, a comma-separated string, or an array of keys - repeated `.populate("x")` calls on the
- * DataQuery builder in query.ts collapse to an array here. A dot-path key (e.g.
- * "comments.author") is one key and passes through unchanged; it is never split on the dot.
- *
- * NOTE: hand-patched ahead of the OpenAPI generator. The declared-relationship engine (backend
- * PR feat/relational-ergonomics-phase-1) has not shipped an updated openapi.yaml yet, so this
- * repo's generated DataApi does not have a populate parameter. Once the spec catches up, this
- * helper and the populate parameters added to getData/listData below should be removed in favor
- * of the regenerated client - this is a stopgap, not a permanent hand-maintained surface.
- */
-function joinPopulateParam(populate: string | Array<string>): string {
-    return Array.isArray(populate) ? populate.join(',') : populate;
-}
-
-/**
  * DataApi - axios parameter creator
  */
 export const DataApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
+        /**
+         * A constrained, declarative aggregation endpoint - not raw pipeline passthrough. The request accepts only the typed shape below (`groupBy`, `metrics`, `filter`, `having`, `limit`); the server compiles it to a fixed `$match -> $group -> $match(having) -> $sort -> $limit` pipeline. There is no way to submit a caller-supplied pipeline stage or expression - the request shape itself is the entire surface.  `groupBy` and every `metrics[].field` must name a real field already declared on the collection (or `_id`, `createdAt`, `updatedAt`); `filter` is sanitized with the same NoSQL-injection guard the list endpoint uses. The caller\'s row-level collection permissions are folded into the `$match` stage exactly as they are for a normal list/get request, so an aggregate can never see or count rows a normal read on the same collection could not.  A large scan is rejected with a clear error (`aggregate_scan_cap_exceeded`) rather than silently truncated - narrow `filter` (or `groupBy`) so the matched-document count stays within the server\'s document-scan cap to run the aggregate. This bound is based on the actual number of documents the request matches, not on whether a field involved happens to have a declared index - an index does not make a non-selective filter safe to run unbounded. 
+         * @summary Aggregate data in collection (group/count/sum/avg/min/max)
+         * @param {string} projectId 
+         * @param {string} collectionId 
+         * @param {AggregateDataRequest} aggregateDataRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        aggregateData: async (projectId: string, collectionId: string, aggregateDataRequest: AggregateDataRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('aggregateData', 'projectId', projectId)
+            // verify required parameter 'collectionId' is not null or undefined
+            assertParamExists('aggregateData', 'collectionId', collectionId)
+            // verify required parameter 'aggregateDataRequest' is not null or undefined
+            assertParamExists('aggregateData', 'aggregateDataRequest', aggregateDataRequest)
+            const localVarPath = `/api/data/projects/{projectId}/collections/{collectionId}/aggregate`
+                .replace('{projectId}', encodeURIComponent(String(projectId)))
+                .replace('{collectionId}', encodeURIComponent(String(collectionId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(aggregateDataRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
         /**
          * 
          * @summary Create data in collection
@@ -13994,6 +18063,9 @@ export const DataApiAxiosParamCreator = function (configuration?: Configuration)
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -14005,6 +18077,60 @@ export const DataApiAxiosParamCreator = function (configuration?: Configuration)
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Runs an ordered array of create/update/delete operations, across one or more collections in the same project, inside a single MongoDB multi-document transaction: either every operation commits, or none do.  Each operation runs through the exact same permission, ownership, and field-validation checks the equivalent single-document route (POST/PATCH/DELETE on `/api/data/projects/{projectId}/collections/{collectionId}/data`) already enforces, per operation, inside the transaction, before that operation\'s write happens. A transaction is never a way to write something the caller could not have written one document at a time - if any operation would be denied on its own, the whole batch is rejected and rolled back, including operations earlier in the same batch that would otherwise have been permitted.  Limits: at most 50 operations per request, and a 2 MB total request payload, to bound how long the transaction can hold locks. The whole attempt is bounded by a 20 second wall-clock timeout; exceeding it rolls back and returns 504.  Supports the same `X-Idempotency-Key` header pattern as other mutating routes in this API - a retried request with the same key returns the original response without re-applying the operations. 
+         * @summary Run an ordered batch of create/update/delete ops as one multi-document transaction
+         * @param {string} projectId 
+         * @param {DataTransactionRequest} dataTransactionRequest 
+         * @param {string} [xIdempotencyKey] A caller-generated unique key. Replaying a request with the same key returns the original response instead of re-running the transaction.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        dataTransaction: async (projectId: string, dataTransactionRequest: DataTransactionRequest, xIdempotencyKey?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('dataTransaction', 'projectId', projectId)
+            // verify required parameter 'dataTransactionRequest' is not null or undefined
+            assertParamExists('dataTransaction', 'dataTransactionRequest', dataTransactionRequest)
+            const localVarPath = `/api/data/projects/{projectId}/tx`
+                .replace('{projectId}', encodeURIComponent(String(projectId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            if (xIdempotencyKey != null) {
+                localVarHeaderParameter['X-Idempotency-Key'] = String(xIdempotencyKey);
+            }
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(dataTransactionRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -14046,6 +18172,9 @@ export const DataApiAxiosParamCreator = function (configuration?: Configuration)
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -14062,16 +18191,16 @@ export const DataApiAxiosParamCreator = function (configuration?: Configuration)
             };
         },
         /**
-         *
+         * 
          * @summary Get single document
-         * @param {string} projectId
-         * @param {string} collectionId
-         * @param {string} documentId
-         * @param {string | Array<string>} [populate] Declared-relationship field(s) to resolve. Comma-separated (\'author,comments\') or an array joined the same way; a dot-path (\'comments.author\') is passed through as one key for a nested populate. See relationshipService.resolvePopulateKeys on the server.
+         * @param {string} projectId 
+         * @param {string} collectionId 
+         * @param {string} documentId 
+         * @param {string} [populate] Comma-separated list of &#x60;reference&#x60;-type fields to resolve into the referenced document (one hop), e.g. &#x60;author,category&#x60;. Only fields declared as type &#x60;reference&#x60; on the collection can be populated. Each referenced document is returned only if the caller is allowed to read it in the referenced collection - the same collection permissions and row-level conditions that govern a direct read of that collection are applied, so &#x60;populate&#x60; never exposes a document the caller could not fetch directly. References the caller cannot read, and references whose value does not resolve to an existing document, are returned as &#x60;null&#x60;.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getData: async (projectId: string, collectionId: string, documentId: string, populate?: string | Array<string>, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        getData: async (projectId: string, collectionId: string, documentId: string, populate?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'projectId' is not null or undefined
             assertParamExists('getData', 'projectId', projectId)
             // verify required parameter 'collectionId' is not null or undefined
@@ -14097,12 +18226,15 @@ export const DataApiAxiosParamCreator = function (configuration?: Configuration)
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             if (populate !== undefined) {
-                localVarQueryParameter['populate'] = joinPopulateParam(populate);
+                localVarQueryParameter['populate'] = populate;
             }
 
             localVarHeaderParameter['Accept'] = 'application/json';
@@ -14117,19 +18249,20 @@ export const DataApiAxiosParamCreator = function (configuration?: Configuration)
             };
         },
         /**
-         * List all documents in a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented.
+         * List all documents in a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
          * @summary List data in collection
-         * @param {string} projectId
-         * @param {string} collectionId
-         * @param {number} [page]
-         * @param {number} [limit]
-         * @param {string} [sort]
-         * @param {string} [filter]
-         * @param {string | Array<string>} [populate] Declared-relationship field(s) to resolve. Comma-separated (\'author,comments\') or an array joined the same way; a dot-path (\'comments.author\') is passed through as one key for a nested populate. Composes with sort/page/limit/filter unchanged - see routes/data.js on the server. Deep/relationship-field filtering (e.g. \'author.name\') is not supported server-side yet.
+         * @param {string} projectId 
+         * @param {string} collectionId 
+         * @param {number} [page] 
+         * @param {number} [limit] 
+         * @param {string} [sort] 
+         * @param {string} [filter] 
+         * @param {string} [fields] Comma-separated list of fields to return (projection), e.g. &#x60;title,price&#x60;.
+         * @param {string} [populate] Comma-separated list of &#x60;reference&#x60;-type fields to resolve into the referenced document (one hop), e.g. &#x60;author,category&#x60;. Only fields declared as type &#x60;reference&#x60; on the collection can be populated. Each referenced document is returned only if the caller is allowed to read it in the referenced collection - the same collection permissions and row-level conditions that govern a direct read of that collection are applied, so &#x60;populate&#x60; never exposes a document the caller could not fetch directly. References the caller cannot read, and references whose value does not resolve to an existing document, are returned as &#x60;null&#x60;.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listData: async (projectId: string, collectionId: string, page?: number, limit?: number, sort?: string, filter?: string, populate?: string | Array<string>, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        listData: async (projectId: string, collectionId: string, page?: number, limit?: number, sort?: string, filter?: string, fields?: string, populate?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'projectId' is not null or undefined
             assertParamExists('listData', 'projectId', projectId)
             // verify required parameter 'collectionId' is not null or undefined
@@ -14152,6 +18285,9 @@ export const DataApiAxiosParamCreator = function (configuration?: Configuration)
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -14172,8 +18308,12 @@ export const DataApiAxiosParamCreator = function (configuration?: Configuration)
                 localVarQueryParameter['filter'] = filter;
             }
 
+            if (fields !== undefined) {
+                localVarQueryParameter['fields'] = fields;
+            }
+
             if (populate !== undefined) {
-                localVarQueryParameter['populate'] = joinPopulateParam(populate);
+                localVarQueryParameter['populate'] = populate;
             }
 
             localVarHeaderParameter['Accept'] = 'application/json';
@@ -14225,6 +18365,9 @@ export const DataApiAxiosParamCreator = function (configuration?: Configuration)
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -14252,6 +18395,21 @@ export const DataApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = DataApiAxiosParamCreator(configuration)
     return {
         /**
+         * A constrained, declarative aggregation endpoint - not raw pipeline passthrough. The request accepts only the typed shape below (`groupBy`, `metrics`, `filter`, `having`, `limit`); the server compiles it to a fixed `$match -> $group -> $match(having) -> $sort -> $limit` pipeline. There is no way to submit a caller-supplied pipeline stage or expression - the request shape itself is the entire surface.  `groupBy` and every `metrics[].field` must name a real field already declared on the collection (or `_id`, `createdAt`, `updatedAt`); `filter` is sanitized with the same NoSQL-injection guard the list endpoint uses. The caller\'s row-level collection permissions are folded into the `$match` stage exactly as they are for a normal list/get request, so an aggregate can never see or count rows a normal read on the same collection could not.  A large scan is rejected with a clear error (`aggregate_scan_cap_exceeded`) rather than silently truncated - narrow `filter` (or `groupBy`) so the matched-document count stays within the server\'s document-scan cap to run the aggregate. This bound is based on the actual number of documents the request matches, not on whether a field involved happens to have a declared index - an index does not make a non-selective filter safe to run unbounded. 
+         * @summary Aggregate data in collection (group/count/sum/avg/min/max)
+         * @param {string} projectId 
+         * @param {string} collectionId 
+         * @param {AggregateDataRequest} aggregateDataRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async aggregateData(projectId: string, collectionId: string, aggregateDataRequest: AggregateDataRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AggregateData200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.aggregateData(projectId, collectionId, aggregateDataRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DataApi.aggregateData']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * 
          * @summary Create data in collection
          * @param {string} projectId 
@@ -14264,6 +18422,21 @@ export const DataApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.createData(projectId, collectionId, body, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DataApi.createData']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Runs an ordered array of create/update/delete operations, across one or more collections in the same project, inside a single MongoDB multi-document transaction: either every operation commits, or none do.  Each operation runs through the exact same permission, ownership, and field-validation checks the equivalent single-document route (POST/PATCH/DELETE on `/api/data/projects/{projectId}/collections/{collectionId}/data`) already enforces, per operation, inside the transaction, before that operation\'s write happens. A transaction is never a way to write something the caller could not have written one document at a time - if any operation would be denied on its own, the whole batch is rejected and rolled back, including operations earlier in the same batch that would otherwise have been permitted.  Limits: at most 50 operations per request, and a 2 MB total request payload, to bound how long the transaction can hold locks. The whole attempt is bounded by a 20 second wall-clock timeout; exceeding it rolls back and returns 504.  Supports the same `X-Idempotency-Key` header pattern as other mutating routes in this API - a retried request with the same key returns the original response without re-applying the operations. 
+         * @summary Run an ordered batch of create/update/delete ops as one multi-document transaction
+         * @param {string} projectId 
+         * @param {DataTransactionRequest} dataTransactionRequest 
+         * @param {string} [xIdempotencyKey] A caller-generated unique key. Replaying a request with the same key returns the original response instead of re-running the transaction.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async dataTransaction(projectId: string, dataTransactionRequest: DataTransactionRequest, xIdempotencyKey?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DataTransaction200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.dataTransaction(projectId, dataTransactionRequest, xIdempotencyKey, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DataApi.dataTransaction']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -14282,36 +18455,37 @@ export const DataApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         *
+         * 
          * @summary Get single document
-         * @param {string} projectId
-         * @param {string} collectionId
-         * @param {string} documentId
-         * @param {string | Array<string>} [populate]
+         * @param {string} projectId 
+         * @param {string} collectionId 
+         * @param {string} documentId 
+         * @param {string} [populate] Comma-separated list of &#x60;reference&#x60;-type fields to resolve into the referenced document (one hop), e.g. &#x60;author,category&#x60;. Only fields declared as type &#x60;reference&#x60; on the collection can be populated. Each referenced document is returned only if the caller is allowed to read it in the referenced collection - the same collection permissions and row-level conditions that govern a direct read of that collection are applied, so &#x60;populate&#x60; never exposes a document the caller could not fetch directly. References the caller cannot read, and references whose value does not resolve to an existing document, are returned as &#x60;null&#x60;.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getData(projectId: string, collectionId: string, documentId: string, populate?: string | Array<string>, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DataResponse>> {
+        async getData(projectId: string, collectionId: string, documentId: string, populate?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DataResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getData(projectId, collectionId, documentId, populate, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DataApi.getData']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * List all documents in a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented.
+         * List all documents in a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
          * @summary List data in collection
-         * @param {string} projectId
-         * @param {string} collectionId
-         * @param {number} [page]
-         * @param {number} [limit]
-         * @param {string} [sort]
-         * @param {string} [filter]
-         * @param {string | Array<string>} [populate]
+         * @param {string} projectId 
+         * @param {string} collectionId 
+         * @param {number} [page] 
+         * @param {number} [limit] 
+         * @param {string} [sort] 
+         * @param {string} [filter] 
+         * @param {string} [fields] Comma-separated list of fields to return (projection), e.g. &#x60;title,price&#x60;.
+         * @param {string} [populate] Comma-separated list of &#x60;reference&#x60;-type fields to resolve into the referenced document (one hop), e.g. &#x60;author,category&#x60;. Only fields declared as type &#x60;reference&#x60; on the collection can be populated. Each referenced document is returned only if the caller is allowed to read it in the referenced collection - the same collection permissions and row-level conditions that govern a direct read of that collection are applied, so &#x60;populate&#x60; never exposes a document the caller could not fetch directly. References the caller cannot read, and references whose value does not resolve to an existing document, are returned as &#x60;null&#x60;.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async listData(projectId: string, collectionId: string, page?: number, limit?: number, sort?: string, filter?: string, populate?: string | Array<string>, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DataListResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.listData(projectId, collectionId, page, limit, sort, filter, populate, options);
+        async listData(projectId: string, collectionId: string, page?: number, limit?: number, sort?: string, filter?: string, fields?: string, populate?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DataListResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listData(projectId, collectionId, page, limit, sort, filter, fields, populate, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DataApi.listData']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -14342,6 +18516,16 @@ export const DataApiFactory = function (configuration?: Configuration, basePath?
     const localVarFp = DataApiFp(configuration)
     return {
         /**
+         * A constrained, declarative aggregation endpoint - not raw pipeline passthrough. The request accepts only the typed shape below (`groupBy`, `metrics`, `filter`, `having`, `limit`); the server compiles it to a fixed `$match -> $group -> $match(having) -> $sort -> $limit` pipeline. There is no way to submit a caller-supplied pipeline stage or expression - the request shape itself is the entire surface.  `groupBy` and every `metrics[].field` must name a real field already declared on the collection (or `_id`, `createdAt`, `updatedAt`); `filter` is sanitized with the same NoSQL-injection guard the list endpoint uses. The caller\'s row-level collection permissions are folded into the `$match` stage exactly as they are for a normal list/get request, so an aggregate can never see or count rows a normal read on the same collection could not.  A large scan is rejected with a clear error (`aggregate_scan_cap_exceeded`) rather than silently truncated - narrow `filter` (or `groupBy`) so the matched-document count stays within the server\'s document-scan cap to run the aggregate. This bound is based on the actual number of documents the request matches, not on whether a field involved happens to have a declared index - an index does not make a non-selective filter safe to run unbounded. 
+         * @summary Aggregate data in collection (group/count/sum/avg/min/max)
+         * @param {DataApiAggregateDataRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        aggregateData(requestParameters: DataApiAggregateDataRequest, options?: RawAxiosRequestConfig): AxiosPromise<AggregateData200Response> {
+            return localVarFp.aggregateData(requestParameters.projectId, requestParameters.collectionId, requestParameters.aggregateDataRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
          * 
          * @summary Create data in collection
          * @param {DataApiCreateDataRequest} requestParameters Request parameters.
@@ -14350,6 +18534,16 @@ export const DataApiFactory = function (configuration?: Configuration, basePath?
          */
         createData(requestParameters: DataApiCreateDataRequest, options?: RawAxiosRequestConfig): AxiosPromise<DataResponse> {
             return localVarFp.createData(requestParameters.projectId, requestParameters.collectionId, requestParameters.body, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Runs an ordered array of create/update/delete operations, across one or more collections in the same project, inside a single MongoDB multi-document transaction: either every operation commits, or none do.  Each operation runs through the exact same permission, ownership, and field-validation checks the equivalent single-document route (POST/PATCH/DELETE on `/api/data/projects/{projectId}/collections/{collectionId}/data`) already enforces, per operation, inside the transaction, before that operation\'s write happens. A transaction is never a way to write something the caller could not have written one document at a time - if any operation would be denied on its own, the whole batch is rejected and rolled back, including operations earlier in the same batch that would otherwise have been permitted.  Limits: at most 50 operations per request, and a 2 MB total request payload, to bound how long the transaction can hold locks. The whole attempt is bounded by a 20 second wall-clock timeout; exceeding it rolls back and returns 504.  Supports the same `X-Idempotency-Key` header pattern as other mutating routes in this API - a retried request with the same key returns the original response without re-applying the operations. 
+         * @summary Run an ordered batch of create/update/delete ops as one multi-document transaction
+         * @param {DataApiDataTransactionRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        dataTransaction(requestParameters: DataApiDataTransactionRequest, options?: RawAxiosRequestConfig): AxiosPromise<DataTransaction200Response> {
+            return localVarFp.dataTransaction(requestParameters.projectId, requestParameters.dataTransactionRequest, requestParameters.xIdempotencyKey, options).then((request) => request(axios, basePath));
         },
         /**
          * Delete a document from a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
@@ -14372,14 +18566,14 @@ export const DataApiFactory = function (configuration?: Configuration, basePath?
             return localVarFp.getData(requestParameters.projectId, requestParameters.collectionId, requestParameters.documentId, requestParameters.populate, options).then((request) => request(axios, basePath));
         },
         /**
-         * List all documents in a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented.
+         * List all documents in a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
          * @summary List data in collection
          * @param {DataApiListDataRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         listData(requestParameters: DataApiListDataRequest, options?: RawAxiosRequestConfig): AxiosPromise<DataListResponse> {
-            return localVarFp.listData(requestParameters.projectId, requestParameters.collectionId, requestParameters.page, requestParameters.limit, requestParameters.sort, requestParameters.filter, requestParameters.populate, options).then((request) => request(axios, basePath));
+            return localVarFp.listData(requestParameters.projectId, requestParameters.collectionId, requestParameters.page, requestParameters.limit, requestParameters.sort, requestParameters.filter, requestParameters.fields, requestParameters.populate, options).then((request) => request(axios, basePath));
         },
         /**
          * Update a document in a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
@@ -14395,6 +18589,17 @@ export const DataApiFactory = function (configuration?: Configuration, basePath?
 };
 
 /**
+ * Request parameters for aggregateData operation in DataApi.
+ */
+export interface DataApiAggregateDataRequest {
+    readonly projectId: string
+
+    readonly collectionId: string
+
+    readonly aggregateDataRequest: AggregateDataRequest
+}
+
+/**
  * Request parameters for createData operation in DataApi.
  */
 export interface DataApiCreateDataRequest {
@@ -14403,6 +18608,20 @@ export interface DataApiCreateDataRequest {
     readonly collectionId: string
 
     readonly body: object
+}
+
+/**
+ * Request parameters for dataTransaction operation in DataApi.
+ */
+export interface DataApiDataTransactionRequest {
+    readonly projectId: string
+
+    readonly dataTransactionRequest: DataTransactionRequest
+
+    /**
+     * A caller-generated unique key. Replaying a request with the same key returns the original response instead of re-running the transaction.
+     */
+    readonly xIdempotencyKey?: string
 }
 
 /**
@@ -14427,10 +18646,9 @@ export interface DataApiGetDataRequest {
     readonly documentId: string
 
     /**
-     * Declared-relationship field(s) to resolve, e.g. \'author\' or [\'author\', \'comments\'].
-     * A dot-path (\'comments.author\') resolves a nested relationship.
+     * Comma-separated list of &#x60;reference&#x60;-type fields to resolve into the referenced document (one hop), e.g. &#x60;author,category&#x60;. Only fields declared as type &#x60;reference&#x60; on the collection can be populated. Each referenced document is returned only if the caller is allowed to read it in the referenced collection - the same collection permissions and row-level conditions that govern a direct read of that collection are applied, so &#x60;populate&#x60; never exposes a document the caller could not fetch directly. References the caller cannot read, and references whose value does not resolve to an existing document, are returned as &#x60;null&#x60;.
      */
-    readonly populate?: string | Array<string>
+    readonly populate?: string
 }
 
 /**
@@ -14450,16 +18668,14 @@ export interface DataApiListDataRequest {
     readonly filter?: string
 
     /**
-     * Declared-relationship field(s) to resolve, e.g. \'author\' or [\'author\', \'comments\'].
-     * A dot-path (\'comments.author\') resolves a nested relationship. Composes with sort,
-     * page, limit, and filter. Deep/relationship-field filtering (e.g. \'author.name=value\')
-     * and sort-by-relationship-field (e.g. \'sort=-author.name\') are supported server-side
-     * (see relationshipService.js\'s resolveRelationshipFilters/resolveRelationshipSortKeys) -
-     * this generated request type has no field for them since they are extra top-level query
-     * params, not named parameters here; use the DataQuery builder in query.ts
-     * (.whereRelated()/.sortByRelated()) for a typed, composable way to add them.
+     * Comma-separated list of fields to return (projection), e.g. &#x60;title,price&#x60;.
      */
-    readonly populate?: string | Array<string>
+    readonly fields?: string
+
+    /**
+     * Comma-separated list of &#x60;reference&#x60;-type fields to resolve into the referenced document (one hop), e.g. &#x60;author,category&#x60;. Only fields declared as type &#x60;reference&#x60; on the collection can be populated. Each referenced document is returned only if the caller is allowed to read it in the referenced collection - the same collection permissions and row-level conditions that govern a direct read of that collection are applied, so &#x60;populate&#x60; never exposes a document the caller could not fetch directly. References the caller cannot read, and references whose value does not resolve to an existing document, are returned as &#x60;null&#x60;.
+     */
+    readonly populate?: string
 }
 
 /**
@@ -14480,6 +18696,17 @@ export interface DataApiUpdateDataRequest {
  */
 export class DataApi extends BaseAPI {
     /**
+     * A constrained, declarative aggregation endpoint - not raw pipeline passthrough. The request accepts only the typed shape below (`groupBy`, `metrics`, `filter`, `having`, `limit`); the server compiles it to a fixed `$match -> $group -> $match(having) -> $sort -> $limit` pipeline. There is no way to submit a caller-supplied pipeline stage or expression - the request shape itself is the entire surface.  `groupBy` and every `metrics[].field` must name a real field already declared on the collection (or `_id`, `createdAt`, `updatedAt`); `filter` is sanitized with the same NoSQL-injection guard the list endpoint uses. The caller\'s row-level collection permissions are folded into the `$match` stage exactly as they are for a normal list/get request, so an aggregate can never see or count rows a normal read on the same collection could not.  A large scan is rejected with a clear error (`aggregate_scan_cap_exceeded`) rather than silently truncated - narrow `filter` (or `groupBy`) so the matched-document count stays within the server\'s document-scan cap to run the aggregate. This bound is based on the actual number of documents the request matches, not on whether a field involved happens to have a declared index - an index does not make a non-selective filter safe to run unbounded. 
+     * @summary Aggregate data in collection (group/count/sum/avg/min/max)
+     * @param {DataApiAggregateDataRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public aggregateData(requestParameters: DataApiAggregateDataRequest, options?: RawAxiosRequestConfig) {
+        return DataApiFp(this.configuration).aggregateData(requestParameters.projectId, requestParameters.collectionId, requestParameters.aggregateDataRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * 
      * @summary Create data in collection
      * @param {DataApiCreateDataRequest} requestParameters Request parameters.
@@ -14488,6 +18715,17 @@ export class DataApi extends BaseAPI {
      */
     public createData(requestParameters: DataApiCreateDataRequest, options?: RawAxiosRequestConfig) {
         return DataApiFp(this.configuration).createData(requestParameters.projectId, requestParameters.collectionId, requestParameters.body, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Runs an ordered array of create/update/delete operations, across one or more collections in the same project, inside a single MongoDB multi-document transaction: either every operation commits, or none do.  Each operation runs through the exact same permission, ownership, and field-validation checks the equivalent single-document route (POST/PATCH/DELETE on `/api/data/projects/{projectId}/collections/{collectionId}/data`) already enforces, per operation, inside the transaction, before that operation\'s write happens. A transaction is never a way to write something the caller could not have written one document at a time - if any operation would be denied on its own, the whole batch is rejected and rolled back, including operations earlier in the same batch that would otherwise have been permitted.  Limits: at most 50 operations per request, and a 2 MB total request payload, to bound how long the transaction can hold locks. The whole attempt is bounded by a 20 second wall-clock timeout; exceeding it rolls back and returns 504.  Supports the same `X-Idempotency-Key` header pattern as other mutating routes in this API - a retried request with the same key returns the original response without re-applying the operations. 
+     * @summary Run an ordered batch of create/update/delete ops as one multi-document transaction
+     * @param {DataApiDataTransactionRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public dataTransaction(requestParameters: DataApiDataTransactionRequest, options?: RawAxiosRequestConfig) {
+        return DataApiFp(this.configuration).dataTransaction(requestParameters.projectId, requestParameters.dataTransactionRequest, requestParameters.xIdempotencyKey, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -14513,14 +18751,14 @@ export class DataApi extends BaseAPI {
     }
 
     /**
-     * List all documents in a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented.
+     * List all documents in a collection. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
      * @summary List data in collection
      * @param {DataApiListDataRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
     public listData(requestParameters: DataApiListDataRequest, options?: RawAxiosRequestConfig) {
-        return DataApiFp(this.configuration).listData(requestParameters.projectId, requestParameters.collectionId, requestParameters.page, requestParameters.limit, requestParameters.sort, requestParameters.filter, requestParameters.populate, options).then((request) => request(this.axios, this.basePath));
+        return DataApiFp(this.configuration).listData(requestParameters.projectId, requestParameters.collectionId, requestParameters.page, requestParameters.limit, requestParameters.sort, requestParameters.filter, requestParameters.fields, requestParameters.populate, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -15658,76 +19896,7 @@ export const FilesApiAxiosParamCreator = function (configuration?: Configuration
             };
         },
         /**
-         * Unauthenticated. Logos are always meant to be public branding assets, but the object storage backend has no per-object ACL, so this route (not the bucket) is what actually serves them - the `key` query param is validated against the exact shape logoStorageService.uploadLogo() produces before signing, so this can never be used to fetch an arbitrary storage key. 302-redirects to a short-lived signed GET url.
-         * @summary Redirect to an org/project logo\'s content
-         * @param {string} key 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiFilesLogoRedirectGet: async (key: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'key' is not null or undefined
-            assertParamExists('apiFilesLogoRedirectGet', 'key', key)
-            const localVarPath = `/api/files/logo-redirect`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            if (key !== undefined) {
-                localVarQueryParameter['key'] = key;
-            }
-
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Unauthenticated. Only serves files with isPublic=true whose upload has been confirmed and whose virus scan came back clean - the object storage backend has no per-object ACL, so this route (not the storage bucket) is what actually decides whether a \"public\" file\'s bytes are reachable. 302-redirects to a fresh, short-lived (60s) signed GET url so the actual bytes are still served straight off the storage edge.
-         * @summary Redirect to a public file\'s content
-         * @param {string} fileId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiFilesPublicFileIdGet: async (fileId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'fileId' is not null or undefined
-            assertParamExists('apiFilesPublicFileIdGet', 'fileId', fileId)
-            const localVarPath = `/api/files/public/{fileId}`
-                .replace('{fileId}', encodeURIComponent(String(fileId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * After a client uploads directly to object storage using the presigned PUT URL, call this endpoint to have the server scan the object, create the File record, and optionally quarantine if infected.
+         * After a client uploads directly to S3 using the presigned PUT URL, call this endpoint to have the server scan the object, create the File record, and optionally quarantine if infected.
          * @summary Confirm direct upload (scan + finalize metadata)
          * @param {ConfirmDirectUploadRequest} confirmDirectUploadRequest 
          * @param {*} [options] Override http request option.
@@ -15803,6 +19972,9 @@ export const FilesApiAxiosParamCreator = function (configuration?: Configuration
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -15858,7 +20030,7 @@ export const FilesApiAxiosParamCreator = function (configuration?: Configuration
             };
         },
         /**
-         * Returns a time-limited provider-signed URL for direct download. Server enforces RBAC before issuing the URL.
+         * Returns a time-limited provider-signed URL (S3) for direct download. Server enforces RBAC before issuing the URL.
          * @summary Generate a presigned URL for downloading a file
          * @param {string} fileId 
          * @param {string} [token] 
@@ -15904,7 +20076,7 @@ export const FilesApiAxiosParamCreator = function (configuration?: Configuration
             };
         },
         /**
-         * Issue a presigned PUT URL for clients to upload directly to object storage. The server stores the issued key with expiry and RBAC is enforced. PUT (not POST) is used because the object storage backend does not implement a POST-based upload API. The client must PUT the file body to `url` with the exact `headers` returned (a Content-Type mismatch fails with SignatureDoesNotMatch). `maxFileUploadBytes` is enforced server-side by `/api/files/upload/confirm` after the upload, not by the presigned URL itself. 
+         * Issue a presigned PUT URL for clients to upload directly to object storage. The server stores the issued key with expiry and RBAC is enforced. PUT (not POST) is used because Cloudflare R2 does not implement the S3 POST Object API. The client must PUT the file body to `url` with the exact `headers` returned (a Content-Type mismatch fails with SignatureDoesNotMatch). `maxFileUploadBytes` is enforced server-side by `/api/files/upload/confirm` after the upload, not by the presigned URL itself. 
          * @summary Generate a presigned PUT URL for direct browser upload
          * @param {GeneratePresignedUploadRequest} generatePresignedUploadRequest 
          * @param {*} [options] Override http request option.
@@ -16089,6 +20261,9 @@ export const FilesApiAxiosParamCreator = function (configuration?: Configuration
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -16203,33 +20378,7 @@ export const FilesApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Unauthenticated. Logos are always meant to be public branding assets, but the object storage backend has no per-object ACL, so this route (not the bucket) is what actually serves them - the `key` query param is validated against the exact shape logoStorageService.uploadLogo() produces before signing, so this can never be used to fetch an arbitrary storage key. 302-redirects to a short-lived signed GET url.
-         * @summary Redirect to an org/project logo\'s content
-         * @param {string} key 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiFilesLogoRedirectGet(key: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiFilesLogoRedirectGet(key, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['FilesApi.apiFilesLogoRedirectGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Unauthenticated. Only serves files with isPublic=true whose upload has been confirmed and whose virus scan came back clean - the object storage backend has no per-object ACL, so this route (not the storage bucket) is what actually decides whether a \"public\" file\'s bytes are reachable. 302-redirects to a fresh, short-lived (60s) signed GET url so the actual bytes are still served straight off the storage edge.
-         * @summary Redirect to a public file\'s content
-         * @param {string} fileId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiFilesPublicFileIdGet(fileId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiFilesPublicFileIdGet(fileId, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['FilesApi.apiFilesPublicFileIdGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * After a client uploads directly to object storage using the presigned PUT URL, call this endpoint to have the server scan the object, create the File record, and optionally quarantine if infected.
+         * After a client uploads directly to S3 using the presigned PUT URL, call this endpoint to have the server scan the object, create the File record, and optionally quarantine if infected.
          * @summary Confirm direct upload (scan + finalize metadata)
          * @param {ConfirmDirectUploadRequest} confirmDirectUploadRequest 
          * @param {*} [options] Override http request option.
@@ -16271,7 +20420,7 @@ export const FilesApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns a time-limited provider-signed URL for direct download. Server enforces RBAC before issuing the URL.
+         * Returns a time-limited provider-signed URL (S3) for direct download. Server enforces RBAC before issuing the URL.
          * @summary Generate a presigned URL for downloading a file
          * @param {string} fileId 
          * @param {string} [token] 
@@ -16285,7 +20434,7 @@ export const FilesApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Issue a presigned PUT URL for clients to upload directly to object storage. The server stores the issued key with expiry and RBAC is enforced. PUT (not POST) is used because the object storage backend does not implement a POST-based upload API. The client must PUT the file body to `url` with the exact `headers` returned (a Content-Type mismatch fails with SignatureDoesNotMatch). `maxFileUploadBytes` is enforced server-side by `/api/files/upload/confirm` after the upload, not by the presigned URL itself. 
+         * Issue a presigned PUT URL for clients to upload directly to object storage. The server stores the issued key with expiry and RBAC is enforced. PUT (not POST) is used because Cloudflare R2 does not implement the S3 POST Object API. The client must PUT the file body to `url` with the exact `headers` returned (a Content-Type mismatch fails with SignatureDoesNotMatch). `maxFileUploadBytes` is enforced server-side by `/api/files/upload/confirm` after the upload, not by the presigned URL itself. 
          * @summary Generate a presigned PUT URL for direct browser upload
          * @param {GeneratePresignedUploadRequest} generatePresignedUploadRequest 
          * @param {*} [options] Override http request option.
@@ -16381,27 +20530,7 @@ export const FilesApiFactory = function (configuration?: Configuration, basePath
             return localVarFp.apiFilesDownloadFileIdGet(requestParameters.fileId, requestParameters.expiresIn, options).then((request) => request(axios, basePath));
         },
         /**
-         * Unauthenticated. Logos are always meant to be public branding assets, but the object storage backend has no per-object ACL, so this route (not the bucket) is what actually serves them - the `key` query param is validated against the exact shape logoStorageService.uploadLogo() produces before signing, so this can never be used to fetch an arbitrary storage key. 302-redirects to a short-lived signed GET url.
-         * @summary Redirect to an org/project logo\'s content
-         * @param {FilesApiApiFilesLogoRedirectGetRequest} requestParameters Request parameters.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiFilesLogoRedirectGet(requestParameters: FilesApiApiFilesLogoRedirectGetRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.apiFilesLogoRedirectGet(requestParameters.key, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Unauthenticated. Only serves files with isPublic=true whose upload has been confirmed and whose virus scan came back clean - the object storage backend has no per-object ACL, so this route (not the storage bucket) is what actually decides whether a \"public\" file\'s bytes are reachable. 302-redirects to a fresh, short-lived (60s) signed GET url so the actual bytes are still served straight off the storage edge.
-         * @summary Redirect to a public file\'s content
-         * @param {FilesApiApiFilesPublicFileIdGetRequest} requestParameters Request parameters.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiFilesPublicFileIdGet(requestParameters: FilesApiApiFilesPublicFileIdGetRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.apiFilesPublicFileIdGet(requestParameters.fileId, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * After a client uploads directly to object storage using the presigned PUT URL, call this endpoint to have the server scan the object, create the File record, and optionally quarantine if infected.
+         * After a client uploads directly to S3 using the presigned PUT URL, call this endpoint to have the server scan the object, create the File record, and optionally quarantine if infected.
          * @summary Confirm direct upload (scan + finalize metadata)
          * @param {FilesApiConfirmDirectUploadRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -16431,7 +20560,7 @@ export const FilesApiFactory = function (configuration?: Configuration, basePath
             return localVarFp.downloadBucketFile(requestParameters.fileId, requestParameters.token, options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns a time-limited provider-signed URL for direct download. Server enforces RBAC before issuing the URL.
+         * Returns a time-limited provider-signed URL (S3) for direct download. Server enforces RBAC before issuing the URL.
          * @summary Generate a presigned URL for downloading a file
          * @param {FilesApiDownloadFileRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -16441,7 +20570,7 @@ export const FilesApiFactory = function (configuration?: Configuration, basePath
             return localVarFp.downloadFile(requestParameters.fileId, requestParameters.token, options).then((request) => request(axios, basePath));
         },
         /**
-         * Issue a presigned PUT URL for clients to upload directly to object storage. The server stores the issued key with expiry and RBAC is enforced. PUT (not POST) is used because the object storage backend does not implement a POST-based upload API. The client must PUT the file body to `url` with the exact `headers` returned (a Content-Type mismatch fails with SignatureDoesNotMatch). `maxFileUploadBytes` is enforced server-side by `/api/files/upload/confirm` after the upload, not by the presigned URL itself. 
+         * Issue a presigned PUT URL for clients to upload directly to object storage. The server stores the issued key with expiry and RBAC is enforced. PUT (not POST) is used because Cloudflare R2 does not implement the S3 POST Object API. The client must PUT the file body to `url` with the exact `headers` returned (a Content-Type mismatch fails with SignatureDoesNotMatch). `maxFileUploadBytes` is enforced server-side by `/api/files/upload/confirm` after the upload, not by the presigned URL itself. 
          * @summary Generate a presigned PUT URL for direct browser upload
          * @param {FilesApiGeneratePresignedUploadRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -16503,20 +20632,6 @@ export interface FilesApiApiFilesDownloadFileIdGetRequest {
      * Signed-URL lifetime in seconds for private files. Clamped to the server\&#39;s min/max range; ignored for public files. Defaults to the server\&#39;s configured expiry.
      */
     readonly expiresIn?: number
-}
-
-/**
- * Request parameters for apiFilesLogoRedirectGet operation in FilesApi.
- */
-export interface FilesApiApiFilesLogoRedirectGetRequest {
-    readonly key: string
-}
-
-/**
- * Request parameters for apiFilesPublicFileIdGet operation in FilesApi.
- */
-export interface FilesApiApiFilesPublicFileIdGetRequest {
-    readonly fileId: string
 }
 
 /**
@@ -16630,29 +20745,7 @@ export class FilesApi extends BaseAPI {
     }
 
     /**
-     * Unauthenticated. Logos are always meant to be public branding assets, but the object storage backend has no per-object ACL, so this route (not the bucket) is what actually serves them - the `key` query param is validated against the exact shape logoStorageService.uploadLogo() produces before signing, so this can never be used to fetch an arbitrary storage key. 302-redirects to a short-lived signed GET url.
-     * @summary Redirect to an org/project logo\'s content
-     * @param {FilesApiApiFilesLogoRedirectGetRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiFilesLogoRedirectGet(requestParameters: FilesApiApiFilesLogoRedirectGetRequest, options?: RawAxiosRequestConfig) {
-        return FilesApiFp(this.configuration).apiFilesLogoRedirectGet(requestParameters.key, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Unauthenticated. Only serves files with isPublic=true whose upload has been confirmed and whose virus scan came back clean - the object storage backend has no per-object ACL, so this route (not the storage bucket) is what actually decides whether a \"public\" file\'s bytes are reachable. 302-redirects to a fresh, short-lived (60s) signed GET url so the actual bytes are still served straight off the storage edge.
-     * @summary Redirect to a public file\'s content
-     * @param {FilesApiApiFilesPublicFileIdGetRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiFilesPublicFileIdGet(requestParameters: FilesApiApiFilesPublicFileIdGetRequest, options?: RawAxiosRequestConfig) {
-        return FilesApiFp(this.configuration).apiFilesPublicFileIdGet(requestParameters.fileId, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * After a client uploads directly to object storage using the presigned PUT URL, call this endpoint to have the server scan the object, create the File record, and optionally quarantine if infected.
+     * After a client uploads directly to S3 using the presigned PUT URL, call this endpoint to have the server scan the object, create the File record, and optionally quarantine if infected.
      * @summary Confirm direct upload (scan + finalize metadata)
      * @param {FilesApiConfirmDirectUploadRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -16685,7 +20778,7 @@ export class FilesApi extends BaseAPI {
     }
 
     /**
-     * Returns a time-limited provider-signed URL for direct download. Server enforces RBAC before issuing the URL.
+     * Returns a time-limited provider-signed URL (S3) for direct download. Server enforces RBAC before issuing the URL.
      * @summary Generate a presigned URL for downloading a file
      * @param {FilesApiDownloadFileRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -16696,7 +20789,7 @@ export class FilesApi extends BaseAPI {
     }
 
     /**
-     * Issue a presigned PUT URL for clients to upload directly to object storage. The server stores the issued key with expiry and RBAC is enforced. PUT (not POST) is used because the object storage backend does not implement a POST-based upload API. The client must PUT the file body to `url` with the exact `headers` returned (a Content-Type mismatch fails with SignatureDoesNotMatch). `maxFileUploadBytes` is enforced server-side by `/api/files/upload/confirm` after the upload, not by the presigned URL itself. 
+     * Issue a presigned PUT URL for clients to upload directly to object storage. The server stores the issued key with expiry and RBAC is enforced. PUT (not POST) is used because Cloudflare R2 does not implement the S3 POST Object API. The client must PUT the file body to `url` with the exact `headers` returned (a Content-Type mismatch fails with SignatureDoesNotMatch). `maxFileUploadBytes` is enforced server-side by `/api/files/upload/confirm` after the upload, not by the presigned URL itself. 
      * @summary Generate a presigned PUT URL for direct browser upload
      * @param {FilesApiGeneratePresignedUploadRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -16808,7 +20901,7 @@ export const FunctionsApiAxiosParamCreator = function (configuration?: Configura
             };
         },
         /**
-         * Create a new serverless function. Trigger types: http, document, file, webhook, cron, messaging. Sandbox globals available today: `payload`, `context`, `env`, `console`. Function code runs in an isolated worker with no ambient network or database access — it can only read its trigger payload, the `env` vars you configure, and return a JSON-serializable result; it cannot yet call back into your project\'s database, storage, or messaging APIs from inside the function body. If you need to read or write project data from a function, call the regular REST API (with your own API key) from your own backend in response to the function\'s returned result, rather than from within the function\'s own code. 
+         * Create a new serverless function. Trigger types: http, document, file, webhook, wallet, cron, messaging. Sandbox globals available today: `payload`, `context`, `env`, `console`. Function code runs in an isolated worker with no ambient network or database access — it can only read its trigger payload, the `env` vars you configure, and return a JSON-serializable result; it cannot yet call back into your project\'s database, storage, messaging, or wallet APIs from inside the function body. If you need to read or write project data from a function, call the regular REST API (with your own API key) from your own backend in response to the function\'s returned result, rather than from within the function\'s own code. 
          * @summary Create function
          * @param {string} projectId 
          * @param {CreateFunctionRequest} createFunctionRequest 
@@ -17142,6 +21235,9 @@ export const FunctionsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -17215,7 +21311,7 @@ export const FunctionsApiAxiosParamCreator = function (configuration?: Configura
             };
         },
         /**
-         * List serverless functions in a project with optional search and filters. Supports trigger types: http, event, document, file, webhook, cron, messaging. 
+         * List serverless functions in a project with optional search and filters. Supports trigger types: http, event, document, file, webhook, wallet, cron, messaging. 
          * @summary List functions
          * @param {string} projectId 
          * @param {number} [page] 
@@ -17392,7 +21488,7 @@ export const FunctionsApiAxiosParamCreator = function (configuration?: Configura
             };
         },
         /**
-         * Test a function with simulated trigger context. Use to verify document, file, webhook, or cron payloads. Executes the function with the provided eventContext merged into the payload.  Asynchronous, same pattern as Execute function: returns 202 immediately with an `executionId`. Poll `GET /api/functions/projects/{projectId}/functions/{functionId}/executions/{executionId}` for the real result. 
+         * Test a function with simulated trigger context. Use to verify document, file, webhook, wallet, or cron payloads. Executes the function with the provided eventContext merged into the payload.  Asynchronous, same pattern as Execute function: returns 202 immediately with an `executionId`. Poll `GET /api/functions/projects/{projectId}/functions/{functionId}/executions/{executionId}` for the real result. 
          * @summary Simulate trigger
          * @param {string} projectId 
          * @param {string} functionId 
@@ -17560,7 +21656,7 @@ export const FunctionsApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Create a new serverless function. Trigger types: http, document, file, webhook, cron, messaging. Sandbox globals available today: `payload`, `context`, `env`, `console`. Function code runs in an isolated worker with no ambient network or database access — it can only read its trigger payload, the `env` vars you configure, and return a JSON-serializable result; it cannot yet call back into your project\'s database, storage, or messaging APIs from inside the function body. If you need to read or write project data from a function, call the regular REST API (with your own API key) from your own backend in response to the function\'s returned result, rather than from within the function\'s own code. 
+         * Create a new serverless function. Trigger types: http, document, file, webhook, wallet, cron, messaging. Sandbox globals available today: `payload`, `context`, `env`, `console`. Function code runs in an isolated worker with no ambient network or database access — it can only read its trigger payload, the `env` vars you configure, and return a JSON-serializable result; it cannot yet call back into your project\'s database, storage, messaging, or wallet APIs from inside the function body. If you need to read or write project data from a function, call the regular REST API (with your own API key) from your own backend in response to the function\'s returned result, rather than from within the function\'s own code. 
          * @summary Create function
          * @param {string} projectId 
          * @param {CreateFunctionRequest} createFunctionRequest 
@@ -17676,7 +21772,7 @@ export const FunctionsApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * List serverless functions in a project with optional search and filters. Supports trigger types: http, event, document, file, webhook, cron, messaging. 
+         * List serverless functions in a project with optional search and filters. Supports trigger types: http, event, document, file, webhook, wallet, cron, messaging. 
          * @summary List functions
          * @param {string} projectId 
          * @param {number} [page] 
@@ -17724,7 +21820,7 @@ export const FunctionsApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Test a function with simulated trigger context. Use to verify document, file, webhook, or cron payloads. Executes the function with the provided eventContext merged into the payload.  Asynchronous, same pattern as Execute function: returns 202 immediately with an `executionId`. Poll `GET /api/functions/projects/{projectId}/functions/{functionId}/executions/{executionId}` for the real result. 
+         * Test a function with simulated trigger context. Use to verify document, file, webhook, wallet, or cron payloads. Executes the function with the provided eventContext merged into the payload.  Asynchronous, same pattern as Execute function: returns 202 immediately with an `executionId`. Poll `GET /api/functions/projects/{projectId}/functions/{functionId}/executions/{executionId}` for the real result. 
          * @summary Simulate trigger
          * @param {string} projectId 
          * @param {string} functionId 
@@ -17788,7 +21884,7 @@ export const FunctionsApiFactory = function (configuration?: Configuration, base
             return localVarFp.activateFunction(requestParameters.projectId, requestParameters.functionId, options).then((request) => request(axios, basePath));
         },
         /**
-         * Create a new serverless function. Trigger types: http, document, file, webhook, cron, messaging. Sandbox globals available today: `payload`, `context`, `env`, `console`. Function code runs in an isolated worker with no ambient network or database access — it can only read its trigger payload, the `env` vars you configure, and return a JSON-serializable result; it cannot yet call back into your project\'s database, storage, or messaging APIs from inside the function body. If you need to read or write project data from a function, call the regular REST API (with your own API key) from your own backend in response to the function\'s returned result, rather than from within the function\'s own code. 
+         * Create a new serverless function. Trigger types: http, document, file, webhook, wallet, cron, messaging. Sandbox globals available today: `payload`, `context`, `env`, `console`. Function code runs in an isolated worker with no ambient network or database access — it can only read its trigger payload, the `env` vars you configure, and return a JSON-serializable result; it cannot yet call back into your project\'s database, storage, messaging, or wallet APIs from inside the function body. If you need to read or write project data from a function, call the regular REST API (with your own API key) from your own backend in response to the function\'s returned result, rather than from within the function\'s own code. 
          * @summary Create function
          * @param {FunctionsApiCreateFunctionRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -17868,7 +21964,7 @@ export const FunctionsApiFactory = function (configuration?: Configuration, base
             return localVarFp.getFunctionVersions(requestParameters.projectId, requestParameters.functionId, options).then((request) => request(axios, basePath));
         },
         /**
-         * List serverless functions in a project with optional search and filters. Supports trigger types: http, event, document, file, webhook, cron, messaging. 
+         * List serverless functions in a project with optional search and filters. Supports trigger types: http, event, document, file, webhook, wallet, cron, messaging. 
          * @summary List functions
          * @param {FunctionsApiListFunctionsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -17898,7 +21994,7 @@ export const FunctionsApiFactory = function (configuration?: Configuration, base
             return localVarFp.rollbackFunction(requestParameters.projectId, requestParameters.functionId, requestParameters.rollbackFunctionRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * Test a function with simulated trigger context. Use to verify document, file, webhook, or cron payloads. Executes the function with the provided eventContext merged into the payload.  Asynchronous, same pattern as Execute function: returns 202 immediately with an `executionId`. Poll `GET /api/functions/projects/{projectId}/functions/{functionId}/executions/{executionId}` for the real result. 
+         * Test a function with simulated trigger context. Use to verify document, file, webhook, wallet, or cron payloads. Executes the function with the provided eventContext merged into the payload.  Asynchronous, same pattern as Execute function: returns 202 immediately with an `executionId`. Poll `GET /api/functions/projects/{projectId}/functions/{functionId}/executions/{executionId}` for the real result. 
          * @summary Simulate trigger
          * @param {FunctionsApiSimulateFunctionTriggerRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -18122,7 +22218,7 @@ export class FunctionsApi extends BaseAPI {
     }
 
     /**
-     * Create a new serverless function. Trigger types: http, document, file, webhook, cron, messaging. Sandbox globals available today: `payload`, `context`, `env`, `console`. Function code runs in an isolated worker with no ambient network or database access — it can only read its trigger payload, the `env` vars you configure, and return a JSON-serializable result; it cannot yet call back into your project\'s database, storage, or messaging APIs from inside the function body. If you need to read or write project data from a function, call the regular REST API (with your own API key) from your own backend in response to the function\'s returned result, rather than from within the function\'s own code. 
+     * Create a new serverless function. Trigger types: http, document, file, webhook, wallet, cron, messaging. Sandbox globals available today: `payload`, `context`, `env`, `console`. Function code runs in an isolated worker with no ambient network or database access — it can only read its trigger payload, the `env` vars you configure, and return a JSON-serializable result; it cannot yet call back into your project\'s database, storage, messaging, or wallet APIs from inside the function body. If you need to read or write project data from a function, call the regular REST API (with your own API key) from your own backend in response to the function\'s returned result, rather than from within the function\'s own code. 
      * @summary Create function
      * @param {FunctionsApiCreateFunctionRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -18210,7 +22306,7 @@ export class FunctionsApi extends BaseAPI {
     }
 
     /**
-     * List serverless functions in a project with optional search and filters. Supports trigger types: http, event, document, file, webhook, cron, messaging. 
+     * List serverless functions in a project with optional search and filters. Supports trigger types: http, event, document, file, webhook, wallet, cron, messaging. 
      * @summary List functions
      * @param {FunctionsApiListFunctionsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -18243,7 +22339,7 @@ export class FunctionsApi extends BaseAPI {
     }
 
     /**
-     * Test a function with simulated trigger context. Use to verify document, file, webhook, or cron payloads. Executes the function with the provided eventContext merged into the payload.  Asynchronous, same pattern as Execute function: returns 202 immediately with an `executionId`. Poll `GET /api/functions/projects/{projectId}/functions/{functionId}/executions/{executionId}` for the real result. 
+     * Test a function with simulated trigger context. Use to verify document, file, webhook, wallet, or cron payloads. Executes the function with the provided eventContext merged into the payload.  Asynchronous, same pattern as Execute function: returns 202 immediately with an `executionId`. Poll `GET /api/functions/projects/{projectId}/functions/{functionId}/executions/{executionId}` for the real result. 
      * @summary Simulate trigger
      * @param {FunctionsApiSimulateFunctionTriggerRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -18282,6 +22378,7 @@ export const ListFunctionsTriggerTypeEnum = {
     Document: 'document',
     File: 'file',
     Webhook: 'webhook',
+    Wallet: 'wallet',
     Cron: 'cron',
     Messaging: 'messaging',
 } as const;
@@ -18486,6 +22583,9 @@ export const IntegrationsApiAxiosParamCreator = function (configuration?: Config
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -18532,6 +22632,9 @@ export const IntegrationsApiAxiosParamCreator = function (configuration?: Config
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -18580,6 +22683,9 @@ export const IntegrationsApiAxiosParamCreator = function (configuration?: Config
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -18630,6 +22736,9 @@ export const IntegrationsApiAxiosParamCreator = function (configuration?: Config
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -18678,6 +22787,9 @@ export const IntegrationsApiAxiosParamCreator = function (configuration?: Config
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -18724,6 +22836,9 @@ export const IntegrationsApiAxiosParamCreator = function (configuration?: Config
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -18766,6 +22881,9 @@ export const IntegrationsApiAxiosParamCreator = function (configuration?: Config
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -18803,6 +22921,9 @@ export const IntegrationsApiAxiosParamCreator = function (configuration?: Config
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -18850,6 +22971,9 @@ export const IntegrationsApiAxiosParamCreator = function (configuration?: Config
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -18899,6 +23023,9 @@ export const IntegrationsApiAxiosParamCreator = function (configuration?: Config
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -18951,6 +23078,9 @@ export const IntegrationsApiAxiosParamCreator = function (configuration?: Config
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -19001,6 +23131,9 @@ export const IntegrationsApiAxiosParamCreator = function (configuration?: Config
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -19079,7 +23212,7 @@ export const IntegrationsApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async executeIntegration(projectId: string, integrationId: string, executeIntegrationRequest: ExecuteIntegrationRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TestIntegration200Response>> {
+        async executeIntegration(projectId: string, integrationId: string, executeIntegrationRequest: ExecuteIntegrationRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TestWalletWebhook200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.executeIntegration(projectId, integrationId, executeIntegrationRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['IntegrationsApi.executeIntegration']?.[localVarOperationServerIndex]?.url;
@@ -19176,7 +23309,7 @@ export const IntegrationsApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async testIntegration(projectId: string, integrationId: string, testIntegrationRequest: TestIntegrationRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TestIntegration200Response>> {
+        async testIntegration(projectId: string, integrationId: string, testIntegrationRequest: TestIntegrationRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TestWalletWebhook200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.testIntegration(projectId, integrationId, testIntegrationRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['IntegrationsApi.testIntegration']?.[localVarOperationServerIndex]?.url;
@@ -19243,7 +23376,7 @@ export const IntegrationsApiFactory = function (configuration?: Configuration, b
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        executeIntegration(requestParameters: IntegrationsApiExecuteIntegrationRequest, options?: RawAxiosRequestConfig): AxiosPromise<TestIntegration200Response> {
+        executeIntegration(requestParameters: IntegrationsApiExecuteIntegrationRequest, options?: RawAxiosRequestConfig): AxiosPromise<TestWalletWebhook200Response> {
             return localVarFp.executeIntegration(requestParameters.projectId, requestParameters.integrationId, requestParameters.executeIntegrationRequest, options).then((request) => request(axios, basePath));
         },
         /**
@@ -19312,7 +23445,7 @@ export const IntegrationsApiFactory = function (configuration?: Configuration, b
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        testIntegration(requestParameters: IntegrationsApiTestIntegrationRequest, options?: RawAxiosRequestConfig): AxiosPromise<TestIntegration200Response> {
+        testIntegration(requestParameters: IntegrationsApiTestIntegrationRequest, options?: RawAxiosRequestConfig): AxiosPromise<TestWalletWebhook200Response> {
             return localVarFp.testIntegration(requestParameters.projectId, requestParameters.integrationId, requestParameters.testIntegrationRequest, options).then((request) => request(axios, basePath));
         },
         /**
@@ -19583,44 +23716,6 @@ export type GetUsageStatsPeriodEnum = typeof GetUsageStatsPeriodEnum[keyof typeo
 export const KYCApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
-         * Audit trail of compliance webhook events received for this organization and whether Mudbase forwarded each one to the organization\'s own endpoint. Owner, admin, and developer roles.
-         * @summary List recent compliance webhook deliveries
-         * @param {number} [limit] Maximum number of events to return.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiKycEventsGet: async (limit?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/kyc/events`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication OrgBearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            if (limit !== undefined) {
-                localVarQueryParameter['limit'] = limit;
-            }
-
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Creates a verification session for the caller\'s organization. Owner/admin only.
          * @summary Start a platform KYC session
          * @param {ApiKycSessionsPostRequest} [apiKycSessionsPostRequest] 
@@ -19797,114 +23892,6 @@ export const KYCApiAxiosParamCreator = function (configuration?: Configuration) 
                 options: localVarRequestOptions,
             };
         },
-        /**
-         * Delivers a sample `kyc.test` payload, signed exactly like a real event, so you can confirm your receiver and signature verification work. Ignores your event subscription. Owner/admin only.
-         * @summary Send a signed test event to the configured webhook endpoint
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiKycWebhookConfigTestPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/kyc/webhook-config/test`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication OrgBearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Returns the verification workflows configured on this Mudbase account, split into kyc (individual identity) and kyb (business verification). Used to choose a default workflow in the console instead of pasting a workflow UUID. Owner/admin only.
-         * @summary List available verification workflows
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiKycWorkflowsGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/kyc/workflows`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication OrgBearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Creates a KYB session scoped to your project. The workflow is resolved from the request, then the organization\'s configured default KYB workflow, then the platform default. Results arrive at your configured KYC webhook as `kyb.completed`.
-         * @summary Start a business verification (KYB) session for one of your business customers
-         * @param {string} projectId 
-         * @param {ApiProjectsProjectIdKybSessionsPostRequest} [apiProjectsProjectIdKybSessionsPostRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiProjectsProjectIdKybSessionsPost: async (projectId: string, apiProjectsProjectIdKybSessionsPostRequest?: ApiProjectsProjectIdKybSessionsPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'projectId' is not null or undefined
-            assertParamExists('apiProjectsProjectIdKybSessionsPost', 'projectId', projectId)
-            const localVarPath = `/api/projects/{projectId}/kyb/sessions`
-                .replace('{projectId}', encodeURIComponent(String(projectId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication OrgBearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiProjectsProjectIdKybSessionsPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
     }
 };
 
@@ -19914,19 +23901,6 @@ export const KYCApiAxiosParamCreator = function (configuration?: Configuration) 
 export const KYCApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = KYCApiAxiosParamCreator(configuration)
     return {
-        /**
-         * Audit trail of compliance webhook events received for this organization and whether Mudbase forwarded each one to the organization\'s own endpoint. Owner, admin, and developer roles.
-         * @summary List recent compliance webhook deliveries
-         * @param {number} [limit] Maximum number of events to return.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiKycEventsGet(limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiKycEventsGet(limit, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['KYCApi.apiKycEventsGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
         /**
          * Creates a verification session for the caller\'s organization. Owner/admin only.
          * @summary Start a platform KYC session
@@ -19990,44 +23964,6 @@ export const KYCApiFp = function(configuration?: Configuration) {
             const localVarOperationServerBasePath = operationServerMap['KYCApi.apiKycWebhookConfigPut']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
-        /**
-         * Delivers a sample `kyc.test` payload, signed exactly like a real event, so you can confirm your receiver and signature verification work. Ignores your event subscription. Owner/admin only.
-         * @summary Send a signed test event to the configured webhook endpoint
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiKycWebhookConfigTestPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiKycWebhookConfigTestPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiKycWebhookConfigTestPost(options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['KYCApi.apiKycWebhookConfigTestPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Returns the verification workflows configured on this Mudbase account, split into kyc (individual identity) and kyb (business verification). Used to choose a default workflow in the console instead of pasting a workflow UUID. Owner/admin only.
-         * @summary List available verification workflows
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiKycWorkflowsGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiKycWorkflowsGet200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiKycWorkflowsGet(options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['KYCApi.apiKycWorkflowsGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Creates a KYB session scoped to your project. The workflow is resolved from the request, then the organization\'s configured default KYB workflow, then the platform default. Results arrive at your configured KYC webhook as `kyb.completed`.
-         * @summary Start a business verification (KYB) session for one of your business customers
-         * @param {string} projectId 
-         * @param {ApiProjectsProjectIdKybSessionsPostRequest} [apiProjectsProjectIdKybSessionsPostRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiProjectsProjectIdKybSessionsPost(projectId: string, apiProjectsProjectIdKybSessionsPostRequest?: ApiProjectsProjectIdKybSessionsPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiProjectsProjectIdKybSessionsPost(projectId, apiProjectsProjectIdKybSessionsPostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['KYCApi.apiProjectsProjectIdKybSessionsPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
     }
 };
 
@@ -20037,16 +23973,6 @@ export const KYCApiFp = function(configuration?: Configuration) {
 export const KYCApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
     const localVarFp = KYCApiFp(configuration)
     return {
-        /**
-         * Audit trail of compliance webhook events received for this organization and whether Mudbase forwarded each one to the organization\'s own endpoint. Owner, admin, and developer roles.
-         * @summary List recent compliance webhook deliveries
-         * @param {KYCApiApiKycEventsGetRequest} requestParameters Request parameters.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiKycEventsGet(requestParameters: KYCApiApiKycEventsGetRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.apiKycEventsGet(requestParameters.limit, options).then((request) => request(axios, basePath));
-        },
         /**
          * Creates a verification session for the caller\'s organization. Owner/admin only.
          * @summary Start a platform KYC session
@@ -20095,46 +24021,8 @@ export const KYCApiFactory = function (configuration?: Configuration, basePath?:
         apiKycWebhookConfigPut(requestParameters: KYCApiApiKycWebhookConfigPutRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<ApiKycWebhookConfigPut200Response> {
             return localVarFp.apiKycWebhookConfigPut(requestParameters.apiKycWebhookConfigPutRequest, options).then((request) => request(axios, basePath));
         },
-        /**
-         * Delivers a sample `kyc.test` payload, signed exactly like a real event, so you can confirm your receiver and signature verification work. Ignores your event subscription. Owner/admin only.
-         * @summary Send a signed test event to the configured webhook endpoint
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiKycWebhookConfigTestPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiKycWebhookConfigTestPost200Response> {
-            return localVarFp.apiKycWebhookConfigTestPost(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Returns the verification workflows configured on this Mudbase account, split into kyc (individual identity) and kyb (business verification). Used to choose a default workflow in the console instead of pasting a workflow UUID. Owner/admin only.
-         * @summary List available verification workflows
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiKycWorkflowsGet(options?: RawAxiosRequestConfig): AxiosPromise<ApiKycWorkflowsGet200Response> {
-            return localVarFp.apiKycWorkflowsGet(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Creates a KYB session scoped to your project. The workflow is resolved from the request, then the organization\'s configured default KYB workflow, then the platform default. Results arrive at your configured KYC webhook as `kyb.completed`.
-         * @summary Start a business verification (KYB) session for one of your business customers
-         * @param {KYCApiApiProjectsProjectIdKybSessionsPostRequest} requestParameters Request parameters.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiProjectsProjectIdKybSessionsPost(requestParameters: KYCApiApiProjectsProjectIdKybSessionsPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.apiProjectsProjectIdKybSessionsPost(requestParameters.projectId, requestParameters.apiProjectsProjectIdKybSessionsPostRequest, options).then((request) => request(axios, basePath));
-        },
     };
 };
-
-/**
- * Request parameters for apiKycEventsGet operation in KYCApi.
- */
-export interface KYCApiApiKycEventsGetRequest {
-    /**
-     * Maximum number of events to return.
-     */
-    readonly limit?: number
-}
 
 /**
  * Request parameters for apiKycSessionsPost operation in KYCApi.
@@ -20161,29 +24049,9 @@ export interface KYCApiApiKycWebhookConfigPutRequest {
 }
 
 /**
- * Request parameters for apiProjectsProjectIdKybSessionsPost operation in KYCApi.
- */
-export interface KYCApiApiProjectsProjectIdKybSessionsPostRequest {
-    readonly projectId: string
-
-    readonly apiProjectsProjectIdKybSessionsPostRequest?: ApiProjectsProjectIdKybSessionsPostRequest
-}
-
-/**
  * KYCApi - object-oriented interface
  */
 export class KYCApi extends BaseAPI {
-    /**
-     * Audit trail of compliance webhook events received for this organization and whether Mudbase forwarded each one to the organization\'s own endpoint. Owner, admin, and developer roles.
-     * @summary List recent compliance webhook deliveries
-     * @param {KYCApiApiKycEventsGetRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiKycEventsGet(requestParameters: KYCApiApiKycEventsGetRequest = {}, options?: RawAxiosRequestConfig) {
-        return KYCApiFp(this.configuration).apiKycEventsGet(requestParameters.limit, options).then((request) => request(this.axios, this.basePath));
-    }
-
     /**
      * Creates a verification session for the caller\'s organization. Owner/admin only.
      * @summary Start a platform KYC session
@@ -20236,135 +24104,6 @@ export class KYCApi extends BaseAPI {
     public apiKycWebhookConfigPut(requestParameters: KYCApiApiKycWebhookConfigPutRequest = {}, options?: RawAxiosRequestConfig) {
         return KYCApiFp(this.configuration).apiKycWebhookConfigPut(requestParameters.apiKycWebhookConfigPutRequest, options).then((request) => request(this.axios, this.basePath));
     }
-
-    /**
-     * Delivers a sample `kyc.test` payload, signed exactly like a real event, so you can confirm your receiver and signature verification work. Ignores your event subscription. Owner/admin only.
-     * @summary Send a signed test event to the configured webhook endpoint
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiKycWebhookConfigTestPost(options?: RawAxiosRequestConfig) {
-        return KYCApiFp(this.configuration).apiKycWebhookConfigTestPost(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Returns the verification workflows configured on this Mudbase account, split into kyc (individual identity) and kyb (business verification). Used to choose a default workflow in the console instead of pasting a workflow UUID. Owner/admin only.
-     * @summary List available verification workflows
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiKycWorkflowsGet(options?: RawAxiosRequestConfig) {
-        return KYCApiFp(this.configuration).apiKycWorkflowsGet(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Creates a KYB session scoped to your project. The workflow is resolved from the request, then the organization\'s configured default KYB workflow, then the platform default. Results arrive at your configured KYC webhook as `kyb.completed`.
-     * @summary Start a business verification (KYB) session for one of your business customers
-     * @param {KYCApiApiProjectsProjectIdKybSessionsPostRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiProjectsProjectIdKybSessionsPost(requestParameters: KYCApiApiProjectsProjectIdKybSessionsPostRequest, options?: RawAxiosRequestConfig) {
-        return KYCApiFp(this.configuration).apiProjectsProjectIdKybSessionsPost(requestParameters.projectId, requestParameters.apiProjectsProjectIdKybSessionsPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-}
-
-
-
-/**
- * MCPApi - axios parameter creator
- */
-export const MCPApiAxiosParamCreator = function (configuration?: Configuration) {
-    return {
-        /**
-         * Whether the org\'s plan includes MCP access and, when enabled, the endpoint URL an MCP client should connect to (the org\'s dedicated API host if it has dedicated infrastructure, otherwise the shared platform host). Auth here is the normal dashboard session - this powers the console\'s MCP settings page, distinct from the API-key-authenticated POST / endpoint an actual MCP client calls.
-         * @summary MCP connection status for the current org
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        mcpConfigGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/mcp/config`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication OrgBearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-    }
-};
-
-/**
- * MCPApi - functional programming interface
- */
-export const MCPApiFp = function(configuration?: Configuration) {
-    const localVarAxiosParamCreator = MCPApiAxiosParamCreator(configuration)
-    return {
-        /**
-         * Whether the org\'s plan includes MCP access and, when enabled, the endpoint URL an MCP client should connect to (the org\'s dedicated API host if it has dedicated infrastructure, otherwise the shared platform host). Auth here is the normal dashboard session - this powers the console\'s MCP settings page, distinct from the API-key-authenticated POST / endpoint an actual MCP client calls.
-         * @summary MCP connection status for the current org
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async mcpConfigGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<McpConfigGet200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.mcpConfigGet(options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['MCPApi.mcpConfigGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-    }
-};
-
-/**
- * MCPApi - factory interface
- */
-export const MCPApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
-    const localVarFp = MCPApiFp(configuration)
-    return {
-        /**
-         * Whether the org\'s plan includes MCP access and, when enabled, the endpoint URL an MCP client should connect to (the org\'s dedicated API host if it has dedicated infrastructure, otherwise the shared platform host). Auth here is the normal dashboard session - this powers the console\'s MCP settings page, distinct from the API-key-authenticated POST / endpoint an actual MCP client calls.
-         * @summary MCP connection status for the current org
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        mcpConfigGet(options?: RawAxiosRequestConfig): AxiosPromise<McpConfigGet200Response> {
-            return localVarFp.mcpConfigGet(options).then((request) => request(axios, basePath));
-        },
-    };
-};
-
-/**
- * MCPApi - object-oriented interface
- */
-export class MCPApi extends BaseAPI {
-    /**
-     * Whether the org\'s plan includes MCP access and, when enabled, the endpoint URL an MCP client should connect to (the org\'s dedicated API host if it has dedicated infrastructure, otherwise the shared platform host). Auth here is the normal dashboard session - this powers the console\'s MCP settings page, distinct from the API-key-authenticated POST / endpoint an actual MCP client calls.
-     * @summary MCP connection status for the current org
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public mcpConfigGet(options?: RawAxiosRequestConfig) {
-        return MCPApiFp(this.configuration).mcpConfigGet(options).then((request) => request(this.axios, this.basePath));
-    }
 }
 
 
@@ -20404,6 +24143,9 @@ export const MessagingApiAxiosParamCreator = function (configuration?: Configura
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -20465,6 +24207,9 @@ export const MessagingApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -20493,8 +24238,8 @@ export const MessagingApiAxiosParamCreator = function (configuration?: Configura
             };
         },
         /**
-         * Returns whether this project has its own push provider credentials stored (encrypted). This is an optional, advanced override - push works out of the box with platform-managed credentials, so when no per-project credentials are stored, push is sent with the platform-managed credentials.
-         * @summary Get bring-your-own push credentials status (masked)
+         * Returns whether a per-project Firebase service account JSON is stored (encrypted). Falls back to platform `FCM_SERVICE_ACCOUNT_JSON` when unset.
+         * @summary Get BYO FCM configuration (masked)
          * @param {string} projectId 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -20583,53 +24328,8 @@ export const MessagingApiAxiosParamCreator = function (configuration?: Configura
             };
         },
         /**
-         * List the device push tokens registered to a project, most-recently-seen first.  Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). 
-         * @summary List registered device tokens
-         * @param {string} projectId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        listDeviceTokens: async (projectId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'projectId' is not null or undefined
-            assertParamExists('listDeviceTokens', 'projectId', projectId)
-            const localVarPath = `/api/messaging/projects/{projectId}/messaging/devices`
-                .replace('{projectId}', encodeURIComponent(String(projectId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication OrgBearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            // authentication ApiKeyAuth required
-            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
-
-            // authentication ProjectBearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Optional advanced step - push works out of the box with platform-managed credentials, so most projects never call this. Use it only to deliver push from your own push provider account. Body `serviceAccountJson` is the Firebase service account JSON you download from your own Firebase project (stored encrypted). Send `clear: true` to remove it and go back to the platform-managed credentials. 
-         * @summary Set or clear your own push service account (optional)
+         * Body `serviceAccountJson` is the Firebase service account object (stored encrypted). Send `clear: true` to remove and use platform FCM only. 
+         * @summary Set or clear per-project FCM service account
          * @param {string} projectId 
          * @param {PatchProjectFcmConfigRequest} patchProjectFcmConfigRequest 
          * @param {*} [options] Override http request option.
@@ -20728,56 +24428,6 @@ export const MessagingApiAxiosParamCreator = function (configuration?: Configura
             };
         },
         /**
-         * Register a device\'s push token with a project so it can receive push notifications. A client registers its token here first; the send endpoint (`/messaging/push`) only delivers to tokens that are registered to the project, so a caller cannot push to arbitrary or other-tenant tokens.  Registration is idempotent - re-registering a token that already exists just refreshes it (updates `platform` and `lastSeenAt`) instead of creating a duplicate. Each project has a cap on the number of registered tokens; when the cap is reached, the least-recently-seen tokens are evicted to make room, so a register-on-launch call never fails.  Push works out of the box with platform-managed credentials - no provider setup is required to start registering tokens and sending push.  Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). 
-         * @summary Register a device push token
-         * @param {string} projectId 
-         * @param {DeviceRegisterRequest} deviceRegisterRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        registerDeviceToken: async (projectId: string, deviceRegisterRequest: DeviceRegisterRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'projectId' is not null or undefined
-            assertParamExists('registerDeviceToken', 'projectId', projectId)
-            // verify required parameter 'deviceRegisterRequest' is not null or undefined
-            assertParamExists('registerDeviceToken', 'deviceRegisterRequest', deviceRegisterRequest)
-            const localVarPath = `/api/messaging/projects/{projectId}/messaging/devices`
-                .replace('{projectId}', encodeURIComponent(String(projectId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication OrgBearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            // authentication ApiKeyAuth required
-            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
-
-            // authentication ProjectBearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(deviceRegisterRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Send an email message to one or more recipients. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
          * @summary Send email
          * @param {string} projectId 
@@ -20857,6 +24507,9 @@ export const MessagingApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -20875,7 +24528,7 @@ export const MessagingApiAxiosParamCreator = function (configuration?: Configura
             };
         },
         /**
-         * Send an SMS message to one or more phone numbers. Uses project BYO SMS when configured; otherwise the platform SMS provider if set. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Send an SMS message to one or more phone numbers. Uses project BYO SMS when configured; otherwise platform Twilio env if set. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
          * @summary Send SMS
          * @param {string} projectId 
          * @param {SMSRequest} sMSRequest 
@@ -20924,56 +24577,6 @@ export const MessagingApiAxiosParamCreator = function (configuration?: Configura
                 options: localVarRequestOptions,
             };
         },
-        /**
-         * Remove a device push token from a project - call this on logout or when a token rotates, so the send endpoint stops delivering to it.  The token to remove is sent in the request body. Removing a token that is not registered is a no-op and still returns 200 (with `removed: false`).  Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). 
-         * @summary Unregister a device push token
-         * @param {string} projectId 
-         * @param {DeviceUnregisterRequest} deviceUnregisterRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        unregisterDeviceToken: async (projectId: string, deviceUnregisterRequest: DeviceUnregisterRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'projectId' is not null or undefined
-            assertParamExists('unregisterDeviceToken', 'projectId', projectId)
-            // verify required parameter 'deviceUnregisterRequest' is not null or undefined
-            assertParamExists('unregisterDeviceToken', 'deviceUnregisterRequest', deviceUnregisterRequest)
-            const localVarPath = `/api/messaging/projects/{projectId}/messaging/devices`
-                .replace('{projectId}', encodeURIComponent(String(projectId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication OrgBearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            // authentication ApiKeyAuth required
-            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
-
-            // authentication ProjectBearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(deviceUnregisterRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
     }
 };
 
@@ -21016,8 +24619,8 @@ export const MessagingApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns whether this project has its own push provider credentials stored (encrypted). This is an optional, advanced override - push works out of the box with platform-managed credentials, so when no per-project credentials are stored, push is sent with the platform-managed credentials.
-         * @summary Get bring-your-own push credentials status (masked)
+         * Returns whether a per-project Firebase service account JSON is stored (encrypted). Falls back to platform `FCM_SERVICE_ACCOUNT_JSON` when unset.
+         * @summary Get BYO FCM configuration (masked)
          * @param {string} projectId 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -21042,21 +24645,8 @@ export const MessagingApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * List the device push tokens registered to a project, most-recently-seen first.  Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). 
-         * @summary List registered device tokens
-         * @param {string} projectId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async listDeviceTokens(projectId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DeviceListResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.listDeviceTokens(projectId, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['MessagingApi.listDeviceTokens']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Optional advanced step - push works out of the box with platform-managed credentials, so most projects never call this. Use it only to deliver push from your own push provider account. Body `serviceAccountJson` is the Firebase service account JSON you download from your own Firebase project (stored encrypted). Send `clear: true` to remove it and go back to the platform-managed credentials. 
-         * @summary Set or clear your own push service account (optional)
+         * Body `serviceAccountJson` is the Firebase service account object (stored encrypted). Send `clear: true` to remove and use platform FCM only. 
+         * @summary Set or clear per-project FCM service account
          * @param {string} projectId 
          * @param {PatchProjectFcmConfigRequest} patchProjectFcmConfigRequest 
          * @param {*} [options] Override http request option.
@@ -21080,20 +24670,6 @@ export const MessagingApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.patchProjectSmsByo(projectId, projectSmsByoPatchRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['MessagingApi.patchProjectSmsByo']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Register a device\'s push token with a project so it can receive push notifications. A client registers its token here first; the send endpoint (`/messaging/push`) only delivers to tokens that are registered to the project, so a caller cannot push to arbitrary or other-tenant tokens.  Registration is idempotent - re-registering a token that already exists just refreshes it (updates `platform` and `lastSeenAt`) instead of creating a duplicate. Each project has a cap on the number of registered tokens; when the cap is reached, the least-recently-seen tokens are evicted to make room, so a register-on-launch call never fails.  Push works out of the box with platform-managed credentials - no provider setup is required to start registering tokens and sending push.  Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). 
-         * @summary Register a device push token
-         * @param {string} projectId 
-         * @param {DeviceRegisterRequest} deviceRegisterRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async registerDeviceToken(projectId: string, deviceRegisterRequest: DeviceRegisterRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DeviceRegisteredResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.registerDeviceToken(projectId, deviceRegisterRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['MessagingApi.registerDeviceToken']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -21125,7 +24701,7 @@ export const MessagingApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Send an SMS message to one or more phone numbers. Uses project BYO SMS when configured; otherwise the platform SMS provider if set. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Send an SMS message to one or more phone numbers. Uses project BYO SMS when configured; otherwise platform Twilio env if set. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
          * @summary Send SMS
          * @param {string} projectId 
          * @param {SMSRequest} sMSRequest 
@@ -21136,20 +24712,6 @@ export const MessagingApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.sendSMS(projectId, sMSRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['MessagingApi.sendSMS']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Remove a device push token from a project - call this on logout or when a token rotates, so the send endpoint stops delivering to it.  The token to remove is sent in the request body. Removing a token that is not registered is a no-op and still returns 200 (with `removed: false`).  Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). 
-         * @summary Unregister a device push token
-         * @param {string} projectId 
-         * @param {DeviceUnregisterRequest} deviceUnregisterRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async unregisterDeviceToken(projectId: string, deviceUnregisterRequest: DeviceUnregisterRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DeviceUnregisteredResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.unregisterDeviceToken(projectId, deviceUnregisterRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['MessagingApi.unregisterDeviceToken']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
     }
@@ -21182,8 +24744,8 @@ export const MessagingApiFactory = function (configuration?: Configuration, base
             return localVarFp.getMessageStats(requestParameters.projectId, requestParameters.startDate, requestParameters.endDate, options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns whether this project has its own push provider credentials stored (encrypted). This is an optional, advanced override - push works out of the box with platform-managed credentials, so when no per-project credentials are stored, push is sent with the platform-managed credentials.
-         * @summary Get bring-your-own push credentials status (masked)
+         * Returns whether a per-project Firebase service account JSON is stored (encrypted). Falls back to platform `FCM_SERVICE_ACCOUNT_JSON` when unset.
+         * @summary Get BYO FCM configuration (masked)
          * @param {MessagingApiGetProjectFcmConfigRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -21202,18 +24764,8 @@ export const MessagingApiFactory = function (configuration?: Configuration, base
             return localVarFp.getProjectSmsByo(requestParameters.projectId, options).then((request) => request(axios, basePath));
         },
         /**
-         * List the device push tokens registered to a project, most-recently-seen first.  Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). 
-         * @summary List registered device tokens
-         * @param {MessagingApiListDeviceTokensRequest} requestParameters Request parameters.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        listDeviceTokens(requestParameters: MessagingApiListDeviceTokensRequest, options?: RawAxiosRequestConfig): AxiosPromise<DeviceListResponse> {
-            return localVarFp.listDeviceTokens(requestParameters.projectId, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Optional advanced step - push works out of the box with platform-managed credentials, so most projects never call this. Use it only to deliver push from your own push provider account. Body `serviceAccountJson` is the Firebase service account JSON you download from your own Firebase project (stored encrypted). Send `clear: true` to remove it and go back to the platform-managed credentials. 
-         * @summary Set or clear your own push service account (optional)
+         * Body `serviceAccountJson` is the Firebase service account object (stored encrypted). Send `clear: true` to remove and use platform FCM only. 
+         * @summary Set or clear per-project FCM service account
          * @param {MessagingApiPatchProjectFcmConfigRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -21230,16 +24782,6 @@ export const MessagingApiFactory = function (configuration?: Configuration, base
          */
         patchProjectSmsByo(requestParameters: MessagingApiPatchProjectSmsByoRequest, options?: RawAxiosRequestConfig): AxiosPromise<GetProjectSmsByo200Response> {
             return localVarFp.patchProjectSmsByo(requestParameters.projectId, requestParameters.projectSmsByoPatchRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Register a device\'s push token with a project so it can receive push notifications. A client registers its token here first; the send endpoint (`/messaging/push`) only delivers to tokens that are registered to the project, so a caller cannot push to arbitrary or other-tenant tokens.  Registration is idempotent - re-registering a token that already exists just refreshes it (updates `platform` and `lastSeenAt`) instead of creating a duplicate. Each project has a cap on the number of registered tokens; when the cap is reached, the least-recently-seen tokens are evicted to make room, so a register-on-launch call never fails.  Push works out of the box with platform-managed credentials - no provider setup is required to start registering tokens and sending push.  Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). 
-         * @summary Register a device push token
-         * @param {MessagingApiRegisterDeviceTokenRequest} requestParameters Request parameters.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        registerDeviceToken(requestParameters: MessagingApiRegisterDeviceTokenRequest, options?: RawAxiosRequestConfig): AxiosPromise<DeviceRegisteredResponse> {
-            return localVarFp.registerDeviceToken(requestParameters.projectId, requestParameters.deviceRegisterRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * Send an email message to one or more recipients. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
@@ -21262,7 +24804,7 @@ export const MessagingApiFactory = function (configuration?: Configuration, base
             return localVarFp.sendPushNotification(requestParameters.projectId, requestParameters.pushNotificationRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * Send an SMS message to one or more phone numbers. Uses project BYO SMS when configured; otherwise the platform SMS provider if set. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Send an SMS message to one or more phone numbers. Uses project BYO SMS when configured; otherwise platform Twilio env if set. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
          * @summary Send SMS
          * @param {MessagingApiSendSMSRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -21270,16 +24812,6 @@ export const MessagingApiFactory = function (configuration?: Configuration, base
          */
         sendSMS(requestParameters: MessagingApiSendSMSRequest, options?: RawAxiosRequestConfig): AxiosPromise<MessageSentResponse> {
             return localVarFp.sendSMS(requestParameters.projectId, requestParameters.sMSRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Remove a device push token from a project - call this on logout or when a token rotates, so the send endpoint stops delivering to it.  The token to remove is sent in the request body. Removing a token that is not registered is a no-op and still returns 200 (with `removed: false`).  Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). 
-         * @summary Unregister a device push token
-         * @param {MessagingApiUnregisterDeviceTokenRequest} requestParameters Request parameters.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        unregisterDeviceToken(requestParameters: MessagingApiUnregisterDeviceTokenRequest, options?: RawAxiosRequestConfig): AxiosPromise<DeviceUnregisteredResponse> {
-            return localVarFp.unregisterDeviceToken(requestParameters.projectId, requestParameters.deviceUnregisterRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -21325,13 +24857,6 @@ export interface MessagingApiGetProjectSmsByoRequest {
 }
 
 /**
- * Request parameters for listDeviceTokens operation in MessagingApi.
- */
-export interface MessagingApiListDeviceTokensRequest {
-    readonly projectId: string
-}
-
-/**
  * Request parameters for patchProjectFcmConfig operation in MessagingApi.
  */
 export interface MessagingApiPatchProjectFcmConfigRequest {
@@ -21347,15 +24872,6 @@ export interface MessagingApiPatchProjectSmsByoRequest {
     readonly projectId: string
 
     readonly projectSmsByoPatchRequest: ProjectSmsByoPatchRequest
-}
-
-/**
- * Request parameters for registerDeviceToken operation in MessagingApi.
- */
-export interface MessagingApiRegisterDeviceTokenRequest {
-    readonly projectId: string
-
-    readonly deviceRegisterRequest: DeviceRegisterRequest
 }
 
 /**
@@ -21386,15 +24902,6 @@ export interface MessagingApiSendSMSRequest {
 }
 
 /**
- * Request parameters for unregisterDeviceToken operation in MessagingApi.
- */
-export interface MessagingApiUnregisterDeviceTokenRequest {
-    readonly projectId: string
-
-    readonly deviceUnregisterRequest: DeviceUnregisterRequest
-}
-
-/**
  * MessagingApi - object-oriented interface
  */
 export class MessagingApi extends BaseAPI {
@@ -21421,8 +24928,8 @@ export class MessagingApi extends BaseAPI {
     }
 
     /**
-     * Returns whether this project has its own push provider credentials stored (encrypted). This is an optional, advanced override - push works out of the box with platform-managed credentials, so when no per-project credentials are stored, push is sent with the platform-managed credentials.
-     * @summary Get bring-your-own push credentials status (masked)
+     * Returns whether a per-project Firebase service account JSON is stored (encrypted). Falls back to platform `FCM_SERVICE_ACCOUNT_JSON` when unset.
+     * @summary Get BYO FCM configuration (masked)
      * @param {MessagingApiGetProjectFcmConfigRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -21443,19 +24950,8 @@ export class MessagingApi extends BaseAPI {
     }
 
     /**
-     * List the device push tokens registered to a project, most-recently-seen first.  Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). 
-     * @summary List registered device tokens
-     * @param {MessagingApiListDeviceTokensRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public listDeviceTokens(requestParameters: MessagingApiListDeviceTokensRequest, options?: RawAxiosRequestConfig) {
-        return MessagingApiFp(this.configuration).listDeviceTokens(requestParameters.projectId, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Optional advanced step - push works out of the box with platform-managed credentials, so most projects never call this. Use it only to deliver push from your own push provider account. Body `serviceAccountJson` is the Firebase service account JSON you download from your own Firebase project (stored encrypted). Send `clear: true` to remove it and go back to the platform-managed credentials. 
-     * @summary Set or clear your own push service account (optional)
+     * Body `serviceAccountJson` is the Firebase service account object (stored encrypted). Send `clear: true` to remove and use platform FCM only. 
+     * @summary Set or clear per-project FCM service account
      * @param {MessagingApiPatchProjectFcmConfigRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -21473,17 +24969,6 @@ export class MessagingApi extends BaseAPI {
      */
     public patchProjectSmsByo(requestParameters: MessagingApiPatchProjectSmsByoRequest, options?: RawAxiosRequestConfig) {
         return MessagingApiFp(this.configuration).patchProjectSmsByo(requestParameters.projectId, requestParameters.projectSmsByoPatchRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Register a device\'s push token with a project so it can receive push notifications. A client registers its token here first; the send endpoint (`/messaging/push`) only delivers to tokens that are registered to the project, so a caller cannot push to arbitrary or other-tenant tokens.  Registration is idempotent - re-registering a token that already exists just refreshes it (updates `platform` and `lastSeenAt`) instead of creating a duplicate. Each project has a cap on the number of registered tokens; when the cap is reached, the least-recently-seen tokens are evicted to make room, so a register-on-launch call never fails.  Push works out of the box with platform-managed credentials - no provider setup is required to start registering tokens and sending push.  Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). 
-     * @summary Register a device push token
-     * @param {MessagingApiRegisterDeviceTokenRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public registerDeviceToken(requestParameters: MessagingApiRegisterDeviceTokenRequest, options?: RawAxiosRequestConfig) {
-        return MessagingApiFp(this.configuration).registerDeviceToken(requestParameters.projectId, requestParameters.deviceRegisterRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -21509,7 +24994,7 @@ export class MessagingApi extends BaseAPI {
     }
 
     /**
-     * Send an SMS message to one or more phone numbers. Uses project BYO SMS when configured; otherwise the platform SMS provider if set. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+     * Send an SMS message to one or more phone numbers. Uses project BYO SMS when configured; otherwise platform Twilio env if set. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
      * @summary Send SMS
      * @param {MessagingApiSendSMSRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -21517,17 +25002,6 @@ export class MessagingApi extends BaseAPI {
      */
     public sendSMS(requestParameters: MessagingApiSendSMSRequest, options?: RawAxiosRequestConfig) {
         return MessagingApiFp(this.configuration).sendSMS(requestParameters.projectId, requestParameters.sMSRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Remove a device push token from a project - call this on logout or when a token rotates, so the send endpoint stops delivering to it.  The token to remove is sent in the request body. Removing a token that is not registered is a no-op and still returns 200 (with `removed: false`).  Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). 
-     * @summary Unregister a device push token
-     * @param {MessagingApiUnregisterDeviceTokenRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public unregisterDeviceToken(requestParameters: MessagingApiUnregisterDeviceTokenRequest, options?: RawAxiosRequestConfig) {
-        return MessagingApiFp(this.configuration).unregisterDeviceToken(requestParameters.projectId, requestParameters.deviceUnregisterRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
@@ -21576,6 +25050,9 @@ export const MonitoringApiAxiosParamCreator = function (configuration?: Configur
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             localVarHeaderParameter['Content-Type'] = 'application/json';
             localVarHeaderParameter['Accept'] = 'application/json';
 
@@ -21615,6 +25092,9 @@ export const MonitoringApiAxiosParamCreator = function (configuration?: Configur
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             if (projectId !== undefined) {
                 localVarQueryParameter['projectId'] = projectId;
@@ -21665,6 +25145,9 @@ export const MonitoringApiAxiosParamCreator = function (configuration?: Configur
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             localVarHeaderParameter['Accept'] = 'application/json';
 
@@ -21743,6 +25226,9 @@ export const MonitoringApiAxiosParamCreator = function (configuration?: Configur
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             if (page !== undefined) {
                 localVarQueryParameter['page'] = page;
             }
@@ -21819,6 +25305,9 @@ export const MonitoringApiAxiosParamCreator = function (configuration?: Configur
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             if (projectId !== undefined) {
                 localVarQueryParameter['projectId'] = projectId;
             }
@@ -21873,6 +25362,44 @@ export const MonitoringApiAxiosParamCreator = function (configuration?: Configur
             };
         },
         /**
+         * Returns per-chain block scanner lag and health. Used for observability of ETH/UTXO block-based wallet monitoring. Alerts when lag exceeds threshold.
+         * @summary Get block scanner metrics
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getScannerMetrics: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/monitoring/scanner-metrics`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * 
          * @summary List monitoring alerts
          * @param {*} [options] Override http request option.
@@ -21894,6 +25421,9 @@ export const MonitoringApiAxiosParamCreator = function (configuration?: Configur
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             localVarHeaderParameter['Accept'] = 'application/json';
 
@@ -22016,6 +25546,18 @@ export const MonitoringApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Returns per-chain block scanner lag and health. Used for observability of ETH/UTXO block-based wallet monitoring. Alerts when lag exceeds threshold.
+         * @summary Get block scanner metrics
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getScannerMetrics(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetScannerMetrics200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getScannerMetrics(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['MonitoringApi.getScannerMetrics']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * 
          * @summary List monitoring alerts
          * @param {*} [options] Override http request option.
@@ -22102,6 +25644,15 @@ export const MonitoringApiFactory = function (configuration?: Configuration, bas
          */
         getMonitoringQueueMetrics(options?: RawAxiosRequestConfig): AxiosPromise<void> {
             return localVarFp.getMonitoringQueueMetrics(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns per-chain block scanner lag and health. Used for observability of ETH/UTXO block-based wallet monitoring. Alerts when lag exceeds threshold.
+         * @summary Get block scanner metrics
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getScannerMetrics(options?: RawAxiosRequestConfig): AxiosPromise<GetScannerMetrics200Response> {
+            return localVarFp.getScannerMetrics(options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -22258,6 +25809,16 @@ export class MonitoringApi extends BaseAPI {
     }
 
     /**
+     * Returns per-chain block scanner lag and health. Used for observability of ETH/UTXO block-based wallet monitoring. Alerts when lag exceeds threshold.
+     * @summary Get block scanner metrics
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public getScannerMetrics(options?: RawAxiosRequestConfig) {
+        return MonitoringApiFp(this.configuration).getScannerMetrics(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * 
      * @summary List monitoring alerts
      * @param {*} [options] Override http request option.
@@ -22294,7 +25855,7 @@ export type GetMonitoringPerformancePeriodEnum = typeof GetMonitoringPerformance
 export const MultiRoleFeatureApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
-         * Add a custom role to a project with specific permissions and signup endpoint. Optional **`featurePermissions`** must align with app JWT gates — see `components/schemas/AppRoleFeaturePermissions` and `services/appRoleFeatureMap.js`. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Add a custom role to a project with specific permissions and signup endpoint. Optional **`featurePermissions`** must align with app JWT gates — see `components/schemas/AppRoleFeaturePermissions` and `services/appRoleFeatureMap.js`. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Add custom role
          * @param {string} projectId 
          * @param {AddCustomRoleRequest} addCustomRoleRequest 
@@ -22392,7 +25953,7 @@ export const MultiRoleFeatureApiAxiosParamCreator = function (configuration?: Co
             };
         },
         /**
-         * Get all available roles for user signup in a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Get all available roles for user signup in a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Get available roles for signup
          * @param {string} projectId 
          * @param {*} [options] Override http request option.
@@ -22460,6 +26021,9 @@ export const MultiRoleFeatureApiAxiosParamCreator = function (configuration?: Co
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -22501,6 +26065,9 @@ export const MultiRoleFeatureApiAxiosParamCreator = function (configuration?: Co
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -22702,7 +26269,7 @@ export const MultiRoleFeatureApiAxiosParamCreator = function (configuration?: Co
             };
         },
         /**
-         * Update collection-specific permissions for a role in a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Update collection-specific permissions for a role in a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Update collection permissions for a role
          * @param {string} projectId 
          * @param {string} roleSlug Role slug (e.g. starter &#x60;customer&#x60; or a role you added).
@@ -22757,7 +26324,7 @@ export const MultiRoleFeatureApiAxiosParamCreator = function (configuration?: Co
             };
         },
         /**
-         * Update multi-role feature settings for a project: enable/disable the feature, set which app role is the default at signup, and tune `settings` (`allowMultipleRoles`, `requireRoleSelection`, `autoAssignDefault`). This endpoint does **not** edit role definitions or permissions — use `POST/PATCH .../multi-role/roles` for that (same shape as **Add custom role**). Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Update multi-role feature settings for a project: enable/disable the feature, set which app role is the default at signup, and tune `settings` (`allowMultipleRoles`, `requireRoleSelection`, `autoAssignDefault`). This endpoint does **not** edit role definitions or permissions — use `POST/PATCH .../multi-role/roles` for that (same shape as **Add custom role**). Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Update multi-role feature settings
          * @param {string} projectId 
          * @param {UpdateMultiRoleSettingsRequest} updateMultiRoleSettingsRequest 
@@ -22864,7 +26431,7 @@ export const MultiRoleFeatureApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = MultiRoleFeatureApiAxiosParamCreator(configuration)
     return {
         /**
-         * Add a custom role to a project with specific permissions and signup endpoint. Optional **`featurePermissions`** must align with app JWT gates — see `components/schemas/AppRoleFeaturePermissions` and `services/appRoleFeatureMap.js`. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Add a custom role to a project with specific permissions and signup endpoint. Optional **`featurePermissions`** must align with app JWT gates — see `components/schemas/AppRoleFeaturePermissions` and `services/appRoleFeatureMap.js`. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Add custom role
          * @param {string} projectId 
          * @param {AddCustomRoleRequest} addCustomRoleRequest 
@@ -22893,7 +26460,7 @@ export const MultiRoleFeatureApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Get all available roles for user signup in a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Get all available roles for user signup in a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Get available roles for signup
          * @param {string} projectId 
          * @param {*} [options] Override http request option.
@@ -22991,7 +26558,7 @@ export const MultiRoleFeatureApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Update collection-specific permissions for a role in a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Update collection-specific permissions for a role in a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Update collection permissions for a role
          * @param {string} projectId 
          * @param {string} roleSlug Role slug (e.g. starter &#x60;customer&#x60; or a role you added).
@@ -23007,7 +26574,7 @@ export const MultiRoleFeatureApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Update multi-role feature settings for a project: enable/disable the feature, set which app role is the default at signup, and tune `settings` (`allowMultipleRoles`, `requireRoleSelection`, `autoAssignDefault`). This endpoint does **not** edit role definitions or permissions — use `POST/PATCH .../multi-role/roles` for that (same shape as **Add custom role**). Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Update multi-role feature settings for a project: enable/disable the feature, set which app role is the default at signup, and tune `settings` (`allowMultipleRoles`, `requireRoleSelection`, `autoAssignDefault`). This endpoint does **not** edit role definitions or permissions — use `POST/PATCH .../multi-role/roles` for that (same shape as **Add custom role**). Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Update multi-role feature settings
          * @param {string} projectId 
          * @param {UpdateMultiRoleSettingsRequest} updateMultiRoleSettingsRequest 
@@ -23045,7 +26612,7 @@ export const MultiRoleFeatureApiFactory = function (configuration?: Configuratio
     const localVarFp = MultiRoleFeatureApiFp(configuration)
     return {
         /**
-         * Add a custom role to a project with specific permissions and signup endpoint. Optional **`featurePermissions`** must align with app JWT gates — see `components/schemas/AppRoleFeaturePermissions` and `services/appRoleFeatureMap.js`. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Add a custom role to a project with specific permissions and signup endpoint. Optional **`featurePermissions`** must align with app JWT gates — see `components/schemas/AppRoleFeaturePermissions` and `services/appRoleFeatureMap.js`. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Add custom role
          * @param {MultiRoleFeatureApiAddCustomRoleRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -23065,7 +26632,7 @@ export const MultiRoleFeatureApiFactory = function (configuration?: Configuratio
             return localVarFp.applyRoleFeaturePreset(requestParameters.projectId, requestParameters.roleSlug, requestParameters.applyRoleFeaturePresetRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * Get all available roles for user signup in a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Get all available roles for user signup in a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Get available roles for signup
          * @param {MultiRoleFeatureApiGetAvailableRolesRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -23135,7 +26702,7 @@ export const MultiRoleFeatureApiFactory = function (configuration?: Configuratio
             return localVarFp.toggleRole(requestParameters.projectId, requestParameters.roleSlug, requestParameters.toggleRoleRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * Update collection-specific permissions for a role in a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Update collection-specific permissions for a role in a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Update collection permissions for a role
          * @param {MultiRoleFeatureApiUpdateCollectionPermissionsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -23145,7 +26712,7 @@ export const MultiRoleFeatureApiFactory = function (configuration?: Configuratio
             return localVarFp.updateCollectionPermissions(requestParameters.projectId, requestParameters.roleSlug, requestParameters.collectionId, requestParameters.updateCollectionPermissionsRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * Update multi-role feature settings for a project: enable/disable the feature, set which app role is the default at signup, and tune `settings` (`allowMultipleRoles`, `requireRoleSelection`, `autoAssignDefault`). This endpoint does **not** edit role definitions or permissions — use `POST/PATCH .../multi-role/roles` for that (same shape as **Add custom role**). Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Update multi-role feature settings for a project: enable/disable the feature, set which app role is the default at signup, and tune `settings` (`allowMultipleRoles`, `requireRoleSelection`, `autoAssignDefault`). This endpoint does **not** edit role definitions or permissions — use `POST/PATCH .../multi-role/roles` for that (same shape as **Add custom role**). Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Update multi-role feature settings
          * @param {MultiRoleFeatureApiUpdateMultiRoleSettingsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -23309,7 +26876,7 @@ export interface MultiRoleFeatureApiUpdateProjectRoleRequest {
  */
 export class MultiRoleFeatureApi extends BaseAPI {
     /**
-     * Add a custom role to a project with specific permissions and signup endpoint. Optional **`featurePermissions`** must align with app JWT gates — see `components/schemas/AppRoleFeaturePermissions` and `services/appRoleFeatureMap.js`. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+     * Add a custom role to a project with specific permissions and signup endpoint. Optional **`featurePermissions`** must align with app JWT gates — see `components/schemas/AppRoleFeaturePermissions` and `services/appRoleFeatureMap.js`. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
      * @summary Add custom role
      * @param {MultiRoleFeatureApiAddCustomRoleRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -23331,7 +26898,7 @@ export class MultiRoleFeatureApi extends BaseAPI {
     }
 
     /**
-     * Get all available roles for user signup in a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+     * Get all available roles for user signup in a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
      * @summary Get available roles for signup
      * @param {MultiRoleFeatureApiGetAvailableRolesRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -23408,7 +26975,7 @@ export class MultiRoleFeatureApi extends BaseAPI {
     }
 
     /**
-     * Update collection-specific permissions for a role in a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+     * Update collection-specific permissions for a role in a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
      * @summary Update collection permissions for a role
      * @param {MultiRoleFeatureApiUpdateCollectionPermissionsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -23419,7 +26986,7 @@ export class MultiRoleFeatureApi extends BaseAPI {
     }
 
     /**
-     * Update multi-role feature settings for a project: enable/disable the feature, set which app role is the default at signup, and tune `settings` (`allowMultipleRoles`, `requireRoleSelection`, `autoAssignDefault`). This endpoint does **not** edit role definitions or permissions — use `POST/PATCH .../multi-role/roles` for that (same shape as **Add custom role**). Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+     * Update multi-role feature settings for a project: enable/disable the feature, set which app role is the default at signup, and tune `settings` (`allowMultipleRoles`, `requireRoleSelection`, `autoAssignDefault`). This endpoint does **not** edit role definitions or permissions — use `POST/PATCH .../multi-role/roles` for that (same shape as **Add custom role**). Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
      * @summary Update multi-role feature settings
      * @param {MultiRoleFeatureApiUpdateMultiRoleSettingsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -24349,7 +27916,7 @@ export const OrganizationsApiAxiosParamCreator = function (configuration?: Confi
             };
         },
         /**
-         * Legacy optional ping: ops are emailed automatically on first successful Mudbase TXT verify. Use this only for an extra nudge. Sends an email to ops while the domain is in platform setup (after Mudbase TXT verification through later pipeline states). Recipients default to `admin@mudhaxkservices.com` and `admin@mudbase.dev` when `CUSTOM_DOMAIN_OPS_NOTIFY_EMAILS` is unset; override with that env (comma/space-separated). Returns **503** `email_provider_not_configured` if the platform email provider is not configured. 
+         * Legacy optional ping: ops are emailed automatically on first successful Mudbase TXT verify. Use this only for an extra nudge. Sends an email to ops while the domain is in platform setup (after Mudbase TXT verification through later pipeline states). Recipients default to `admin@mudhaxkservices.com` and `admin@mudbase.dev` when `CUSTOM_DOMAIN_OPS_NOTIFY_EMAILS` is unset; override with that env (comma/space-separated). Returns **503** `email_provider_not_configured` if no email provider is configured (e.g. missing `ZEPTOMAIL_SEND_TOKEN`). 
          * @summary Notify platform ops that hosting or edge work is ready (email)
          * @param {string} orgId 
          * @param {string} projectId 
@@ -25365,7 +28932,7 @@ export const OrganizationsApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Legacy optional ping: ops are emailed automatically on first successful Mudbase TXT verify. Use this only for an extra nudge. Sends an email to ops while the domain is in platform setup (after Mudbase TXT verification through later pipeline states). Recipients default to `admin@mudhaxkservices.com` and `admin@mudbase.dev` when `CUSTOM_DOMAIN_OPS_NOTIFY_EMAILS` is unset; override with that env (comma/space-separated). Returns **503** `email_provider_not_configured` if the platform email provider is not configured. 
+         * Legacy optional ping: ops are emailed automatically on first successful Mudbase TXT verify. Use this only for an extra nudge. Sends an email to ops while the domain is in platform setup (after Mudbase TXT verification through later pipeline states). Recipients default to `admin@mudhaxkservices.com` and `admin@mudbase.dev` when `CUSTOM_DOMAIN_OPS_NOTIFY_EMAILS` is unset; override with that env (comma/space-separated). Returns **503** `email_provider_not_configured` if no email provider is configured (e.g. missing `ZEPTOMAIL_SEND_TOKEN`). 
          * @summary Notify platform ops that hosting or edge work is ready (email)
          * @param {string} orgId 
          * @param {string} projectId 
@@ -25815,7 +29382,7 @@ export const OrganizationsApiFactory = function (configuration?: Configuration, 
             return localVarFp.listOrganizations(options).then((request) => request(axios, basePath));
         },
         /**
-         * Legacy optional ping: ops are emailed automatically on first successful Mudbase TXT verify. Use this only for an extra nudge. Sends an email to ops while the domain is in platform setup (after Mudbase TXT verification through later pipeline states). Recipients default to `admin@mudhaxkservices.com` and `admin@mudbase.dev` when `CUSTOM_DOMAIN_OPS_NOTIFY_EMAILS` is unset; override with that env (comma/space-separated). Returns **503** `email_provider_not_configured` if the platform email provider is not configured. 
+         * Legacy optional ping: ops are emailed automatically on first successful Mudbase TXT verify. Use this only for an extra nudge. Sends an email to ops while the domain is in platform setup (after Mudbase TXT verification through later pipeline states). Recipients default to `admin@mudhaxkservices.com` and `admin@mudbase.dev` when `CUSTOM_DOMAIN_OPS_NOTIFY_EMAILS` is unset; override with that env (comma/space-separated). Returns **503** `email_provider_not_configured` if no email provider is configured (e.g. missing `ZEPTOMAIL_SEND_TOKEN`). 
          * @summary Notify platform ops that hosting or edge work is ready (email)
          * @param {OrganizationsApiOrgCustomDomainPlatformReadyRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -26543,7 +30110,7 @@ export class OrganizationsApi extends BaseAPI {
     }
 
     /**
-     * Legacy optional ping: ops are emailed automatically on first successful Mudbase TXT verify. Use this only for an extra nudge. Sends an email to ops while the domain is in platform setup (after Mudbase TXT verification through later pipeline states). Recipients default to `admin@mudhaxkservices.com` and `admin@mudbase.dev` when `CUSTOM_DOMAIN_OPS_NOTIFY_EMAILS` is unset; override with that env (comma/space-separated). Returns **503** `email_provider_not_configured` if the platform email provider is not configured. 
+     * Legacy optional ping: ops are emailed automatically on first successful Mudbase TXT verify. Use this only for an extra nudge. Sends an email to ops while the domain is in platform setup (after Mudbase TXT verification through later pipeline states). Recipients default to `admin@mudhaxkservices.com` and `admin@mudbase.dev` when `CUSTOM_DOMAIN_OPS_NOTIFY_EMAILS` is unset; override with that env (comma/space-separated). Returns **503** `email_provider_not_configured` if no email provider is configured (e.g. missing `ZEPTOMAIL_SEND_TOKEN`). 
      * @summary Notify platform ops that hosting or edge work is ready (email)
      * @param {OrganizationsApiOrgCustomDomainPlatformReadyRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -26732,7 +30299,53 @@ export type GetProjectUsersStatusEnum = typeof GetProjectUsersStatusEnum[keyof t
 export const ProjectFeesApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
-         * Confirm address verification by providing the transaction hash of the test transaction sent to the payout address. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * 
+         * @summary ~~Cancel payout (Admin)~~ (deprecated)
+         * @param {string} payoutId 
+         * @param {PlatformAdminDetachMemberRequest} [platformAdminDetachMemberRequest] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        cancelPayout: async (payoutId: string, platformAdminDetachMemberRequest?: PlatformAdminDetachMemberRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'payoutId' is not null or undefined
+            assertParamExists('cancelPayout', 'payoutId', payoutId)
+            const localVarPath = `/api/admin/payouts/{payoutId}/cancel`
+                .replace('{payoutId}', encodeURIComponent(String(payoutId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(platformAdminDetachMemberRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Confirm address verification by providing the transaction hash of the test transaction sent to the payout address. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Confirm address verification~~ (deprecated)
          * @param {string} projectId 
          * @param {string} currency 
@@ -26784,7 +30397,7 @@ export const ProjectFeesApiAxiosParamCreator = function (configuration?: Configu
             };
         },
         /**
-         * Create or update fee settings for a project. Configure transaction fees, payout addresses, and thresholds for supported cryptocurrencies. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Create or update fee settings for a project. Configure transaction fees, payout addresses, and thresholds for supported cryptocurrencies. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Create or update project fee settings~~ (deprecated)
          * @param {string} projectId 
          * @param {CreateOrUpdateFeeSettingsRequest} createOrUpdateFeeSettingsRequest 
@@ -26832,7 +30445,46 @@ export const ProjectFeesApiAxiosParamCreator = function (configuration?: Configu
             };
         },
         /**
-         * Get fee balance for a specific cryptocurrency in a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * 
+         * @summary ~~Get admin payout dashboard (Admin)~~ (deprecated)
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getAdminPayoutDashboard: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/admin/payouts/dashboard`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get fee balance for a specific cryptocurrency in a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Get currency fee balance~~ (deprecated)
          * @param {string} projectId 
          * @param {string} currency 
@@ -26879,7 +30531,7 @@ export const ProjectFeesApiAxiosParamCreator = function (configuration?: Configu
             };
         },
         /**
-         * Get fee balances for all currencies in a project, including collected amounts, thresholds, and payout status. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Get fee balances for all currencies in a project, including collected amounts, thresholds, and payout status. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Get all fee balances~~ (deprecated)
          * @param {string} projectId 
          * @param {*} [options] Override http request option.
@@ -26922,7 +30574,7 @@ export const ProjectFeesApiAxiosParamCreator = function (configuration?: Configu
             };
         },
         /**
-         * Get all fee settings configured for a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Get all fee settings configured for a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Get project fee settings~~ (deprecated)
          * @param {string} projectId 
          * @param {*} [options] Override http request option.
@@ -26965,7 +30617,7 @@ export const ProjectFeesApiAxiosParamCreator = function (configuration?: Configu
             };
         },
         /**
-         * Get historical payout records for a project with pagination. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Get historical payout records for a project with pagination. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Get payout history~~ (deprecated)
          * @param {string} projectId 
          * @param {number} [limit] 
@@ -27029,6 +30681,65 @@ export const ProjectFeesApiAxiosParamCreator = function (configuration?: Configu
         },
         /**
          * 
+         * @summary ~~Get all pending payouts (Admin)~~ (deprecated)
+         * @param {string} [status] 
+         * @param {string} [currency] 
+         * @param {number} [limit] 
+         * @param {number} [page] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getPendingPayouts: async (status?: string, currency?: string, limit?: number, page?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/admin/payouts/pending`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (status !== undefined) {
+                localVarQueryParameter['status'] = status;
+            }
+
+            if (currency !== undefined) {
+                localVarQueryParameter['currency'] = currency;
+            }
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            if (page !== undefined) {
+                localVarQueryParameter['page'] = page;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary ~~Get fee dashboard~~ (deprecated)
          * @param {string} projectId 
          * @param {*} [options] Override http request option.
@@ -27071,7 +30782,7 @@ export const ProjectFeesApiAxiosParamCreator = function (configuration?: Configu
             };
         },
         /**
-         * Initiate verification process for a payout address. Requires sending a small test transaction to verify ownership. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Initiate verification process for a payout address. Requires sending a small test transaction to verify ownership. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Initiate address verification~~ (deprecated)
          * @param {string} projectId 
          * @param {string} currency 
@@ -27118,7 +30829,50 @@ export const ProjectFeesApiAxiosParamCreator = function (configuration?: Configu
             };
         },
         /**
-         * Request a manual payout for collected fees. Requires sufficient balance above the threshold. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * 
+         * @summary ~~Manually process payout (Admin)~~ (deprecated)
+         * @param {string} payoutId 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        processPayout: async (payoutId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'payoutId' is not null or undefined
+            assertParamExists('processPayout', 'payoutId', payoutId)
+            const localVarPath = `/api/admin/payouts/{payoutId}/process`
+                .replace('{payoutId}', encodeURIComponent(String(payoutId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Request a manual payout for collected fees. Requires sufficient balance above the threshold. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Request manual payout~~ (deprecated)
          * @param {string} projectId 
          * @param {RequestManualPayoutRequest} requestManualPayoutRequest 
@@ -27166,7 +30920,7 @@ export const ProjectFeesApiAxiosParamCreator = function (configuration?: Configu
             };
         },
         /**
-         * Update fee settings for a specific cryptocurrency in a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Update fee settings for a specific cryptocurrency in a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Update currency fee settings~~ (deprecated)
          * @param {string} projectId 
          * @param {UpdateCurrencyFeeSettingsCurrencyEnum} currency 
@@ -27227,7 +30981,22 @@ export const ProjectFeesApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = ProjectFeesApiAxiosParamCreator(configuration)
     return {
         /**
-         * Confirm address verification by providing the transaction hash of the test transaction sent to the payout address. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * 
+         * @summary ~~Cancel payout (Admin)~~ (deprecated)
+         * @param {string} payoutId 
+         * @param {PlatformAdminDetachMemberRequest} [platformAdminDetachMemberRequest] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async cancelPayout(payoutId: string, platformAdminDetachMemberRequest?: PlatformAdminDetachMemberRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApplyRoleFeaturePreset200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.cancelPayout(payoutId, platformAdminDetachMemberRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ProjectFeesApi.cancelPayout']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Confirm address verification by providing the transaction hash of the test transaction sent to the payout address. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Confirm address verification~~ (deprecated)
          * @param {string} projectId 
          * @param {string} currency 
@@ -27243,7 +31012,7 @@ export const ProjectFeesApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Create or update fee settings for a project. Configure transaction fees, payout addresses, and thresholds for supported cryptocurrencies. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Create or update fee settings for a project. Configure transaction fees, payout addresses, and thresholds for supported cryptocurrencies. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Create or update project fee settings~~ (deprecated)
          * @param {string} projectId 
          * @param {CreateOrUpdateFeeSettingsRequest} createOrUpdateFeeSettingsRequest 
@@ -27258,7 +31027,20 @@ export const ProjectFeesApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Get fee balance for a specific cryptocurrency in a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * 
+         * @summary ~~Get admin payout dashboard (Admin)~~ (deprecated)
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async getAdminPayoutDashboard(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetAdminPayoutDashboard200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getAdminPayoutDashboard(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ProjectFeesApi.getAdminPayoutDashboard']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Get fee balance for a specific cryptocurrency in a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Get currency fee balance~~ (deprecated)
          * @param {string} projectId 
          * @param {string} currency 
@@ -27273,7 +31055,7 @@ export const ProjectFeesApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Get fee balances for all currencies in a project, including collected amounts, thresholds, and payout status. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Get fee balances for all currencies in a project, including collected amounts, thresholds, and payout status. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Get all fee balances~~ (deprecated)
          * @param {string} projectId 
          * @param {*} [options] Override http request option.
@@ -27287,21 +31069,21 @@ export const ProjectFeesApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Get all fee settings configured for a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Get all fee settings configured for a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Get project fee settings~~ (deprecated)
          * @param {string} projectId 
          * @param {*} [options] Override http request option.
          * @deprecated
          * @throws {RequiredError}
          */
-        async getFeeSettings(projectId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TestIntegration200Response>> {
+        async getFeeSettings(projectId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TestWalletWebhook200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getFeeSettings(projectId, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['ProjectFeesApi.getFeeSettings']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Get historical payout records for a project with pagination. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Get historical payout records for a project with pagination. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Get payout history~~ (deprecated)
          * @param {string} projectId 
          * @param {number} [limit] 
@@ -27320,6 +31102,23 @@ export const ProjectFeesApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary ~~Get all pending payouts (Admin)~~ (deprecated)
+         * @param {string} [status] 
+         * @param {string} [currency] 
+         * @param {number} [limit] 
+         * @param {number} [page] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async getPendingPayouts(status?: string, currency?: string, limit?: number, page?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetPendingPayouts200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getPendingPayouts(status, currency, limit, page, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ProjectFeesApi.getPendingPayouts']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary ~~Get fee dashboard~~ (deprecated)
          * @param {string} projectId 
          * @param {*} [options] Override http request option.
@@ -27333,7 +31132,7 @@ export const ProjectFeesApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Initiate verification process for a payout address. Requires sending a small test transaction to verify ownership. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Initiate verification process for a payout address. Requires sending a small test transaction to verify ownership. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Initiate address verification~~ (deprecated)
          * @param {string} projectId 
          * @param {string} currency 
@@ -27348,7 +31147,21 @@ export const ProjectFeesApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Request a manual payout for collected fees. Requires sufficient balance above the threshold. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * 
+         * @summary ~~Manually process payout (Admin)~~ (deprecated)
+         * @param {string} payoutId 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async processPayout(payoutId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApplyRoleFeaturePreset200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.processPayout(payoutId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ProjectFeesApi.processPayout']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Request a manual payout for collected fees. Requires sufficient balance above the threshold. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Request manual payout~~ (deprecated)
          * @param {string} projectId 
          * @param {RequestManualPayoutRequest} requestManualPayoutRequest 
@@ -27363,7 +31176,7 @@ export const ProjectFeesApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Update fee settings for a specific cryptocurrency in a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Update fee settings for a specific cryptocurrency in a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Update currency fee settings~~ (deprecated)
          * @param {string} projectId 
          * @param {UpdateCurrencyFeeSettingsCurrencyEnum} currency 
@@ -27388,7 +31201,18 @@ export const ProjectFeesApiFactory = function (configuration?: Configuration, ba
     const localVarFp = ProjectFeesApiFp(configuration)
     return {
         /**
-         * Confirm address verification by providing the transaction hash of the test transaction sent to the payout address. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * 
+         * @summary ~~Cancel payout (Admin)~~ (deprecated)
+         * @param {ProjectFeesApiCancelPayoutRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        cancelPayout(requestParameters: ProjectFeesApiCancelPayoutRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApplyRoleFeaturePreset200Response> {
+            return localVarFp.cancelPayout(requestParameters.payoutId, requestParameters.platformAdminDetachMemberRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Confirm address verification by providing the transaction hash of the test transaction sent to the payout address. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Confirm address verification~~ (deprecated)
          * @param {ProjectFeesApiConfirmAddressVerificationRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -27399,7 +31223,7 @@ export const ProjectFeesApiFactory = function (configuration?: Configuration, ba
             return localVarFp.confirmAddressVerification(requestParameters.projectId, requestParameters.currency, requestParameters.confirmAddressVerificationRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * Create or update fee settings for a project. Configure transaction fees, payout addresses, and thresholds for supported cryptocurrencies. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Create or update fee settings for a project. Configure transaction fees, payout addresses, and thresholds for supported cryptocurrencies. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Create or update project fee settings~~ (deprecated)
          * @param {ProjectFeesApiCreateOrUpdateFeeSettingsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -27410,7 +31234,17 @@ export const ProjectFeesApiFactory = function (configuration?: Configuration, ba
             return localVarFp.createOrUpdateFeeSettings(requestParameters.projectId, requestParameters.createOrUpdateFeeSettingsRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * Get fee balance for a specific cryptocurrency in a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * 
+         * @summary ~~Get admin payout dashboard (Admin)~~ (deprecated)
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getAdminPayoutDashboard(options?: RawAxiosRequestConfig): AxiosPromise<GetAdminPayoutDashboard200Response> {
+            return localVarFp.getAdminPayoutDashboard(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get fee balance for a specific cryptocurrency in a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Get currency fee balance~~ (deprecated)
          * @param {ProjectFeesApiGetCurrencyFeeBalanceRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -27421,7 +31255,7 @@ export const ProjectFeesApiFactory = function (configuration?: Configuration, ba
             return localVarFp.getCurrencyFeeBalance(requestParameters.projectId, requestParameters.currency, options).then((request) => request(axios, basePath));
         },
         /**
-         * Get fee balances for all currencies in a project, including collected amounts, thresholds, and payout status. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Get fee balances for all currencies in a project, including collected amounts, thresholds, and payout status. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Get all fee balances~~ (deprecated)
          * @param {ProjectFeesApiGetFeeBalancesRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -27432,18 +31266,18 @@ export const ProjectFeesApiFactory = function (configuration?: Configuration, ba
             return localVarFp.getFeeBalances(requestParameters.projectId, options).then((request) => request(axios, basePath));
         },
         /**
-         * Get all fee settings configured for a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Get all fee settings configured for a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Get project fee settings~~ (deprecated)
          * @param {ProjectFeesApiGetFeeSettingsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @deprecated
          * @throws {RequiredError}
          */
-        getFeeSettings(requestParameters: ProjectFeesApiGetFeeSettingsRequest, options?: RawAxiosRequestConfig): AxiosPromise<TestIntegration200Response> {
+        getFeeSettings(requestParameters: ProjectFeesApiGetFeeSettingsRequest, options?: RawAxiosRequestConfig): AxiosPromise<TestWalletWebhook200Response> {
             return localVarFp.getFeeSettings(requestParameters.projectId, options).then((request) => request(axios, basePath));
         },
         /**
-         * Get historical payout records for a project with pagination. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Get historical payout records for a project with pagination. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Get payout history~~ (deprecated)
          * @param {ProjectFeesApiGetPayoutHistoryRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -27452,6 +31286,17 @@ export const ProjectFeesApiFactory = function (configuration?: Configuration, ba
          */
         getPayoutHistory(requestParameters: ProjectFeesApiGetPayoutHistoryRequest, options?: RawAxiosRequestConfig): AxiosPromise<GetPayoutHistory200Response> {
             return localVarFp.getPayoutHistory(requestParameters.projectId, requestParameters.limit, requestParameters.page, requestParameters.currency, requestParameters.status, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary ~~Get all pending payouts (Admin)~~ (deprecated)
+         * @param {ProjectFeesApiGetPendingPayoutsRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getPendingPayouts(requestParameters: ProjectFeesApiGetPendingPayoutsRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<GetPendingPayouts200Response> {
+            return localVarFp.getPendingPayouts(requestParameters.status, requestParameters.currency, requestParameters.limit, requestParameters.page, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -27465,7 +31310,7 @@ export const ProjectFeesApiFactory = function (configuration?: Configuration, ba
             return localVarFp.getProjectFeeDashboard(requestParameters.projectId, options).then((request) => request(axios, basePath));
         },
         /**
-         * Initiate verification process for a payout address. Requires sending a small test transaction to verify ownership. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Initiate verification process for a payout address. Requires sending a small test transaction to verify ownership. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Initiate address verification~~ (deprecated)
          * @param {ProjectFeesApiInitiateAddressVerificationRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -27476,7 +31321,18 @@ export const ProjectFeesApiFactory = function (configuration?: Configuration, ba
             return localVarFp.initiateAddressVerification(requestParameters.projectId, requestParameters.currency, options).then((request) => request(axios, basePath));
         },
         /**
-         * Request a manual payout for collected fees. Requires sufficient balance above the threshold. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * 
+         * @summary ~~Manually process payout (Admin)~~ (deprecated)
+         * @param {ProjectFeesApiProcessPayoutRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        processPayout(requestParameters: ProjectFeesApiProcessPayoutRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApplyRoleFeaturePreset200Response> {
+            return localVarFp.processPayout(requestParameters.payoutId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Request a manual payout for collected fees. Requires sufficient balance above the threshold. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Request manual payout~~ (deprecated)
          * @param {ProjectFeesApiRequestManualPayoutRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -27487,7 +31343,7 @@ export const ProjectFeesApiFactory = function (configuration?: Configuration, ba
             return localVarFp.requestManualPayout(requestParameters.projectId, requestParameters.requestManualPayoutRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * Update fee settings for a specific cryptocurrency in a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Update fee settings for a specific cryptocurrency in a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary ~~Update currency fee settings~~ (deprecated)
          * @param {ProjectFeesApiUpdateCurrencyFeeSettingsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -27499,6 +31355,15 @@ export const ProjectFeesApiFactory = function (configuration?: Configuration, ba
         },
     };
 };
+
+/**
+ * Request parameters for cancelPayout operation in ProjectFeesApi.
+ */
+export interface ProjectFeesApiCancelPayoutRequest {
+    readonly payoutId: string
+
+    readonly platformAdminDetachMemberRequest?: PlatformAdminDetachMemberRequest
+}
 
 /**
  * Request parameters for confirmAddressVerification operation in ProjectFeesApi.
@@ -27559,6 +31424,19 @@ export interface ProjectFeesApiGetPayoutHistoryRequest {
 }
 
 /**
+ * Request parameters for getPendingPayouts operation in ProjectFeesApi.
+ */
+export interface ProjectFeesApiGetPendingPayoutsRequest {
+    readonly status?: string
+
+    readonly currency?: string
+
+    readonly limit?: number
+
+    readonly page?: number
+}
+
+/**
  * Request parameters for getProjectFeeDashboard operation in ProjectFeesApi.
  */
 export interface ProjectFeesApiGetProjectFeeDashboardRequest {
@@ -27572,6 +31450,13 @@ export interface ProjectFeesApiInitiateAddressVerificationRequest {
     readonly projectId: string
 
     readonly currency: string
+}
+
+/**
+ * Request parameters for processPayout operation in ProjectFeesApi.
+ */
+export interface ProjectFeesApiProcessPayoutRequest {
+    readonly payoutId: string
 }
 
 /**
@@ -27599,7 +31484,19 @@ export interface ProjectFeesApiUpdateCurrencyFeeSettingsRequest {
  */
 export class ProjectFeesApi extends BaseAPI {
     /**
-     * Confirm address verification by providing the transaction hash of the test transaction sent to the payout address. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+     * 
+     * @summary ~~Cancel payout (Admin)~~ (deprecated)
+     * @param {ProjectFeesApiCancelPayoutRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public cancelPayout(requestParameters: ProjectFeesApiCancelPayoutRequest, options?: RawAxiosRequestConfig) {
+        return ProjectFeesApiFp(this.configuration).cancelPayout(requestParameters.payoutId, requestParameters.platformAdminDetachMemberRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Confirm address verification by providing the transaction hash of the test transaction sent to the payout address. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
      * @summary ~~Confirm address verification~~ (deprecated)
      * @param {ProjectFeesApiConfirmAddressVerificationRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -27611,7 +31508,7 @@ export class ProjectFeesApi extends BaseAPI {
     }
 
     /**
-     * Create or update fee settings for a project. Configure transaction fees, payout addresses, and thresholds for supported cryptocurrencies. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+     * Create or update fee settings for a project. Configure transaction fees, payout addresses, and thresholds for supported cryptocurrencies. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
      * @summary ~~Create or update project fee settings~~ (deprecated)
      * @param {ProjectFeesApiCreateOrUpdateFeeSettingsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -27623,7 +31520,18 @@ export class ProjectFeesApi extends BaseAPI {
     }
 
     /**
-     * Get fee balance for a specific cryptocurrency in a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+     * 
+     * @summary ~~Get admin payout dashboard (Admin)~~ (deprecated)
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public getAdminPayoutDashboard(options?: RawAxiosRequestConfig) {
+        return ProjectFeesApiFp(this.configuration).getAdminPayoutDashboard(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get fee balance for a specific cryptocurrency in a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
      * @summary ~~Get currency fee balance~~ (deprecated)
      * @param {ProjectFeesApiGetCurrencyFeeBalanceRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -27635,7 +31543,7 @@ export class ProjectFeesApi extends BaseAPI {
     }
 
     /**
-     * Get fee balances for all currencies in a project, including collected amounts, thresholds, and payout status. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+     * Get fee balances for all currencies in a project, including collected amounts, thresholds, and payout status. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
      * @summary ~~Get all fee balances~~ (deprecated)
      * @param {ProjectFeesApiGetFeeBalancesRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -27647,7 +31555,7 @@ export class ProjectFeesApi extends BaseAPI {
     }
 
     /**
-     * Get all fee settings configured for a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+     * Get all fee settings configured for a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
      * @summary ~~Get project fee settings~~ (deprecated)
      * @param {ProjectFeesApiGetFeeSettingsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -27659,7 +31567,7 @@ export class ProjectFeesApi extends BaseAPI {
     }
 
     /**
-     * Get historical payout records for a project with pagination. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+     * Get historical payout records for a project with pagination. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
      * @summary ~~Get payout history~~ (deprecated)
      * @param {ProjectFeesApiGetPayoutHistoryRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -27668,6 +31576,18 @@ export class ProjectFeesApi extends BaseAPI {
      */
     public getPayoutHistory(requestParameters: ProjectFeesApiGetPayoutHistoryRequest, options?: RawAxiosRequestConfig) {
         return ProjectFeesApiFp(this.configuration).getPayoutHistory(requestParameters.projectId, requestParameters.limit, requestParameters.page, requestParameters.currency, requestParameters.status, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary ~~Get all pending payouts (Admin)~~ (deprecated)
+     * @param {ProjectFeesApiGetPendingPayoutsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public getPendingPayouts(requestParameters: ProjectFeesApiGetPendingPayoutsRequest = {}, options?: RawAxiosRequestConfig) {
+        return ProjectFeesApiFp(this.configuration).getPendingPayouts(requestParameters.status, requestParameters.currency, requestParameters.limit, requestParameters.page, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -27683,7 +31603,7 @@ export class ProjectFeesApi extends BaseAPI {
     }
 
     /**
-     * Initiate verification process for a payout address. Requires sending a small test transaction to verify ownership. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+     * Initiate verification process for a payout address. Requires sending a small test transaction to verify ownership. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
      * @summary ~~Initiate address verification~~ (deprecated)
      * @param {ProjectFeesApiInitiateAddressVerificationRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -27695,7 +31615,19 @@ export class ProjectFeesApi extends BaseAPI {
     }
 
     /**
-     * Request a manual payout for collected fees. Requires sufficient balance above the threshold. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+     * 
+     * @summary ~~Manually process payout (Admin)~~ (deprecated)
+     * @param {ProjectFeesApiProcessPayoutRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public processPayout(requestParameters: ProjectFeesApiProcessPayoutRequest, options?: RawAxiosRequestConfig) {
+        return ProjectFeesApiFp(this.configuration).processPayout(requestParameters.payoutId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Request a manual payout for collected fees. Requires sufficient balance above the threshold. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
      * @summary ~~Request manual payout~~ (deprecated)
      * @param {ProjectFeesApiRequestManualPayoutRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -27707,7 +31639,7 @@ export class ProjectFeesApi extends BaseAPI {
     }
 
     /**
-     * Update fee settings for a specific cryptocurrency in a project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+     * Update fee settings for a specific cryptocurrency in a project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
      * @summary ~~Update currency fee settings~~ (deprecated)
      * @param {ProjectFeesApiUpdateCurrencyFeeSettingsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -27918,6 +31850,9 @@ export const ProjectsApiAxiosParamCreator = function (configuration?: Configurat
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -27934,7 +31869,7 @@ export const ProjectsApiAxiosParamCreator = function (configuration?: Configurat
             };
         },
         /**
-         * Get project details by ID. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Get project details by ID. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Get single project
          * @param {string} orgId Organization ID
          * @param {string} id Project ID
@@ -28088,6 +32023,9 @@ export const ProjectsApiAxiosParamCreator = function (configuration?: Configurat
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -28468,7 +32406,7 @@ export const ProjectsApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Get project details by ID. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Get project details by ID. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Get single project
          * @param {string} orgId Organization ID
          * @param {string} id Project ID
@@ -28657,7 +32595,7 @@ export const ProjectsApiFactory = function (configuration?: Configuration, baseP
             return localVarFp.getOAuthProviderConfig(requestParameters.projectId, requestParameters.provider, options).then((request) => request(axios, basePath));
         },
         /**
-         * Get project details by ID. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Get project details by ID. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Get single project
          * @param {ProjectsApiGetProjectRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -28987,7 +32925,7 @@ export class ProjectsApi extends BaseAPI {
     }
 
     /**
-     * Get project details by ID. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+     * Get project details by ID. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
      * @summary Get single project
      * @param {ProjectsApiGetProjectRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -29230,6 +33168,9 @@ export const RealTimeAnalyticsApiAxiosParamCreator = function (configuration?: C
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -29274,6 +33215,9 @@ export const RealTimeAnalyticsApiAxiosParamCreator = function (configuration?: C
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -29316,6 +33260,9 @@ export const RealTimeAnalyticsApiAxiosParamCreator = function (configuration?: C
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -29402,6 +33349,9 @@ export const RealTimeAnalyticsApiAxiosParamCreator = function (configuration?: C
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -29447,6 +33397,9 @@ export const RealTimeAnalyticsApiAxiosParamCreator = function (configuration?: C
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -29747,93 +33700,6 @@ export const GetHistoricalAnalyticsPeriodEnum = {
 } as const;
 export type GetHistoricalAnalyticsPeriodEnum = typeof GetHistoricalAnalyticsPeriodEnum[keyof typeof GetHistoricalAnalyticsPeriodEnum];
 
-/**
- * NOTE: hand-patched ahead of the OpenAPI generator, same as the populate parameters on
- * DataApi above. The declared-relationship engine (backend PR feat/relational-ergonomics-
- * phase-1) has not shipped an updated openapi.yaml yet, so RelationshipsApi below is written
- * by hand against the real route/controller contract (routes/relationship.js,
- * controllers/relationshipController.js) rather than generated. Replace with the generated
- * version once the spec catches up.
- */
-export const RelationshipTypeEnum = {
-    OneToOne: 'one-to-one',
-    OneToMany: 'one-to-many',
-    ManyToOne: 'many-to-one',
-    ManyToMany: 'many-to-many',
-} as const;
-export type RelationshipTypeEnum = typeof RelationshipTypeEnum[keyof typeof RelationshipTypeEnum];
-
-export const RelationshipOnDeleteEnum = {
-    Restrict: 'restrict',
-    Cascade: 'cascade',
-    SetNull: 'set-null',
-    NoAction: 'no-action',
-} as const;
-export type RelationshipOnDeleteEnum = typeof RelationshipOnDeleteEnum[keyof typeof RelationshipOnDeleteEnum];
-
-/**
- * A declared relationship between two collections in a project. Reference fields on the
- * documents themselves stay plain ids - this record only tells the server\'s populate engine,
- * write-time reference validator, and cascade-delete enforcer how two collections relate. See
- * models/Relationship.js on the server for the full field-ownership contract per `type`.
- */
-export interface Relationship {
-    '_id'?: string;
-    'project'?: string;
-    'sourceCollection'?: string;
-    'targetCollection'?: string;
-    'field'?: string;
-    'type'?: RelationshipTypeEnum;
-    'onDelete'?: RelationshipOnDeleteEnum;
-    'createdBy'?: string;
-    'createdAt'?: string;
-    'updatedAt'?: string;
-}
-export interface RelationshipListResponse {
-    'success'?: boolean;
-    'data'?: Array<Relationship>;
-    'pagination'?: Pagination;
-}
-export interface RelationshipResponse {
-    'success'?: boolean;
-    'data'?: Relationship;
-    'message'?: string;
-}
-export interface DeleteRelationship200Response {
-    'success'?: boolean;
-    'message'?: string;
-}
-/**
- * One relationship\'s orphan-reference scan result: reference values on the source collection
- * that point at a target document which no longer exists. Detection only, no repair.
- */
-export interface RelationshipOrphanReportEntry {
-    'relationshipId'?: string;
-    'sourceCollection'?: string;
-    'targetCollection'?: string;
-    'field'?: string;
-    'type'?: RelationshipTypeEnum;
-    'error'?: string;
-    'orphanCount'?: number;
-    'orphanSamples'?: Array<string>;
-    'truncated'?: boolean;
-}
-export interface RelationshipOrphanReportResponse {
-    'success'?: boolean;
-    'data'?: Array<RelationshipOrphanReportEntry>;
-    'totalOrphans'?: number;
-}
-export interface CreateRelationshipRequest {
-    'sourceCollection': string;
-    'targetCollection': string;
-    'field': string;
-    'type': RelationshipTypeEnum;
-    'onDelete'?: RelationshipOnDeleteEnum;
-}
-export interface UpdateRelationshipRequest {
-    'type'?: RelationshipTypeEnum;
-    'onDelete'?: RelationshipOnDeleteEnum;
-}
 
 /**
  * RelationshipsApi - axios parameter creator
@@ -29841,18 +33707,21 @@ export interface UpdateRelationshipRequest {
 export const RelationshipsApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
-         * Declare a new relationship between two collections in this project. Requires project owner/admin (ProjectBearerAuth or ApiKeyAuth).
+         * Owner/admin only. `sourceCollection` + `field` must be unique within a project - a second relationship declared on the same source field is rejected. See the `Relationship` schema for the field-ownership contract per `type` (which side of the relationship physically stores the id(s)). 
          * @summary Declare a new relationship between two collections
-         * @param {string} projectId
-         * @param {CreateRelationshipRequest} createRelationshipRequest
+         * @param {string} projectId 
+         * @param {RelationshipCreateRequest} relationshipCreateRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createRelationship: async (projectId: string, createRelationshipRequest: CreateRelationshipRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        createRelationship: async (projectId: string, relationshipCreateRequest: RelationshipCreateRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
             assertParamExists('createRelationship', 'projectId', projectId)
-            assertParamExists('createRelationship', 'createRelationshipRequest', createRelationshipRequest)
+            // verify required parameter 'relationshipCreateRequest' is not null or undefined
+            assertParamExists('createRelationship', 'relationshipCreateRequest', relationshipCreateRequest)
             const localVarPath = `/api/projects/{projectId}/relationships`
                 .replace('{projectId}', encodeURIComponent(String(projectId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
             if (configuration) {
@@ -29863,12 +33732,16 @@ export const RelationshipsApiAxiosParamCreator = function (configuration?: Confi
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
-            // authentication ProjectBearerAuth required
+            // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             // authentication ApiKeyAuth required
             await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             localVarHeaderParameter['Content-Type'] = 'application/json';
             localVarHeaderParameter['Accept'] = 'application/json';
@@ -29876,7 +33749,7 @@ export const RelationshipsApiAxiosParamCreator = function (configuration?: Confi
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(createRelationshipRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(relationshipCreateRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -29884,19 +33757,22 @@ export const RelationshipsApiAxiosParamCreator = function (configuration?: Confi
             };
         },
         /**
-         * Remove a relationship declaration (metadata only - never touches documents). Requires project owner/admin.
-         * @summary Delete a relationship declaration
-         * @param {string} projectId
-         * @param {string} relationshipId
+         * 
+         * @summary Remove a relationship declaration (metadata only - never touches documents)
+         * @param {string} projectId 
+         * @param {string} relationshipId 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         deleteRelationship: async (projectId: string, relationshipId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
             assertParamExists('deleteRelationship', 'projectId', projectId)
+            // verify required parameter 'relationshipId' is not null or undefined
             assertParamExists('deleteRelationship', 'relationshipId', relationshipId)
             const localVarPath = `/api/projects/{projectId}/relationships/{relationshipId}`
                 .replace('{projectId}', encodeURIComponent(String(projectId)))
                 .replace('{relationshipId}', encodeURIComponent(String(relationshipId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
             if (configuration) {
@@ -29907,12 +33783,16 @@ export const RelationshipsApiAxiosParamCreator = function (configuration?: Confi
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
-            // authentication ProjectBearerAuth required
+            // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             // authentication ApiKeyAuth required
             await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             localVarHeaderParameter['Accept'] = 'application/json';
 
@@ -29926,19 +33806,22 @@ export const RelationshipsApiAxiosParamCreator = function (configuration?: Confi
             };
         },
         /**
-         * Get a single relationship definition.
+         * 
          * @summary Get a single relationship definition
-         * @param {string} projectId
-         * @param {string} relationshipId
+         * @param {string} projectId 
+         * @param {string} relationshipId 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         getRelationship: async (projectId: string, relationshipId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
             assertParamExists('getRelationship', 'projectId', projectId)
+            // verify required parameter 'relationshipId' is not null or undefined
             assertParamExists('getRelationship', 'relationshipId', relationshipId)
             const localVarPath = `/api/projects/{projectId}/relationships/{relationshipId}`
                 .replace('{projectId}', encodeURIComponent(String(projectId)))
                 .replace('{relationshipId}', encodeURIComponent(String(relationshipId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
             if (configuration) {
@@ -29949,12 +33832,16 @@ export const RelationshipsApiAxiosParamCreator = function (configuration?: Confi
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
-            // authentication ProjectBearerAuth required
+            // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             // authentication ApiKeyAuth required
             await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             localVarHeaderParameter['Accept'] = 'application/json';
 
@@ -29968,20 +33855,18 @@ export const RelationshipsApiAxiosParamCreator = function (configuration?: Confi
             };
         },
         /**
-         * List declared relationships for a project, optionally narrowed to one source and/or target collection.
-         * @summary List declared relationships for a project
-         * @param {string} projectId
-         * @param {string} [sourceCollection]
-         * @param {string} [targetCollection]
-         * @param {number} [page]
-         * @param {number} [limit]
+         * Owner/admin only. Inspects declared Relationship metadata and each involved collection\'s real existing indexes and suggests (never creates) an index on any foreign-key field a populate/filter path queries but that has no index covering it yet. 
+         * @summary Read-only index suggestions for declared relationships\' foreign-key fields
+         * @param {string} projectId 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listRelationships: async (projectId: string, sourceCollection?: string, targetCollection?: string, page?: number, limit?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            assertParamExists('listRelationships', 'projectId', projectId)
-            const localVarPath = `/api/projects/{projectId}/relationships`
+        getRelationshipIndexSuggestions: async (projectId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('getRelationshipIndexSuggestions', 'projectId', projectId)
+            const localVarPath = `/api/projects/{projectId}/relationships/index-suggestions`
                 .replace('{projectId}', encodeURIComponent(String(projectId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
             if (configuration) {
@@ -29992,12 +33877,110 @@ export const RelationshipsApiAxiosParamCreator = function (configuration?: Confi
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
-            // authentication ProjectBearerAuth required
+            // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             // authentication ApiKeyAuth required
             await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Owner/admin only, read-only. Walks every declared relationship for the project and reports foreign-key values that do not resolve to an existing target document. Detection only - see `POST /api/projects/{projectId}/relationships/{relationshipId}/repair-orphans` for the mutation half. 
+         * @summary Scan every declared relationship for FK values with no matching target document
+         * @param {string} projectId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getRelationshipOrphans: async (projectId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('getRelationshipOrphans', 'projectId', projectId)
+            const localVarPath = `/api/projects/{projectId}/relationships/orphans`
+                .replace('{projectId}', encodeURIComponent(String(projectId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Paginated list of declared Relationship records for a project. Optional `sourceCollection` / `targetCollection` query params filter to relationships touching a given collection on either side. 
+         * @summary List declared relationships for a project
+         * @param {string} projectId 
+         * @param {string} [sourceCollection] 
+         * @param {string} [targetCollection] 
+         * @param {number} [page] 
+         * @param {number} [limit] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listRelationships: async (projectId: string, sourceCollection?: string, targetCollection?: string, page?: number, limit?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('listRelationships', 'projectId', projectId)
+            const localVarPath = `/api/projects/{projectId}/relationships`
+                .replace('{projectId}', encodeURIComponent(String(projectId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             if (sourceCollection !== undefined) {
                 localVarQueryParameter['sourceCollection'] = sourceCollection;
@@ -30027,38 +34010,51 @@ export const RelationshipsApiAxiosParamCreator = function (configuration?: Confi
             };
         },
         /**
-         * Scan every declared relationship for FK values with no matching target document. Owner/admin only, detection only - repair is a separate follow-up.
-         * @summary Scan for orphaned references
-         * @param {string} projectId
+         * Owner/admin only. Dry-run by default - reports what would change without mutating any document. Only `{\"confirm\": true}` performs the real mutation, following the relationship\'s own declared `onDelete` policy: `cascade` deletes the orphaned referencing (source) documents, `set-null` clears the dangling reference. `restrict` / `no-action` decline automatic repair and return a 400 instead. 
+         * @summary Repair the orphaned FK values getRelationshipOrphans finds for one relationship
+         * @param {string} projectId 
+         * @param {string} relationshipId 
+         * @param {RepairRelationshipOrphansRequest} [repairRelationshipOrphansRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getRelationshipOrphans: async (projectId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            assertParamExists('getRelationshipOrphans', 'projectId', projectId)
-            const localVarPath = `/api/projects/{projectId}/relationships/orphans`
-                .replace('{projectId}', encodeURIComponent(String(projectId)));
+        repairRelationshipOrphans: async (projectId: string, relationshipId: string, repairRelationshipOrphansRequest?: RepairRelationshipOrphansRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('repairRelationshipOrphans', 'projectId', projectId)
+            // verify required parameter 'relationshipId' is not null or undefined
+            assertParamExists('repairRelationshipOrphans', 'relationshipId', relationshipId)
+            const localVarPath = `/api/projects/{projectId}/relationships/{relationshipId}/repair-orphans`
+                .replace('{projectId}', encodeURIComponent(String(projectId)))
+                .replace('{relationshipId}', encodeURIComponent(String(relationshipId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
             if (configuration) {
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
-            // authentication ProjectBearerAuth required
+            // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             // authentication ApiKeyAuth required
             await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
             localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(repairRelationshipOrphansRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -30066,21 +34062,25 @@ export const RelationshipsApiAxiosParamCreator = function (configuration?: Confi
             };
         },
         /**
-         * Update a relationship\'s type or onDelete policy. sourceCollection/field are immutable - delete and recreate to repoint those. Requires project owner/admin.
+         * Owner/admin only. `sourceCollection` and `field` are immutable - delete and recreate the relationship to repoint those, since they are part of the unique key other declared relationships are checked against. 
          * @summary Update a relationship\'s type or onDelete policy
-         * @param {string} projectId
-         * @param {string} relationshipId
-         * @param {UpdateRelationshipRequest} updateRelationshipRequest
+         * @param {string} projectId 
+         * @param {string} relationshipId 
+         * @param {RelationshipUpdateRequest} relationshipUpdateRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateRelationship: async (projectId: string, relationshipId: string, updateRelationshipRequest: UpdateRelationshipRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        updateRelationship: async (projectId: string, relationshipId: string, relationshipUpdateRequest: RelationshipUpdateRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
             assertParamExists('updateRelationship', 'projectId', projectId)
+            // verify required parameter 'relationshipId' is not null or undefined
             assertParamExists('updateRelationship', 'relationshipId', relationshipId)
-            assertParamExists('updateRelationship', 'updateRelationshipRequest', updateRelationshipRequest)
+            // verify required parameter 'relationshipUpdateRequest' is not null or undefined
+            assertParamExists('updateRelationship', 'relationshipUpdateRequest', relationshipUpdateRequest)
             const localVarPath = `/api/projects/{projectId}/relationships/{relationshipId}`
                 .replace('{projectId}', encodeURIComponent(String(projectId)))
                 .replace('{relationshipId}', encodeURIComponent(String(relationshipId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
             if (configuration) {
@@ -30091,12 +34091,16 @@ export const RelationshipsApiAxiosParamCreator = function (configuration?: Confi
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
-            // authentication ProjectBearerAuth required
+            // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             // authentication ApiKeyAuth required
             await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             localVarHeaderParameter['Content-Type'] = 'application/json';
             localVarHeaderParameter['Accept'] = 'application/json';
@@ -30104,7 +34108,7 @@ export const RelationshipsApiAxiosParamCreator = function (configuration?: Confi
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(updateRelationshipRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(relationshipUpdateRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -30120,38 +34124,117 @@ export const RelationshipsApiAxiosParamCreator = function (configuration?: Confi
 export const RelationshipsApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = RelationshipsApiAxiosParamCreator(configuration)
     return {
-        async createRelationship(projectId: string, createRelationshipRequest: CreateRelationshipRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RelationshipResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createRelationship(projectId, createRelationshipRequest, options);
+        /**
+         * Owner/admin only. `sourceCollection` + `field` must be unique within a project - a second relationship declared on the same source field is rejected. See the `Relationship` schema for the field-ownership contract per `type` (which side of the relationship physically stores the id(s)). 
+         * @summary Declare a new relationship between two collections
+         * @param {string} projectId 
+         * @param {RelationshipCreateRequest} relationshipCreateRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createRelationship(projectId: string, relationshipCreateRequest: RelationshipCreateRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RelationshipResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createRelationship(projectId, relationshipCreateRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['RelationshipsApi.createRelationship']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
-        async deleteRelationship(projectId: string, relationshipId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DeleteRelationship200Response>> {
+        /**
+         * 
+         * @summary Remove a relationship declaration (metadata only - never touches documents)
+         * @param {string} projectId 
+         * @param {string} relationshipId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async deleteRelationship(projectId: string, relationshipId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<MessageResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.deleteRelationship(projectId, relationshipId, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['RelationshipsApi.deleteRelationship']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
+        /**
+         * 
+         * @summary Get a single relationship definition
+         * @param {string} projectId 
+         * @param {string} relationshipId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
         async getRelationship(projectId: string, relationshipId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RelationshipResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getRelationship(projectId, relationshipId, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['RelationshipsApi.getRelationship']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
-        async listRelationships(projectId: string, sourceCollection?: string, targetCollection?: string, page?: number, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RelationshipListResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.listRelationships(projectId, sourceCollection, targetCollection, page, limit, options);
+        /**
+         * Owner/admin only. Inspects declared Relationship metadata and each involved collection\'s real existing indexes and suggests (never creates) an index on any foreign-key field a populate/filter path queries but that has no index covering it yet. 
+         * @summary Read-only index suggestions for declared relationships\' foreign-key fields
+         * @param {string} projectId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getRelationshipIndexSuggestions(projectId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RelationshipIndexSuggestionsResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getRelationshipIndexSuggestions(projectId, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['RelationshipsApi.listRelationships']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['RelationshipsApi.getRelationshipIndexSuggestions']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
+        /**
+         * Owner/admin only, read-only. Walks every declared relationship for the project and reports foreign-key values that do not resolve to an existing target document. Detection only - see `POST /api/projects/{projectId}/relationships/{relationshipId}/repair-orphans` for the mutation half. 
+         * @summary Scan every declared relationship for FK values with no matching target document
+         * @param {string} projectId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
         async getRelationshipOrphans(projectId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RelationshipOrphanReportResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getRelationshipOrphans(projectId, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['RelationshipsApi.getRelationshipOrphans']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
-        async updateRelationship(projectId: string, relationshipId: string, updateRelationshipRequest: UpdateRelationshipRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RelationshipResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateRelationship(projectId, relationshipId, updateRelationshipRequest, options);
+        /**
+         * Paginated list of declared Relationship records for a project. Optional `sourceCollection` / `targetCollection` query params filter to relationships touching a given collection on either side. 
+         * @summary List declared relationships for a project
+         * @param {string} projectId 
+         * @param {string} [sourceCollection] 
+         * @param {string} [targetCollection] 
+         * @param {number} [page] 
+         * @param {number} [limit] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async listRelationships(projectId: string, sourceCollection?: string, targetCollection?: string, page?: number, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RelationshipListResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listRelationships(projectId, sourceCollection, targetCollection, page, limit, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['RelationshipsApi.listRelationships']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Owner/admin only. Dry-run by default - reports what would change without mutating any document. Only `{\"confirm\": true}` performs the real mutation, following the relationship\'s own declared `onDelete` policy: `cascade` deletes the orphaned referencing (source) documents, `set-null` clears the dangling reference. `restrict` / `no-action` decline automatic repair and return a 400 instead. 
+         * @summary Repair the orphaned FK values getRelationshipOrphans finds for one relationship
+         * @param {string} projectId 
+         * @param {string} relationshipId 
+         * @param {RepairRelationshipOrphansRequest} [repairRelationshipOrphansRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async repairRelationshipOrphans(projectId: string, relationshipId: string, repairRelationshipOrphansRequest?: RepairRelationshipOrphansRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RelationshipRepairResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.repairRelationshipOrphans(projectId, relationshipId, repairRelationshipOrphansRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['RelationshipsApi.repairRelationshipOrphans']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Owner/admin only. `sourceCollection` and `field` are immutable - delete and recreate the relationship to repoint those, since they are part of the unique key other declared relationships are checked against. 
+         * @summary Update a relationship\'s type or onDelete policy
+         * @param {string} projectId 
+         * @param {string} relationshipId 
+         * @param {RelationshipUpdateRequest} relationshipUpdateRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateRelationship(projectId: string, relationshipId: string, relationshipUpdateRequest: RelationshipUpdateRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RelationshipResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateRelationship(projectId, relationshipId, relationshipUpdateRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['RelationshipsApi.updateRelationship']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -30165,23 +34248,85 @@ export const RelationshipsApiFp = function(configuration?: Configuration) {
 export const RelationshipsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
     const localVarFp = RelationshipsApiFp(configuration)
     return {
+        /**
+         * Owner/admin only. `sourceCollection` + `field` must be unique within a project - a second relationship declared on the same source field is rejected. See the `Relationship` schema for the field-ownership contract per `type` (which side of the relationship physically stores the id(s)). 
+         * @summary Declare a new relationship between two collections
+         * @param {RelationshipsApiCreateRelationshipRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
         createRelationship(requestParameters: RelationshipsApiCreateRelationshipRequest, options?: RawAxiosRequestConfig): AxiosPromise<RelationshipResponse> {
-            return localVarFp.createRelationship(requestParameters.projectId, requestParameters.createRelationshipRequest, options).then((request) => request(axios, basePath));
+            return localVarFp.createRelationship(requestParameters.projectId, requestParameters.relationshipCreateRequest, options).then((request) => request(axios, basePath));
         },
-        deleteRelationship(requestParameters: RelationshipsApiDeleteRelationshipRequest, options?: RawAxiosRequestConfig): AxiosPromise<DeleteRelationship200Response> {
+        /**
+         * 
+         * @summary Remove a relationship declaration (metadata only - never touches documents)
+         * @param {RelationshipsApiDeleteRelationshipRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteRelationship(requestParameters: RelationshipsApiDeleteRelationshipRequest, options?: RawAxiosRequestConfig): AxiosPromise<MessageResponse> {
             return localVarFp.deleteRelationship(requestParameters.projectId, requestParameters.relationshipId, options).then((request) => request(axios, basePath));
         },
+        /**
+         * 
+         * @summary Get a single relationship definition
+         * @param {RelationshipsApiGetRelationshipRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
         getRelationship(requestParameters: RelationshipsApiGetRelationshipRequest, options?: RawAxiosRequestConfig): AxiosPromise<RelationshipResponse> {
             return localVarFp.getRelationship(requestParameters.projectId, requestParameters.relationshipId, options).then((request) => request(axios, basePath));
         },
-        listRelationships(requestParameters: RelationshipsApiListRelationshipsRequest, options?: RawAxiosRequestConfig): AxiosPromise<RelationshipListResponse> {
-            return localVarFp.listRelationships(requestParameters.projectId, requestParameters.sourceCollection, requestParameters.targetCollection, requestParameters.page, requestParameters.limit, options).then((request) => request(axios, basePath));
+        /**
+         * Owner/admin only. Inspects declared Relationship metadata and each involved collection\'s real existing indexes and suggests (never creates) an index on any foreign-key field a populate/filter path queries but that has no index covering it yet. 
+         * @summary Read-only index suggestions for declared relationships\' foreign-key fields
+         * @param {RelationshipsApiGetRelationshipIndexSuggestionsRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getRelationshipIndexSuggestions(requestParameters: RelationshipsApiGetRelationshipIndexSuggestionsRequest, options?: RawAxiosRequestConfig): AxiosPromise<RelationshipIndexSuggestionsResponse> {
+            return localVarFp.getRelationshipIndexSuggestions(requestParameters.projectId, options).then((request) => request(axios, basePath));
         },
+        /**
+         * Owner/admin only, read-only. Walks every declared relationship for the project and reports foreign-key values that do not resolve to an existing target document. Detection only - see `POST /api/projects/{projectId}/relationships/{relationshipId}/repair-orphans` for the mutation half. 
+         * @summary Scan every declared relationship for FK values with no matching target document
+         * @param {RelationshipsApiGetRelationshipOrphansRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
         getRelationshipOrphans(requestParameters: RelationshipsApiGetRelationshipOrphansRequest, options?: RawAxiosRequestConfig): AxiosPromise<RelationshipOrphanReportResponse> {
             return localVarFp.getRelationshipOrphans(requestParameters.projectId, options).then((request) => request(axios, basePath));
         },
+        /**
+         * Paginated list of declared Relationship records for a project. Optional `sourceCollection` / `targetCollection` query params filter to relationships touching a given collection on either side. 
+         * @summary List declared relationships for a project
+         * @param {RelationshipsApiListRelationshipsRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listRelationships(requestParameters: RelationshipsApiListRelationshipsRequest, options?: RawAxiosRequestConfig): AxiosPromise<RelationshipListResponse> {
+            return localVarFp.listRelationships(requestParameters.projectId, requestParameters.sourceCollection, requestParameters.targetCollection, requestParameters.page, requestParameters.limit, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Owner/admin only. Dry-run by default - reports what would change without mutating any document. Only `{\"confirm\": true}` performs the real mutation, following the relationship\'s own declared `onDelete` policy: `cascade` deletes the orphaned referencing (source) documents, `set-null` clears the dangling reference. `restrict` / `no-action` decline automatic repair and return a 400 instead. 
+         * @summary Repair the orphaned FK values getRelationshipOrphans finds for one relationship
+         * @param {RelationshipsApiRepairRelationshipOrphansRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        repairRelationshipOrphans(requestParameters: RelationshipsApiRepairRelationshipOrphansRequest, options?: RawAxiosRequestConfig): AxiosPromise<RelationshipRepairResponse> {
+            return localVarFp.repairRelationshipOrphans(requestParameters.projectId, requestParameters.relationshipId, requestParameters.repairRelationshipOrphansRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Owner/admin only. `sourceCollection` and `field` are immutable - delete and recreate the relationship to repoint those, since they are part of the unique key other declared relationships are checked against. 
+         * @summary Update a relationship\'s type or onDelete policy
+         * @param {RelationshipsApiUpdateRelationshipRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
         updateRelationship(requestParameters: RelationshipsApiUpdateRelationshipRequest, options?: RawAxiosRequestConfig): AxiosPromise<RelationshipResponse> {
-            return localVarFp.updateRelationship(requestParameters.projectId, requestParameters.relationshipId, requestParameters.updateRelationshipRequest, options).then((request) => request(axios, basePath));
+            return localVarFp.updateRelationship(requestParameters.projectId, requestParameters.relationshipId, requestParameters.relationshipUpdateRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -30192,7 +34337,7 @@ export const RelationshipsApiFactory = function (configuration?: Configuration, 
 export interface RelationshipsApiCreateRelationshipRequest {
     readonly projectId: string
 
-    readonly createRelationshipRequest: CreateRelationshipRequest
+    readonly relationshipCreateRequest: RelationshipCreateRequest
 }
 
 /**
@@ -30214,6 +34359,20 @@ export interface RelationshipsApiGetRelationshipRequest {
 }
 
 /**
+ * Request parameters for getRelationshipIndexSuggestions operation in RelationshipsApi.
+ */
+export interface RelationshipsApiGetRelationshipIndexSuggestionsRequest {
+    readonly projectId: string
+}
+
+/**
+ * Request parameters for getRelationshipOrphans operation in RelationshipsApi.
+ */
+export interface RelationshipsApiGetRelationshipOrphansRequest {
+    readonly projectId: string
+}
+
+/**
  * Request parameters for listRelationships operation in RelationshipsApi.
  */
 export interface RelationshipsApiListRelationshipsRequest {
@@ -30229,10 +34388,14 @@ export interface RelationshipsApiListRelationshipsRequest {
 }
 
 /**
- * Request parameters for getRelationshipOrphans operation in RelationshipsApi.
+ * Request parameters for repairRelationshipOrphans operation in RelationshipsApi.
  */
-export interface RelationshipsApiGetRelationshipOrphansRequest {
+export interface RelationshipsApiRepairRelationshipOrphansRequest {
     readonly projectId: string
+
+    readonly relationshipId: string
+
+    readonly repairRelationshipOrphansRequest?: RepairRelationshipOrphansRequest
 }
 
 /**
@@ -30243,28 +34406,27 @@ export interface RelationshipsApiUpdateRelationshipRequest {
 
     readonly relationshipId: string
 
-    readonly updateRelationshipRequest: UpdateRelationshipRequest
+    readonly relationshipUpdateRequest: RelationshipUpdateRequest
 }
 
 /**
- * RelationshipsApi - object-oriented interface. Thin client for the declared-relationship
- * metadata CRUD endpoints (routes/relationship.js on the server) - the same declarations that
- * drive DataApi's `?populate=` support above, write-time reference validation, and cascade
- * delete. `getRelationshipOrphans` is owner/admin-only (detection, not repair).
+ * RelationshipsApi - object-oriented interface
  */
 export class RelationshipsApi extends BaseAPI {
     /**
+     * Owner/admin only. `sourceCollection` + `field` must be unique within a project - a second relationship declared on the same source field is rejected. See the `Relationship` schema for the field-ownership contract per `type` (which side of the relationship physically stores the id(s)). 
      * @summary Declare a new relationship between two collections
      * @param {RelationshipsApiCreateRelationshipRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
     public createRelationship(requestParameters: RelationshipsApiCreateRelationshipRequest, options?: RawAxiosRequestConfig) {
-        return RelationshipsApiFp(this.configuration).createRelationship(requestParameters.projectId, requestParameters.createRelationshipRequest, options).then((request) => request(this.axios, this.basePath));
+        return RelationshipsApiFp(this.configuration).createRelationship(requestParameters.projectId, requestParameters.relationshipCreateRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
-     * @summary Delete a relationship declaration
+     * 
+     * @summary Remove a relationship declaration (metadata only - never touches documents)
      * @param {RelationshipsApiDeleteRelationshipRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -30274,6 +34436,7 @@ export class RelationshipsApi extends BaseAPI {
     }
 
     /**
+     * 
      * @summary Get a single relationship definition
      * @param {RelationshipsApiGetRelationshipRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -30284,6 +34447,29 @@ export class RelationshipsApi extends BaseAPI {
     }
 
     /**
+     * Owner/admin only. Inspects declared Relationship metadata and each involved collection\'s real existing indexes and suggests (never creates) an index on any foreign-key field a populate/filter path queries but that has no index covering it yet. 
+     * @summary Read-only index suggestions for declared relationships\' foreign-key fields
+     * @param {RelationshipsApiGetRelationshipIndexSuggestionsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public getRelationshipIndexSuggestions(requestParameters: RelationshipsApiGetRelationshipIndexSuggestionsRequest, options?: RawAxiosRequestConfig) {
+        return RelationshipsApiFp(this.configuration).getRelationshipIndexSuggestions(requestParameters.projectId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Owner/admin only, read-only. Walks every declared relationship for the project and reports foreign-key values that do not resolve to an existing target document. Detection only - see `POST /api/projects/{projectId}/relationships/{relationshipId}/repair-orphans` for the mutation half. 
+     * @summary Scan every declared relationship for FK values with no matching target document
+     * @param {RelationshipsApiGetRelationshipOrphansRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public getRelationshipOrphans(requestParameters: RelationshipsApiGetRelationshipOrphansRequest, options?: RawAxiosRequestConfig) {
+        return RelationshipsApiFp(this.configuration).getRelationshipOrphans(requestParameters.projectId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Paginated list of declared Relationship records for a project. Optional `sourceCollection` / `targetCollection` query params filter to relationships touching a given collection on either side. 
      * @summary List declared relationships for a project
      * @param {RelationshipsApiListRelationshipsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -30294,23 +34480,25 @@ export class RelationshipsApi extends BaseAPI {
     }
 
     /**
-     * @summary Scan for orphaned references (owner/admin only)
-     * @param {RelationshipsApiGetRelationshipOrphansRequest} requestParameters Request parameters.
+     * Owner/admin only. Dry-run by default - reports what would change without mutating any document. Only `{\"confirm\": true}` performs the real mutation, following the relationship\'s own declared `onDelete` policy: `cascade` deletes the orphaned referencing (source) documents, `set-null` clears the dangling reference. `restrict` / `no-action` decline automatic repair and return a 400 instead. 
+     * @summary Repair the orphaned FK values getRelationshipOrphans finds for one relationship
+     * @param {RelationshipsApiRepairRelationshipOrphansRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public getRelationshipOrphans(requestParameters: RelationshipsApiGetRelationshipOrphansRequest, options?: RawAxiosRequestConfig) {
-        return RelationshipsApiFp(this.configuration).getRelationshipOrphans(requestParameters.projectId, options).then((request) => request(this.axios, this.basePath));
+    public repairRelationshipOrphans(requestParameters: RelationshipsApiRepairRelationshipOrphansRequest, options?: RawAxiosRequestConfig) {
+        return RelationshipsApiFp(this.configuration).repairRelationshipOrphans(requestParameters.projectId, requestParameters.relationshipId, requestParameters.repairRelationshipOrphansRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
+     * Owner/admin only. `sourceCollection` and `field` are immutable - delete and recreate the relationship to repoint those, since they are part of the unique key other declared relationships are checked against. 
      * @summary Update a relationship\'s type or onDelete policy
      * @param {RelationshipsApiUpdateRelationshipRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
     public updateRelationship(requestParameters: RelationshipsApiUpdateRelationshipRequest, options?: RawAxiosRequestConfig) {
-        return RelationshipsApiFp(this.configuration).updateRelationship(requestParameters.projectId, requestParameters.relationshipId, requestParameters.updateRelationshipRequest, options).then((request) => request(this.axios, this.basePath));
+        return RelationshipsApiFp(this.configuration).updateRelationship(requestParameters.projectId, requestParameters.relationshipId, requestParameters.relationshipUpdateRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
@@ -31714,6 +35902,886 @@ export class RolesApi extends BaseAPI {
 
 
 /**
+ * SandboxesApi - axios parameter creator
+ */
+export const SandboxesApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Explicitly terminate a sandbox session. The machine is destroyed and all in-memory state is discarded. Idempotent: closing an already-ended session returns 200. 
+         * @summary Close sandbox session
+         * @param {string} projectId 
+         * @param {string} sessionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        closeSandboxSession: async (projectId: string, sessionId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('closeSandboxSession', 'projectId', projectId)
+            // verify required parameter 'sessionId' is not null or undefined
+            assertParamExists('closeSandboxSession', 'sessionId', sessionId)
+            const localVarPath = `/api/sandboxes/projects/{projectId}/sessions/{sessionId}`
+                .replace('{projectId}', encodeURIComponent(String(projectId)))
+                .replace('{sessionId}', encodeURIComponent(String(sessionId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Create a new isolated sandbox session for the project. The session boots an execution environment for the requested language and returns connection credentials (WebSocket URL and a short-lived JWT).  Supported languages and versions are determined by the images registered with the sandbox gateway. The session is automatically terminated after `timeoutSeconds` seconds of inactivity. 
+         * @summary Create sandbox session
+         * @param {string} projectId 
+         * @param {CreateSandboxSessionRequest} createSandboxSessionRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createSandboxSession: async (projectId: string, createSandboxSessionRequest: CreateSandboxSessionRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('createSandboxSession', 'projectId', projectId)
+            // verify required parameter 'createSandboxSessionRequest' is not null or undefined
+            assertParamExists('createSandboxSession', 'createSandboxSessionRequest', createSandboxSessionRequest)
+            const localVarPath = `/api/sandboxes/projects/{projectId}`
+                .replace('{projectId}', encodeURIComponent(String(projectId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createSandboxSessionRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Run a shell command inside a running sandbox and stream the output as Server-Sent Events (SSE). Each event carries one line of stdout/stderr or a final `exit` event with the process exit code.  If the session is currently suspended it is automatically resumed before the command is executed; the call blocks until the machine is running.  **Event stream format**  Each SSE event has a `data` field. Lines from stdout/stderr are prefixed with `stdout:` or `stderr:`. The final event has `data: exit:<code>`.  **Abort:** close the HTTP connection to cancel the command early. 
+         * @summary Execute command in session
+         * @param {string} projectId 
+         * @param {string} sessionId 
+         * @param {ExecSandboxRequest} execSandboxRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        execSandboxSession: async (projectId: string, sessionId: string, execSandboxRequest: ExecSandboxRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('execSandboxSession', 'projectId', projectId)
+            // verify required parameter 'sessionId' is not null or undefined
+            assertParamExists('execSandboxSession', 'sessionId', sessionId)
+            // verify required parameter 'execSandboxRequest' is not null or undefined
+            assertParamExists('execSandboxSession', 'execSandboxRequest', execSandboxRequest)
+            const localVarPath = `/api/sandboxes/projects/{projectId}/sessions/{sessionId}/exec`
+                .replace('{projectId}', encodeURIComponent(String(projectId)))
+                .replace('{sessionId}', encodeURIComponent(String(sessionId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'text/event-stream,application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(execSandboxRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Expose an internal port on a running sandbox so the user\'s application is reachable from the internet at the session\'s stable public URL (`https://sb-{sessionId}.cells.mudbase.dev`). The caller is responsible for appending any path the application requires.  Use `access: \"token-gated\"` to require a `portToken` Bearer header on every request to the exposed URL, preventing public access. 
+         * @summary Expose sandbox port
+         * @param {string} projectId 
+         * @param {string} sessionId 
+         * @param {ExposeSandboxPortRequest} exposeSandboxPortRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        exposeSandboxPort: async (projectId: string, sessionId: string, exposeSandboxPortRequest: ExposeSandboxPortRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('exposeSandboxPort', 'projectId', projectId)
+            // verify required parameter 'sessionId' is not null or undefined
+            assertParamExists('exposeSandboxPort', 'sessionId', sessionId)
+            // verify required parameter 'exposeSandboxPortRequest' is not null or undefined
+            assertParamExists('exposeSandboxPort', 'exposeSandboxPortRequest', exposeSandboxPortRequest)
+            const localVarPath = `/api/sandboxes/projects/{projectId}/sessions/{sessionId}/expose`
+                .replace('{projectId}', encodeURIComponent(String(projectId)))
+                .replace('{sessionId}', encodeURIComponent(String(sessionId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(exposeSandboxPortRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Issue a fresh 60-second gateway JWT for an existing session. Use this when the original token from `POST .../sandboxes/projects/{projectId}` has expired (tokens are short-lived) and you need to reconnect to the same session. If the session is currently suspended it is automatically resumed before the token is issued; the call blocks until the machine is running. 
+         * @summary Issue connect token
+         * @param {string} projectId 
+         * @param {string} sessionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getSandboxConnectToken: async (projectId: string, sessionId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('getSandboxConnectToken', 'projectId', projectId)
+            // verify required parameter 'sessionId' is not null or undefined
+            assertParamExists('getSandboxConnectToken', 'sessionId', sessionId)
+            const localVarPath = `/api/sandboxes/projects/{projectId}/sessions/{sessionId}/connect-token`
+                .replace('{projectId}', encodeURIComponent(String(projectId)))
+                .replace('{sessionId}', encodeURIComponent(String(sessionId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Return the status and metadata of a single sandbox session.
+         * @summary Get sandbox session
+         * @param {string} projectId 
+         * @param {string} sessionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getSandboxSession: async (projectId: string, sessionId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('getSandboxSession', 'projectId', projectId)
+            // verify required parameter 'sessionId' is not null or undefined
+            assertParamExists('getSandboxSession', 'sessionId', sessionId)
+            const localVarPath = `/api/sandboxes/projects/{projectId}/sessions/{sessionId}`
+                .replace('{projectId}', encodeURIComponent(String(projectId)))
+                .replace('{sessionId}', encodeURIComponent(String(sessionId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns all running (and recently ended) sandbox sessions for the authenticated org. Results are not filtered by project; pass `projectId` to scope the list to a single project if needed. 
+         * @summary List sandbox sessions
+         * @param {string} projectId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listSandboxSessions: async (projectId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('listSandboxSessions', 'projectId', projectId)
+            const localVarPath = `/api/sandboxes/projects/{projectId}`
+                .replace('{projectId}', encodeURIComponent(String(projectId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Resume a suspended sandbox session. The machine is restarted from its frozen state. Returns immediately; the caller should poll `GET .../sessions/{sessionId}` until `status` is `running`. 
+         * @summary Resume sandbox session
+         * @param {string} projectId 
+         * @param {string} sessionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        resumeSandboxSession: async (projectId: string, sessionId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('resumeSandboxSession', 'projectId', projectId)
+            // verify required parameter 'sessionId' is not null or undefined
+            assertParamExists('resumeSandboxSession', 'sessionId', sessionId)
+            const localVarPath = `/api/sandboxes/projects/{projectId}/sessions/{sessionId}/resume`
+                .replace('{projectId}', encodeURIComponent(String(projectId)))
+                .replace('{sessionId}', encodeURIComponent(String(sessionId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Freeze an always-on sandbox session. The machine\'s memory state is preserved and the session resumes on the next connection. Only sessions with `alwaysOn: true` can be suspended. 
+         * @summary Suspend sandbox session
+         * @param {string} projectId 
+         * @param {string} sessionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        suspendSandboxSession: async (projectId: string, sessionId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('suspendSandboxSession', 'projectId', projectId)
+            // verify required parameter 'sessionId' is not null or undefined
+            assertParamExists('suspendSandboxSession', 'sessionId', sessionId)
+            const localVarPath = `/api/sandboxes/projects/{projectId}/sessions/{sessionId}/suspend`
+                .replace('{projectId}', encodeURIComponent(String(projectId)))
+                .replace('{sessionId}', encodeURIComponent(String(sessionId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * SandboxesApi - functional programming interface
+ */
+export const SandboxesApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = SandboxesApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Explicitly terminate a sandbox session. The machine is destroyed and all in-memory state is discarded. Idempotent: closing an already-ended session returns 200. 
+         * @summary Close sandbox session
+         * @param {string} projectId 
+         * @param {string} sessionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async closeSandboxSession(projectId: string, sessionId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<CloseSandboxSession200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.closeSandboxSession(projectId, sessionId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SandboxesApi.closeSandboxSession']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Create a new isolated sandbox session for the project. The session boots an execution environment for the requested language and returns connection credentials (WebSocket URL and a short-lived JWT).  Supported languages and versions are determined by the images registered with the sandbox gateway. The session is automatically terminated after `timeoutSeconds` seconds of inactivity. 
+         * @summary Create sandbox session
+         * @param {string} projectId 
+         * @param {CreateSandboxSessionRequest} createSandboxSessionRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createSandboxSession(projectId: string, createSandboxSessionRequest: CreateSandboxSessionRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<CreateSandboxSessionResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createSandboxSession(projectId, createSandboxSessionRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SandboxesApi.createSandboxSession']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Run a shell command inside a running sandbox and stream the output as Server-Sent Events (SSE). Each event carries one line of stdout/stderr or a final `exit` event with the process exit code.  If the session is currently suspended it is automatically resumed before the command is executed; the call blocks until the machine is running.  **Event stream format**  Each SSE event has a `data` field. Lines from stdout/stderr are prefixed with `stdout:` or `stderr:`. The final event has `data: exit:<code>`.  **Abort:** close the HTTP connection to cancel the command early. 
+         * @summary Execute command in session
+         * @param {string} projectId 
+         * @param {string} sessionId 
+         * @param {ExecSandboxRequest} execSandboxRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async execSandboxSession(projectId: string, sessionId: string, execSandboxRequest: ExecSandboxRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<string>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.execSandboxSession(projectId, sessionId, execSandboxRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SandboxesApi.execSandboxSession']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Expose an internal port on a running sandbox so the user\'s application is reachable from the internet at the session\'s stable public URL (`https://sb-{sessionId}.cells.mudbase.dev`). The caller is responsible for appending any path the application requires.  Use `access: \"token-gated\"` to require a `portToken` Bearer header on every request to the exposed URL, preventing public access. 
+         * @summary Expose sandbox port
+         * @param {string} projectId 
+         * @param {string} sessionId 
+         * @param {ExposeSandboxPortRequest} exposeSandboxPortRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async exposeSandboxPort(projectId: string, sessionId: string, exposeSandboxPortRequest: ExposeSandboxPortRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ExposeSandboxPortResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.exposeSandboxPort(projectId, sessionId, exposeSandboxPortRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SandboxesApi.exposeSandboxPort']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Issue a fresh 60-second gateway JWT for an existing session. Use this when the original token from `POST .../sandboxes/projects/{projectId}` has expired (tokens are short-lived) and you need to reconnect to the same session. If the session is currently suspended it is automatically resumed before the token is issued; the call blocks until the machine is running. 
+         * @summary Issue connect token
+         * @param {string} projectId 
+         * @param {string} sessionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getSandboxConnectToken(projectId: string, sessionId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetSandboxConnectToken200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getSandboxConnectToken(projectId, sessionId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SandboxesApi.getSandboxConnectToken']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Return the status and metadata of a single sandbox session.
+         * @summary Get sandbox session
+         * @param {string} projectId 
+         * @param {string} sessionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getSandboxSession(projectId: string, sessionId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetSandboxSession200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getSandboxSession(projectId, sessionId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SandboxesApi.getSandboxSession']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns all running (and recently ended) sandbox sessions for the authenticated org. Results are not filtered by project; pass `projectId` to scope the list to a single project if needed. 
+         * @summary List sandbox sessions
+         * @param {string} projectId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async listSandboxSessions(projectId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ListSandboxSessions200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listSandboxSessions(projectId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SandboxesApi.listSandboxSessions']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Resume a suspended sandbox session. The machine is restarted from its frozen state. Returns immediately; the caller should poll `GET .../sessions/{sessionId}` until `status` is `running`. 
+         * @summary Resume sandbox session
+         * @param {string} projectId 
+         * @param {string} sessionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async resumeSandboxSession(projectId: string, sessionId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ResumeSandboxSession200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.resumeSandboxSession(projectId, sessionId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SandboxesApi.resumeSandboxSession']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Freeze an always-on sandbox session. The machine\'s memory state is preserved and the session resumes on the next connection. Only sessions with `alwaysOn: true` can be suspended. 
+         * @summary Suspend sandbox session
+         * @param {string} projectId 
+         * @param {string} sessionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async suspendSandboxSession(projectId: string, sessionId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuspendSandboxSession200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.suspendSandboxSession(projectId, sessionId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SandboxesApi.suspendSandboxSession']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * SandboxesApi - factory interface
+ */
+export const SandboxesApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = SandboxesApiFp(configuration)
+    return {
+        /**
+         * Explicitly terminate a sandbox session. The machine is destroyed and all in-memory state is discarded. Idempotent: closing an already-ended session returns 200. 
+         * @summary Close sandbox session
+         * @param {SandboxesApiCloseSandboxSessionRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        closeSandboxSession(requestParameters: SandboxesApiCloseSandboxSessionRequest, options?: RawAxiosRequestConfig): AxiosPromise<CloseSandboxSession200Response> {
+            return localVarFp.closeSandboxSession(requestParameters.projectId, requestParameters.sessionId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Create a new isolated sandbox session for the project. The session boots an execution environment for the requested language and returns connection credentials (WebSocket URL and a short-lived JWT).  Supported languages and versions are determined by the images registered with the sandbox gateway. The session is automatically terminated after `timeoutSeconds` seconds of inactivity. 
+         * @summary Create sandbox session
+         * @param {SandboxesApiCreateSandboxSessionRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createSandboxSession(requestParameters: SandboxesApiCreateSandboxSessionRequest, options?: RawAxiosRequestConfig): AxiosPromise<CreateSandboxSessionResponse> {
+            return localVarFp.createSandboxSession(requestParameters.projectId, requestParameters.createSandboxSessionRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Run a shell command inside a running sandbox and stream the output as Server-Sent Events (SSE). Each event carries one line of stdout/stderr or a final `exit` event with the process exit code.  If the session is currently suspended it is automatically resumed before the command is executed; the call blocks until the machine is running.  **Event stream format**  Each SSE event has a `data` field. Lines from stdout/stderr are prefixed with `stdout:` or `stderr:`. The final event has `data: exit:<code>`.  **Abort:** close the HTTP connection to cancel the command early. 
+         * @summary Execute command in session
+         * @param {SandboxesApiExecSandboxSessionRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        execSandboxSession(requestParameters: SandboxesApiExecSandboxSessionRequest, options?: RawAxiosRequestConfig): AxiosPromise<string> {
+            return localVarFp.execSandboxSession(requestParameters.projectId, requestParameters.sessionId, requestParameters.execSandboxRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Expose an internal port on a running sandbox so the user\'s application is reachable from the internet at the session\'s stable public URL (`https://sb-{sessionId}.cells.mudbase.dev`). The caller is responsible for appending any path the application requires.  Use `access: \"token-gated\"` to require a `portToken` Bearer header on every request to the exposed URL, preventing public access. 
+         * @summary Expose sandbox port
+         * @param {SandboxesApiExposeSandboxPortRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        exposeSandboxPort(requestParameters: SandboxesApiExposeSandboxPortRequest, options?: RawAxiosRequestConfig): AxiosPromise<ExposeSandboxPortResponse> {
+            return localVarFp.exposeSandboxPort(requestParameters.projectId, requestParameters.sessionId, requestParameters.exposeSandboxPortRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Issue a fresh 60-second gateway JWT for an existing session. Use this when the original token from `POST .../sandboxes/projects/{projectId}` has expired (tokens are short-lived) and you need to reconnect to the same session. If the session is currently suspended it is automatically resumed before the token is issued; the call blocks until the machine is running. 
+         * @summary Issue connect token
+         * @param {SandboxesApiGetSandboxConnectTokenRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getSandboxConnectToken(requestParameters: SandboxesApiGetSandboxConnectTokenRequest, options?: RawAxiosRequestConfig): AxiosPromise<GetSandboxConnectToken200Response> {
+            return localVarFp.getSandboxConnectToken(requestParameters.projectId, requestParameters.sessionId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Return the status and metadata of a single sandbox session.
+         * @summary Get sandbox session
+         * @param {SandboxesApiGetSandboxSessionRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getSandboxSession(requestParameters: SandboxesApiGetSandboxSessionRequest, options?: RawAxiosRequestConfig): AxiosPromise<GetSandboxSession200Response> {
+            return localVarFp.getSandboxSession(requestParameters.projectId, requestParameters.sessionId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns all running (and recently ended) sandbox sessions for the authenticated org. Results are not filtered by project; pass `projectId` to scope the list to a single project if needed. 
+         * @summary List sandbox sessions
+         * @param {SandboxesApiListSandboxSessionsRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listSandboxSessions(requestParameters: SandboxesApiListSandboxSessionsRequest, options?: RawAxiosRequestConfig): AxiosPromise<ListSandboxSessions200Response> {
+            return localVarFp.listSandboxSessions(requestParameters.projectId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Resume a suspended sandbox session. The machine is restarted from its frozen state. Returns immediately; the caller should poll `GET .../sessions/{sessionId}` until `status` is `running`. 
+         * @summary Resume sandbox session
+         * @param {SandboxesApiResumeSandboxSessionRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        resumeSandboxSession(requestParameters: SandboxesApiResumeSandboxSessionRequest, options?: RawAxiosRequestConfig): AxiosPromise<ResumeSandboxSession200Response> {
+            return localVarFp.resumeSandboxSession(requestParameters.projectId, requestParameters.sessionId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Freeze an always-on sandbox session. The machine\'s memory state is preserved and the session resumes on the next connection. Only sessions with `alwaysOn: true` can be suspended. 
+         * @summary Suspend sandbox session
+         * @param {SandboxesApiSuspendSandboxSessionRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        suspendSandboxSession(requestParameters: SandboxesApiSuspendSandboxSessionRequest, options?: RawAxiosRequestConfig): AxiosPromise<SuspendSandboxSession200Response> {
+            return localVarFp.suspendSandboxSession(requestParameters.projectId, requestParameters.sessionId, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * Request parameters for closeSandboxSession operation in SandboxesApi.
+ */
+export interface SandboxesApiCloseSandboxSessionRequest {
+    readonly projectId: string
+
+    readonly sessionId: string
+}
+
+/**
+ * Request parameters for createSandboxSession operation in SandboxesApi.
+ */
+export interface SandboxesApiCreateSandboxSessionRequest {
+    readonly projectId: string
+
+    readonly createSandboxSessionRequest: CreateSandboxSessionRequest
+}
+
+/**
+ * Request parameters for execSandboxSession operation in SandboxesApi.
+ */
+export interface SandboxesApiExecSandboxSessionRequest {
+    readonly projectId: string
+
+    readonly sessionId: string
+
+    readonly execSandboxRequest: ExecSandboxRequest
+}
+
+/**
+ * Request parameters for exposeSandboxPort operation in SandboxesApi.
+ */
+export interface SandboxesApiExposeSandboxPortRequest {
+    readonly projectId: string
+
+    readonly sessionId: string
+
+    readonly exposeSandboxPortRequest: ExposeSandboxPortRequest
+}
+
+/**
+ * Request parameters for getSandboxConnectToken operation in SandboxesApi.
+ */
+export interface SandboxesApiGetSandboxConnectTokenRequest {
+    readonly projectId: string
+
+    readonly sessionId: string
+}
+
+/**
+ * Request parameters for getSandboxSession operation in SandboxesApi.
+ */
+export interface SandboxesApiGetSandboxSessionRequest {
+    readonly projectId: string
+
+    readonly sessionId: string
+}
+
+/**
+ * Request parameters for listSandboxSessions operation in SandboxesApi.
+ */
+export interface SandboxesApiListSandboxSessionsRequest {
+    readonly projectId: string
+}
+
+/**
+ * Request parameters for resumeSandboxSession operation in SandboxesApi.
+ */
+export interface SandboxesApiResumeSandboxSessionRequest {
+    readonly projectId: string
+
+    readonly sessionId: string
+}
+
+/**
+ * Request parameters for suspendSandboxSession operation in SandboxesApi.
+ */
+export interface SandboxesApiSuspendSandboxSessionRequest {
+    readonly projectId: string
+
+    readonly sessionId: string
+}
+
+/**
+ * SandboxesApi - object-oriented interface
+ */
+export class SandboxesApi extends BaseAPI {
+    /**
+     * Explicitly terminate a sandbox session. The machine is destroyed and all in-memory state is discarded. Idempotent: closing an already-ended session returns 200. 
+     * @summary Close sandbox session
+     * @param {SandboxesApiCloseSandboxSessionRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public closeSandboxSession(requestParameters: SandboxesApiCloseSandboxSessionRequest, options?: RawAxiosRequestConfig) {
+        return SandboxesApiFp(this.configuration).closeSandboxSession(requestParameters.projectId, requestParameters.sessionId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Create a new isolated sandbox session for the project. The session boots an execution environment for the requested language and returns connection credentials (WebSocket URL and a short-lived JWT).  Supported languages and versions are determined by the images registered with the sandbox gateway. The session is automatically terminated after `timeoutSeconds` seconds of inactivity. 
+     * @summary Create sandbox session
+     * @param {SandboxesApiCreateSandboxSessionRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public createSandboxSession(requestParameters: SandboxesApiCreateSandboxSessionRequest, options?: RawAxiosRequestConfig) {
+        return SandboxesApiFp(this.configuration).createSandboxSession(requestParameters.projectId, requestParameters.createSandboxSessionRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Run a shell command inside a running sandbox and stream the output as Server-Sent Events (SSE). Each event carries one line of stdout/stderr or a final `exit` event with the process exit code.  If the session is currently suspended it is automatically resumed before the command is executed; the call blocks until the machine is running.  **Event stream format**  Each SSE event has a `data` field. Lines from stdout/stderr are prefixed with `stdout:` or `stderr:`. The final event has `data: exit:<code>`.  **Abort:** close the HTTP connection to cancel the command early. 
+     * @summary Execute command in session
+     * @param {SandboxesApiExecSandboxSessionRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public execSandboxSession(requestParameters: SandboxesApiExecSandboxSessionRequest, options?: RawAxiosRequestConfig) {
+        return SandboxesApiFp(this.configuration).execSandboxSession(requestParameters.projectId, requestParameters.sessionId, requestParameters.execSandboxRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Expose an internal port on a running sandbox so the user\'s application is reachable from the internet at the session\'s stable public URL (`https://sb-{sessionId}.cells.mudbase.dev`). The caller is responsible for appending any path the application requires.  Use `access: \"token-gated\"` to require a `portToken` Bearer header on every request to the exposed URL, preventing public access. 
+     * @summary Expose sandbox port
+     * @param {SandboxesApiExposeSandboxPortRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public exposeSandboxPort(requestParameters: SandboxesApiExposeSandboxPortRequest, options?: RawAxiosRequestConfig) {
+        return SandboxesApiFp(this.configuration).exposeSandboxPort(requestParameters.projectId, requestParameters.sessionId, requestParameters.exposeSandboxPortRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Issue a fresh 60-second gateway JWT for an existing session. Use this when the original token from `POST .../sandboxes/projects/{projectId}` has expired (tokens are short-lived) and you need to reconnect to the same session. If the session is currently suspended it is automatically resumed before the token is issued; the call blocks until the machine is running. 
+     * @summary Issue connect token
+     * @param {SandboxesApiGetSandboxConnectTokenRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public getSandboxConnectToken(requestParameters: SandboxesApiGetSandboxConnectTokenRequest, options?: RawAxiosRequestConfig) {
+        return SandboxesApiFp(this.configuration).getSandboxConnectToken(requestParameters.projectId, requestParameters.sessionId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Return the status and metadata of a single sandbox session.
+     * @summary Get sandbox session
+     * @param {SandboxesApiGetSandboxSessionRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public getSandboxSession(requestParameters: SandboxesApiGetSandboxSessionRequest, options?: RawAxiosRequestConfig) {
+        return SandboxesApiFp(this.configuration).getSandboxSession(requestParameters.projectId, requestParameters.sessionId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns all running (and recently ended) sandbox sessions for the authenticated org. Results are not filtered by project; pass `projectId` to scope the list to a single project if needed. 
+     * @summary List sandbox sessions
+     * @param {SandboxesApiListSandboxSessionsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public listSandboxSessions(requestParameters: SandboxesApiListSandboxSessionsRequest, options?: RawAxiosRequestConfig) {
+        return SandboxesApiFp(this.configuration).listSandboxSessions(requestParameters.projectId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Resume a suspended sandbox session. The machine is restarted from its frozen state. Returns immediately; the caller should poll `GET .../sessions/{sessionId}` until `status` is `running`. 
+     * @summary Resume sandbox session
+     * @param {SandboxesApiResumeSandboxSessionRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public resumeSandboxSession(requestParameters: SandboxesApiResumeSandboxSessionRequest, options?: RawAxiosRequestConfig) {
+        return SandboxesApiFp(this.configuration).resumeSandboxSession(requestParameters.projectId, requestParameters.sessionId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Freeze an always-on sandbox session. The machine\'s memory state is preserved and the session resumes on the next connection. Only sessions with `alwaysOn: true` can be suspended. 
+     * @summary Suspend sandbox session
+     * @param {SandboxesApiSuspendSandboxSessionRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public suspendSandboxSession(requestParameters: SandboxesApiSuspendSandboxSessionRequest, options?: RawAxiosRequestConfig) {
+        return SandboxesApiFp(this.configuration).suspendSandboxSession(requestParameters.projectId, requestParameters.sessionId, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
  * SearchApi - axios parameter creator
  */
 export const SearchApiAxiosParamCreator = function (configuration?: Configuration) {
@@ -31745,6 +36813,9 @@ export const SearchApiAxiosParamCreator = function (configuration?: Configuratio
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -31795,6 +36866,9 @@ export const SearchApiAxiosParamCreator = function (configuration?: Configuratio
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -31852,6 +36926,9 @@ export const SearchApiAxiosParamCreator = function (configuration?: Configuratio
             // authentication OrgBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
 
             // authentication ProjectBearerAuth required
             // http bearer authentication required
@@ -32136,6 +37213,9 @@ export const UsageApiAxiosParamCreator = function (configuration?: Configuration
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
             // authentication ProjectBearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
@@ -32258,7 +37338,7 @@ export const UsageApiAxiosParamCreator = function (configuration?: Configuration
             };
         },
         /**
-         * Get usage trends over time for the authenticated organization or project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Get usage trends over time for the authenticated organization or project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Get usage trends
          * @param {number} [days] 
          * @param {*} [options] Override http request option.
@@ -32398,7 +37478,7 @@ export const UsageApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Get usage trends over time for the authenticated organization or project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Get usage trends over time for the authenticated organization or project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Get usage trends
          * @param {number} [days] 
          * @param {*} [options] Override http request option.
@@ -32471,7 +37551,7 @@ export const UsageApiFactory = function (configuration?: Configuration, basePath
             return localVarFp.getUsage(requestParameters.period, requestParameters.startDate, requestParameters.endDate, options).then((request) => request(axios, basePath));
         },
         /**
-         * Get usage trends over time for the authenticated organization or project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+         * Get usage trends over time for the authenticated organization or project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
          * @summary Get usage trends
          * @param {UsageApiGetUsageTrendsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -32574,7 +37654,7 @@ export class UsageApi extends BaseAPI {
     }
 
     /**
-     * Get usage trends over time for the authenticated organization or project. Accepts: OrgBearerAuth (for admin users), ProjectBearerAuth (JWT for authenticated users), or ApiKeyAuth (X-API-Key for programmatic access). Both ProjectBearerAuth and ApiKeyAuth are fully implemented. 
+     * Get usage trends over time for the authenticated organization or project. Accepts JWT Bearer token only: OrgBearerAuth (for admin users) or ProjectBearerAuth (for authenticated users). API keys are not supported for this endpoint. 
      * @summary Get usage trends
      * @param {UsageApiGetUsageTrendsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -33874,6 +38954,3104 @@ export class VerifiedRoleUpgradeApi extends BaseAPI {
     }
 }
 
+
+
+/**
+ * WalletApi - axios parameter creator
+ */
+export const WalletApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Broadcast a transaction that has been signed client-side. The transaction must be fully signed before sending. The fromAddress must be registered and belong to your organization (POST /api/wallet/non-custodial/register-address). **Supported chains:** EVM (ethereum, polygon, arbitrum, optimism, base, bsc, binance, avalanche, celo), UTXO (bitcoin, litecoin, dogecoin), and chain-specific (tron, solana, ton, cardano). Use `binance` or `bsc` for BNB Smart Chain. **Testing with custodial:** You can create a wallet via POST /api/wallet/create, get its private key via GET /api/wallet/{walletId}/private-key, register that address with POST /api/wallet/non-custodial/register-address, then build a signed tx (using POST /api/wallet/estimate-network-fee or estimate-gas for fees) and broadcast it here to test the non-custodial flow end-to-end. 
+         * @summary Broadcast a client-signed transaction
+         * @param {BroadcastNonCustodialTransactionRequest} broadcastNonCustodialTransactionRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        broadcastNonCustodialTransaction: async (broadcastNonCustodialTransactionRequest: BroadcastNonCustodialTransactionRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'broadcastNonCustodialTransactionRequest' is not null or undefined
+            assertParamExists('broadcastNonCustodialTransaction', 'broadcastNonCustodialTransactionRequest', broadcastNonCustodialTransactionRequest)
+            const localVarPath = `/api/wallet/non-custodial/broadcast`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(broadcastNonCustodialTransactionRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns **network fee only**, estimated from the blockchain (RPC / fee APIs). No platform fee or project fee. **Same as POST /api/wallet/estimate-network-fee.** Prefer estimate-network-fee for clarity. Supported currencies: BTC, ETH, BNB, LTC, SOL, TRX, USDT, MATIC, AVAX, CELO, DOGE, TON, ADA. For USDT, `network` is required (ETH, BSC, TRX, SOL, POLYGON). Use `?fresh=1` or header `X-Fee-Fresh: true` for a fresh estimate (bypass cache) right before building the transaction for broadcast. 
+         * @summary Get network fee only (alias for POST /api/wallet/estimate-network-fee)
+         * @param {EstimateNetworkFeeRequest} estimateNetworkFeeRequest 
+         * @param {CalculateWalletFeeFreshEnum} [fresh] Bypass cache and fetch current fee (use right before building tx for broadcast)
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        calculateWalletFee: async (estimateNetworkFeeRequest: EstimateNetworkFeeRequest, fresh?: CalculateWalletFeeFreshEnum, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'estimateNetworkFeeRequest' is not null or undefined
+            assertParamExists('calculateWalletFee', 'estimateNetworkFeeRequest', estimateNetworkFeeRequest)
+            const localVarPath = `/api/wallet/calculate-fee`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (fresh !== undefined) {
+                localVarQueryParameter['fresh'] = fresh;
+            }
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(estimateNetworkFeeRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Create a custodial wallet. **Custodial is not used in production.** Use this to **test non-custodial flows**: create a wallet, get its private key (GET /api/wallet/{walletId}/private-key), register the same address with POST /api/wallet/non-custodial/register-address, then use estimate-network-fee and POST /api/wallet/non-custodial/broadcast to build and send a signed transaction. Transaction monitoring (pending/confirmed) applies to both custodial and non-custodial WalletTransaction records. 
+         * @summary Create new wallet (for testing non-custodial)
+         * @param {CreateWalletRequest} createWalletRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        createWallet: async (createWalletRequest: CreateWalletRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'createWalletRequest' is not null or undefined
+            assertParamExists('createWallet', 'createWalletRequest', createWalletRequest)
+            const localVarPath = `/api/wallet/create`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createWalletRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Create a wallet webhook
+         * @param {CreateWalletWebhookRequest} createWalletWebhookRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        createWalletWebhook: async (createWalletWebhookRequest: CreateWalletWebhookRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'createWalletWebhookRequest' is not null or undefined
+            assertParamExists('createWalletWebhook', 'createWalletWebhookRequest', createWalletWebhookRequest)
+            const localVarPath = `/api/wallet/non-custodial/webhooks`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createWalletWebhookRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * **Soft delete (default):** Omit **permanent** or set to false. The address is deactivated (isActive = false); it no longer appears in list or receives monitoring but the record remains for audit. **Permanent delete:** Set query **permanent=true** to remove the address record from the database. Use when you need to fully remove the monitored address. 
+         * @summary Delete or deactivate a monitored wallet address
+         * @param {string} addressId 
+         * @param {boolean} [permanent] If true, permanently delete the address from the database; if false or omitted, only deactivate (soft delete)
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        deleteNonCustodialAddress: async (addressId: string, permanent?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'addressId' is not null or undefined
+            assertParamExists('deleteNonCustodialAddress', 'addressId', addressId)
+            const localVarPath = `/api/wallet/non-custodial/addresses/{addressId}`
+                .replace('{addressId}', encodeURIComponent(String(addressId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (permanent !== undefined) {
+                localVarQueryParameter['permanent'] = permanent;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Delete a wallet webhook
+         * @param {string} webhookId 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        deleteWalletWebhook: async (webhookId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'webhookId' is not null or undefined
+            assertParamExists('deleteWalletWebhook', 'webhookId', webhookId)
+            const localVarPath = `/api/wallet/non-custodial/webhooks/{webhookId}`
+                .replace('{webhookId}', encodeURIComponent(String(webhookId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns **network fee only** from the blockchain. **Preferred endpoint** for network fee. Uses a fee oracle: fees are polled every 15–20s and cached, so responses are fast and RPC load is minimal (same strategy as large wallets). No platform fee. Request/response identical to POST /api/wallet/calculate-fee (which is an alias). See docs/FEE_ARCHITECTURE.md. Supported currencies: BTC, ETH, BNB, LTC, SOL, TRX, USDT, MATIC, AVAX, CELO, DOGE, TON, ADA. For USDT, `network` is required (ETH, BSC, TRX, SOL, POLYGON). **Fresh fee before broadcast:** To avoid stuck transactions, get a fresh estimate right before building/signing: use query `?fresh=1` or header `X-Fee-Fresh: true` to bypass cache. 
+         * @summary Estimate network fee (preferred; reads from fee oracle cache)
+         * @param {EstimateNetworkFeeRequest} estimateNetworkFeeRequest 
+         * @param {EstimateNetworkFeeFreshEnum} [fresh] Bypass cache and fetch current fee from RPC/fee API (use right before building tx for broadcast)
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        estimateNetworkFee: async (estimateNetworkFeeRequest: EstimateNetworkFeeRequest, fresh?: EstimateNetworkFeeFreshEnum, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'estimateNetworkFeeRequest' is not null or undefined
+            assertParamExists('estimateNetworkFee', 'estimateNetworkFeeRequest', estimateNetworkFeeRequest)
+            const localVarPath = `/api/wallet/estimate-network-fee`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (fresh !== undefined) {
+                localVarQueryParameter['fresh'] = fresh;
+            }
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(estimateNetworkFeeRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * **Network fee (from blockchain only).** Returns network fee **estimated directly from the blockchain** via RPC or fee APIs. **Not controlled by Mudbase.** Both POST /api/wallet/estimate-network-fee (or calculate-fee) and this endpoint return network fee only; use either for gas/fee display. This endpoint is chain-oriented and supports full transaction shape for EVM. **EVM chains:** ethereum, polygon, arbitrum, optimism, base, bsc, binance, avalanche, celo — require `transaction` (from, and to/value or tokenAddress/amount). Response includes gasLimit, gasPrice, networkFee, estimatedTime, currency. **Non-EVM chains:** bitcoin, litecoin, dogecoin, solana, tron, ton, cardano — only `chain` is required; `transaction` is optional/ignored. Returns networkFee, estimatedTime, currency (and e.g. satPerVb for UTXO). See docs/FEE_ARCHITECTURE.md. Results cached 15s. 
+         * @summary Estimate network fee from blockchain (all supported chains; not controlled by Mudbase)
+         * @param {EstimateNonCustodialGasRequest} estimateNonCustodialGasRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        estimateNonCustodialGas: async (estimateNonCustodialGasRequest: EstimateNonCustodialGasRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'estimateNonCustodialGasRequest' is not null or undefined
+            assertParamExists('estimateNonCustodialGas', 'estimateNonCustodialGasRequest', estimateNonCustodialGasRequest)
+            const localVarPath = `/api/wallet/non-custodial/estimate-gas`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(estimateNonCustodialGasRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Generate private key
+         * @param {GeneratePrivateKeyRequest} generatePrivateKeyRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        generatePrivateKey: async (generatePrivateKeyRequest: GeneratePrivateKeyRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'generatePrivateKeyRequest' is not null or undefined
+            assertParamExists('generatePrivateKey', 'generatePrivateKeyRequest', generatePrivateKeyRequest)
+            const localVarPath = `/api/wallet/generate-key`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(generatePrivateKeyRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns **all chain network fees** in one call. Reads from the fee oracle cache (no RPC during the request). Each chain returns the **full fee object** (networkFee, gasPriceGwei, congestion, estimatedTime, feeTiers for EVM, etc.) for frontend/UX. Use for dashboards or \"current fees\" screens. 
+         * @summary Get all chain network fees (fee oracle snapshot)
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getAllFees: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/wallet/fees`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Get wallet balance
+         * @param {string} walletId 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getBalance: async (walletId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'walletId' is not null or undefined
+            assertParamExists('getBalance', 'walletId', walletId)
+            const localVarPath = `/api/wallet/{walletId}/balance`
+                .replace('{walletId}', encodeURIComponent(String(walletId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns **replacement transaction params** to cancel a stuck EVM transaction (same nonce, to=self, value=0, data=0x, higher gas). Client signs and broadcasts via POST /api/wallet/non-custodial/broadcast. Address must be registered for your organization. EVM chains only. 
+         * @summary Get replacement tx params for cancel (stuck EVM tx)
+         * @param {GetCancelParamsRequest} getCancelParamsRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getCancelParams: async (getCancelParamsRequest: GetCancelParamsRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'getCancelParamsRequest' is not null or undefined
+            assertParamExists('getCancelParams', 'getCancelParamsRequest', getCancelParamsRequest)
+            const localVarPath = `/api/wallet/non-custodial/cancel`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(getCancelParamsRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns **network status** per chain (congestion and main fee metric). Use to show network health before sending transactions. Same data as GET /fees but trimmed to congestion + gasPriceGwei (EVM) or satPerVb (UTXO) and networkFee. 
+         * @summary Get network status (congestion + fee metric per chain)
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getNetworkStatus: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/wallet/network-status`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Get non-custodial address by ID
+         * @param {string} addressId 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getNonCustodialAddress: async (addressId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'addressId' is not null or undefined
+            assertParamExists('getNonCustodialAddress', 'addressId', addressId)
+            const localVarPath = `/api/wallet/non-custodial/addresses/{addressId}`
+                .replace('{addressId}', encodeURIComponent(String(addressId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Get balance for a non-custodial address
+         * @param {string} addressId 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getNonCustodialBalance: async (addressId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'addressId' is not null or undefined
+            assertParamExists('getNonCustodialBalance', 'addressId', addressId)
+            const localVarPath = `/api/wallet/non-custodial/addresses/{addressId}/balance`
+                .replace('{addressId}', encodeURIComponent(String(addressId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns a transaction by its hash. The **chain** query parameter is required because the same hash format can exist on different chains (e.g. 0x-style on EVM chains). 
+         * @summary Get transaction by hash
+         * @param {string} txHash Transaction hash (e.g. 0x... for EVM, or block explorer format for UTXO)
+         * @param {GetNonCustodialTransactionByHashChainEnum} chain Chain the transaction belongs to (required for lookup)
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getNonCustodialTransactionByHash: async (txHash: string, chain: GetNonCustodialTransactionByHashChainEnum, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'txHash' is not null or undefined
+            assertParamExists('getNonCustodialTransactionByHash', 'txHash', txHash)
+            // verify required parameter 'chain' is not null or undefined
+            assertParamExists('getNonCustodialTransactionByHash', 'chain', chain)
+            const localVarPath = `/api/wallet/non-custodial/transactions/{txHash}`
+                .replace('{txHash}', encodeURIComponent(String(txHash)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (chain !== undefined) {
+                localVarQueryParameter['chain'] = chain;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Get transaction history for a non-custodial address
+         * @param {string} addressId 
+         * @param {number} [limit] 
+         * @param {number} [page] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getNonCustodialTransactions: async (addressId: string, limit?: number, page?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'addressId' is not null or undefined
+            assertParamExists('getNonCustodialTransactions', 'addressId', addressId)
+            const localVarPath = `/api/wallet/non-custodial/addresses/{addressId}/transactions`
+                .replace('{addressId}', encodeURIComponent(String(addressId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            if (page !== undefined) {
+                localVarQueryParameter['page'] = page;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns **replacement transaction params** for a stuck EVM transaction (same nonce, same to/value/data, higher gas). Client signs the replacement and broadcasts via POST /api/wallet/non-custodial/broadcast. Address must be registered for your organization. Use when a tx has been pending >5 min (stuck). EVM chains only. 
+         * @summary Get replacement tx params for speed-up (stuck EVM tx)
+         * @param {GetSpeedUpParamsRequest} getSpeedUpParamsRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getSpeedUpParams: async (getSpeedUpParamsRequest: GetSpeedUpParamsRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'getSpeedUpParamsRequest' is not null or undefined
+            assertParamExists('getSpeedUpParams', 'getSpeedUpParamsRequest', getSpeedUpParamsRequest)
+            const localVarPath = `/api/wallet/non-custodial/speed-up`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(getSpeedUpParamsRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns the list of **platform-supported cryptocurrencies and chains** for non-custodial wallets, broadcast, and multi-chain use. Custodial wallet is no longer used in production; this endpoint is the source of truth for supported chains and currencies. **Supported:** BTC, LTC, DOGE, ETH, ETC, CELO, SOL, TRX, TON, Polygon (MATIC), Arbitrum, Optimism, Base, BSC/BNB, Avalanche (AVAX), Cardano (ADA), USDT. Each item includes **code** (currency symbol), **name** (display name), **chain** (chain id for API calls). USDT includes **networks** (ETH, BSC, TRX, SOL, POLYGON). Use **chain** with non-custodial endpoints (register-address, broadcast, estimate-gas). Use **code** for display and fee/currency selection. This is a public endpoint - no authentication required. 
+         * @summary Get supported currencies and chains
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getSupportedCurrencies: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/wallet/currencies`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Get transaction details
+         * @param {string} transactionId 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getTransaction: async (transactionId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'transactionId' is not null or undefined
+            assertParamExists('getTransaction', 'transactionId', transactionId)
+            const localVarPath = `/api/wallet/transactions/{transactionId}`
+                .replace('{transactionId}', encodeURIComponent(String(transactionId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns transaction history for custodial wallets. Transactions are stored and monitored the same way as non-custodial (WalletTransaction); status updates (pending, broadcast, confirmed, failed) and stuck detection apply to both. 
+         * @summary Get transaction history (custodial wallets; same monitoring as non-custodial)
+         * @param {string} [walletId] 
+         * @param {number} [limit] 
+         * @param {number} [page] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getTransactionHistory: async (walletId?: string, limit?: number, page?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/wallet/transactions`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (walletId !== undefined) {
+                localVarQueryParameter['walletId'] = walletId;
+            }
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            if (page !== undefined) {
+                localVarQueryParameter['page'] = page;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Get user wallets
+         * @param {string} [projectId] 
+         * @param {string} [currency] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getUserWallets: async (projectId?: string, currency?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/wallet`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (projectId !== undefined) {
+                localVarQueryParameter['projectId'] = projectId;
+            }
+
+            if (currency !== undefined) {
+                localVarQueryParameter['currency'] = currency;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get project-level fee settings (enabled flag and fee percentage). **For non-custodial / external users** — e.g. when your app charges a fee on payouts or transfers. Custodial wallet is no longer used in production. Applies to all supported chains/currencies for that project. 
+         * @summary Get project fee configuration (for non-custodial / external users)
+         * @param {string} projectId Project ID
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getWalletFeeConfig: async (projectId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('getWalletFeeConfig', 'projectId', projectId)
+            const localVarPath = `/api/wallet/projects/{projectId}/fee-config`
+                .replace('{projectId}', encodeURIComponent(String(projectId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns the wallet private key. **For testing non-custodial only:** use this key to sign a transaction locally, then register the wallet address via POST /api/wallet/non-custodial/register-address and broadcast the signed tx via POST /api/wallet/non-custodial/broadcast. 
+         * @summary Get wallet private key (WARNING: Sensitive data; for testing non-custodial)
+         * @param {string} walletId 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getWalletPrivateKey: async (walletId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'walletId' is not null or undefined
+            assertParamExists('getWalletPrivateKey', 'walletId', walletId)
+            const localVarPath = `/api/wallet/{walletId}/private-key`
+                .replace('{walletId}', encodeURIComponent(String(walletId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Get webhook delivery logs
+         * @param {string} webhookId 
+         * @param {number} [limit] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getWalletWebhookLogs: async (webhookId: string, limit?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'webhookId' is not null or undefined
+            assertParamExists('getWalletWebhookLogs', 'webhookId', webhookId)
+            const localVarPath = `/api/wallet/non-custodial/webhooks/{webhookId}/logs`
+                .replace('{webhookId}', encodeURIComponent(String(webhookId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary List registered non-custodial addresses
+         * @param {ListNonCustodialAddressesChainEnum} [chain] Filter by chain (optional)
+         * @param {string} [projectId] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        listNonCustodialAddresses: async (chain?: ListNonCustodialAddressesChainEnum, projectId?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/wallet/non-custodial/addresses`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (chain !== undefined) {
+                localVarQueryParameter['chain'] = chain;
+            }
+
+            if (projectId !== undefined) {
+                localVarQueryParameter['projectId'] = projectId;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary List wallet webhooks
+         * @param {string} [projectId] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        listWalletWebhooks: async (projectId?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/wallet/non-custodial/webhooks`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (projectId !== undefined) {
+                localVarQueryParameter['projectId'] = projectId;
+            }
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Register a public wallet address for monitoring and indexing. All key operations (generation, signing) occur client-side only. 
+         * @summary Register a non-custodial wallet address
+         * @param {RegisterNonCustodialAddressRequest} registerNonCustodialAddressRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        registerNonCustodialAddress: async (registerNonCustodialAddressRequest: RegisterNonCustodialAddressRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'registerNonCustodialAddressRequest' is not null or undefined
+            assertParamExists('registerNonCustodialAddress', 'registerNonCustodialAddressRequest', registerNonCustodialAddressRequest)
+            const localVarPath = `/api/wallet/non-custodial/register-address`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(registerNonCustodialAddressRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Test a webhook delivery (sends a single test payload)
+         * @param {TestWalletWebhookRequest} testWalletWebhookRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        testWalletWebhook: async (testWalletWebhookRequest: TestWalletWebhookRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'testWalletWebhookRequest' is not null or undefined
+            assertParamExists('testWalletWebhook', 'testWalletWebhookRequest', testWalletWebhookRequest)
+            const localVarPath = `/api/wallet/non-custodial/webhooks/test`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(testWalletWebhookRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Update metadata for a registered non-custodial address. Only **label** and **derivationPath** can be updated; address and chain are immutable. 
+         * @summary Update a monitored wallet address
+         * @param {string} addressId 
+         * @param {UpdateNonCustodialAddressRequest} [updateNonCustodialAddressRequest] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        updateNonCustodialAddress: async (addressId: string, updateNonCustodialAddressRequest?: UpdateNonCustodialAddressRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'addressId' is not null or undefined
+            assertParamExists('updateNonCustodialAddress', 'addressId', addressId)
+            const localVarPath = `/api/wallet/non-custodial/addresses/{addressId}`
+                .replace('{addressId}', encodeURIComponent(String(addressId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(updateNonCustodialAddressRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Update project-level fee settings. **For non-custodial / external users** — e.g. fee charged on payouts or transfers. Custodial wallet is no longer used in production. Applies to **all supported currencies** (BTC, ETH, BNB, LTC, SOL, TRX, USDT). **feePercentage** is a decimal: use `0.01` for 1%, `0.005` for 0.5%, etc. (min 0, max 1). 
+         * @summary Update project fee configuration (for non-custodial / external users)
+         * @param {string} projectId Project ID
+         * @param {UpdateWalletFeeConfigRequest} [updateWalletFeeConfigRequest] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        updateWalletFeeConfig: async (projectId: string, updateWalletFeeConfigRequest?: UpdateWalletFeeConfigRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectId' is not null or undefined
+            assertParamExists('updateWalletFeeConfig', 'projectId', projectId)
+            const localVarPath = `/api/wallet/projects/{projectId}/fee-config`
+                .replace('{projectId}', encodeURIComponent(String(projectId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(updateWalletFeeConfigRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Update a wallet webhook
+         * @param {string} webhookId 
+         * @param {UpdateWalletWebhookRequest} updateWalletWebhookRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        updateWalletWebhook: async (webhookId: string, updateWalletWebhookRequest: UpdateWalletWebhookRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'webhookId' is not null or undefined
+            assertParamExists('updateWalletWebhook', 'webhookId', webhookId)
+            // verify required parameter 'updateWalletWebhookRequest' is not null or undefined
+            assertParamExists('updateWalletWebhook', 'updateWalletWebhookRequest', updateWalletWebhookRequest)
+            const localVarPath = `/api/wallet/non-custodial/webhooks/{webhookId}`
+                .replace('{webhookId}', encodeURIComponent(String(webhookId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(updateWalletWebhookRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Validate cryptocurrency address
+         * @param {ValidateAddressRequest} validateAddressRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        validateAddress: async (validateAddressRequest: ValidateAddressRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'validateAddressRequest' is not null or undefined
+            assertParamExists('validateAddress', 'validateAddressRequest', validateAddressRequest)
+            const localVarPath = `/api/wallet/validate-address`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(validateAddressRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * **Semi-transaction:** Builds and signs the withdrawal but does **not** broadcast. Returns `signedTx`, `chain`, and `fromAddress` so the client can broadcast via POST /api/wallet/non-custodial/broadcast. The wallet address must be registered for your organization before broadcasting. Supports all platform chains/currencies (EVM, UTXO, Tron, Solana, USDT on ETH/BSC/TRX/SOL/POLYGON). Use for testing the non-custodial flow: create custodial wallet, get private key, register address, then call withdraw to get signed tx and broadcast it manually. 
+         * @summary Prepare withdrawal (semi-transaction; broadcast via non-custodial)
+         * @param {string} walletId 
+         * @param {WithdrawRequest} withdrawRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        withdraw: async (walletId: string, withdrawRequest: WithdrawRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'walletId' is not null or undefined
+            assertParamExists('withdraw', 'walletId', walletId)
+            // verify required parameter 'withdrawRequest' is not null or undefined
+            assertParamExists('withdraw', 'withdrawRequest', withdrawRequest)
+            const localVarPath = `/api/wallet/{walletId}/withdraw`
+                .replace('{walletId}', encodeURIComponent(String(walletId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OrgBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            // authentication ProjectBearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(withdrawRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * WalletApi - functional programming interface
+ */
+export const WalletApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = WalletApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Broadcast a transaction that has been signed client-side. The transaction must be fully signed before sending. The fromAddress must be registered and belong to your organization (POST /api/wallet/non-custodial/register-address). **Supported chains:** EVM (ethereum, polygon, arbitrum, optimism, base, bsc, binance, avalanche, celo), UTXO (bitcoin, litecoin, dogecoin), and chain-specific (tron, solana, ton, cardano). Use `binance` or `bsc` for BNB Smart Chain. **Testing with custodial:** You can create a wallet via POST /api/wallet/create, get its private key via GET /api/wallet/{walletId}/private-key, register that address with POST /api/wallet/non-custodial/register-address, then build a signed tx (using POST /api/wallet/estimate-network-fee or estimate-gas for fees) and broadcast it here to test the non-custodial flow end-to-end. 
+         * @summary Broadcast a client-signed transaction
+         * @param {BroadcastNonCustodialTransactionRequest} broadcastNonCustodialTransactionRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async broadcastNonCustodialTransaction(broadcastNonCustodialTransactionRequest: BroadcastNonCustodialTransactionRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<BroadcastNonCustodialTransaction200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.broadcastNonCustodialTransaction(broadcastNonCustodialTransactionRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.broadcastNonCustodialTransaction']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns **network fee only**, estimated from the blockchain (RPC / fee APIs). No platform fee or project fee. **Same as POST /api/wallet/estimate-network-fee.** Prefer estimate-network-fee for clarity. Supported currencies: BTC, ETH, BNB, LTC, SOL, TRX, USDT, MATIC, AVAX, CELO, DOGE, TON, ADA. For USDT, `network` is required (ETH, BSC, TRX, SOL, POLYGON). Use `?fresh=1` or header `X-Fee-Fresh: true` for a fresh estimate (bypass cache) right before building the transaction for broadcast. 
+         * @summary Get network fee only (alias for POST /api/wallet/estimate-network-fee)
+         * @param {EstimateNetworkFeeRequest} estimateNetworkFeeRequest 
+         * @param {CalculateWalletFeeFreshEnum} [fresh] Bypass cache and fetch current fee (use right before building tx for broadcast)
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async calculateWalletFee(estimateNetworkFeeRequest: EstimateNetworkFeeRequest, fresh?: CalculateWalletFeeFreshEnum, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<CalculateWalletFee200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.calculateWalletFee(estimateNetworkFeeRequest, fresh, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.calculateWalletFee']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Create a custodial wallet. **Custodial is not used in production.** Use this to **test non-custodial flows**: create a wallet, get its private key (GET /api/wallet/{walletId}/private-key), register the same address with POST /api/wallet/non-custodial/register-address, then use estimate-network-fee and POST /api/wallet/non-custodial/broadcast to build and send a signed transaction. Transaction monitoring (pending/confirmed) applies to both custodial and non-custodial WalletTransaction records. 
+         * @summary Create new wallet (for testing non-custodial)
+         * @param {CreateWalletRequest} createWalletRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async createWallet(createWalletRequest: CreateWalletRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<CreateWallet201Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createWallet(createWalletRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.createWallet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Create a wallet webhook
+         * @param {CreateWalletWebhookRequest} createWalletWebhookRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async createWalletWebhook(createWalletWebhookRequest: CreateWalletWebhookRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<CreateWalletWebhook201Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createWalletWebhook(createWalletWebhookRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.createWalletWebhook']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * **Soft delete (default):** Omit **permanent** or set to false. The address is deactivated (isActive = false); it no longer appears in list or receives monitoring but the record remains for audit. **Permanent delete:** Set query **permanent=true** to remove the address record from the database. Use when you need to fully remove the monitored address. 
+         * @summary Delete or deactivate a monitored wallet address
+         * @param {string} addressId 
+         * @param {boolean} [permanent] If true, permanently delete the address from the database; if false or omitted, only deactivate (soft delete)
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async deleteNonCustodialAddress(addressId: string, permanent?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DeleteFunction200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteNonCustodialAddress(addressId, permanent, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.deleteNonCustodialAddress']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Delete a wallet webhook
+         * @param {string} webhookId 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async deleteWalletWebhook(webhookId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DeleteFunction200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteWalletWebhook(webhookId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.deleteWalletWebhook']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns **network fee only** from the blockchain. **Preferred endpoint** for network fee. Uses a fee oracle: fees are polled every 15–20s and cached, so responses are fast and RPC load is minimal (same strategy as large wallets). No platform fee. Request/response identical to POST /api/wallet/calculate-fee (which is an alias). See docs/FEE_ARCHITECTURE.md. Supported currencies: BTC, ETH, BNB, LTC, SOL, TRX, USDT, MATIC, AVAX, CELO, DOGE, TON, ADA. For USDT, `network` is required (ETH, BSC, TRX, SOL, POLYGON). **Fresh fee before broadcast:** To avoid stuck transactions, get a fresh estimate right before building/signing: use query `?fresh=1` or header `X-Fee-Fresh: true` to bypass cache. 
+         * @summary Estimate network fee (preferred; reads from fee oracle cache)
+         * @param {EstimateNetworkFeeRequest} estimateNetworkFeeRequest 
+         * @param {EstimateNetworkFeeFreshEnum} [fresh] Bypass cache and fetch current fee from RPC/fee API (use right before building tx for broadcast)
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async estimateNetworkFee(estimateNetworkFeeRequest: EstimateNetworkFeeRequest, fresh?: EstimateNetworkFeeFreshEnum, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<EstimateNetworkFee200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.estimateNetworkFee(estimateNetworkFeeRequest, fresh, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.estimateNetworkFee']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * **Network fee (from blockchain only).** Returns network fee **estimated directly from the blockchain** via RPC or fee APIs. **Not controlled by Mudbase.** Both POST /api/wallet/estimate-network-fee (or calculate-fee) and this endpoint return network fee only; use either for gas/fee display. This endpoint is chain-oriented and supports full transaction shape for EVM. **EVM chains:** ethereum, polygon, arbitrum, optimism, base, bsc, binance, avalanche, celo — require `transaction` (from, and to/value or tokenAddress/amount). Response includes gasLimit, gasPrice, networkFee, estimatedTime, currency. **Non-EVM chains:** bitcoin, litecoin, dogecoin, solana, tron, ton, cardano — only `chain` is required; `transaction` is optional/ignored. Returns networkFee, estimatedTime, currency (and e.g. satPerVb for UTXO). See docs/FEE_ARCHITECTURE.md. Results cached 15s. 
+         * @summary Estimate network fee from blockchain (all supported chains; not controlled by Mudbase)
+         * @param {EstimateNonCustodialGasRequest} estimateNonCustodialGasRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async estimateNonCustodialGas(estimateNonCustodialGasRequest: EstimateNonCustodialGasRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<EstimateNonCustodialGas200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.estimateNonCustodialGas(estimateNonCustodialGasRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.estimateNonCustodialGas']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Generate private key
+         * @param {GeneratePrivateKeyRequest} generatePrivateKeyRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async generatePrivateKey(generatePrivateKeyRequest: GeneratePrivateKeyRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GeneratePrivateKey200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.generatePrivateKey(generatePrivateKeyRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.generatePrivateKey']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns **all chain network fees** in one call. Reads from the fee oracle cache (no RPC during the request). Each chain returns the **full fee object** (networkFee, gasPriceGwei, congestion, estimatedTime, feeTiers for EVM, etc.) for frontend/UX. Use for dashboards or \"current fees\" screens. 
+         * @summary Get all chain network fees (fee oracle snapshot)
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async getAllFees(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetAllFees200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getAllFees(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.getAllFees']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Get wallet balance
+         * @param {string} walletId 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async getBalance(walletId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetBalance200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getBalance(walletId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.getBalance']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns **replacement transaction params** to cancel a stuck EVM transaction (same nonce, to=self, value=0, data=0x, higher gas). Client signs and broadcasts via POST /api/wallet/non-custodial/broadcast. Address must be registered for your organization. EVM chains only. 
+         * @summary Get replacement tx params for cancel (stuck EVM tx)
+         * @param {GetCancelParamsRequest} getCancelParamsRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async getCancelParams(getCancelParamsRequest: GetCancelParamsRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetCancelParams200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getCancelParams(getCancelParamsRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.getCancelParams']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns **network status** per chain (congestion and main fee metric). Use to show network health before sending transactions. Same data as GET /fees but trimmed to congestion + gasPriceGwei (EVM) or satPerVb (UTXO) and networkFee. 
+         * @summary Get network status (congestion + fee metric per chain)
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async getNetworkStatus(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetNetworkStatus200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getNetworkStatus(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.getNetworkStatus']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Get non-custodial address by ID
+         * @param {string} addressId 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async getNonCustodialAddress(addressId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<NonCustodialAddressResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getNonCustodialAddress(addressId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.getNonCustodialAddress']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Get balance for a non-custodial address
+         * @param {string} addressId 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async getNonCustodialBalance(addressId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetNonCustodialBalance200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getNonCustodialBalance(addressId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.getNonCustodialBalance']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns a transaction by its hash. The **chain** query parameter is required because the same hash format can exist on different chains (e.g. 0x-style on EVM chains). 
+         * @summary Get transaction by hash
+         * @param {string} txHash Transaction hash (e.g. 0x... for EVM, or block explorer format for UTXO)
+         * @param {GetNonCustodialTransactionByHashChainEnum} chain Chain the transaction belongs to (required for lookup)
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async getNonCustodialTransactionByHash(txHash: string, chain: GetNonCustodialTransactionByHashChainEnum, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetNonCustodialTransactionByHash200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getNonCustodialTransactionByHash(txHash, chain, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.getNonCustodialTransactionByHash']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Get transaction history for a non-custodial address
+         * @param {string} addressId 
+         * @param {number} [limit] 
+         * @param {number} [page] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async getNonCustodialTransactions(addressId: string, limit?: number, page?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetNonCustodialTransactions200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getNonCustodialTransactions(addressId, limit, page, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.getNonCustodialTransactions']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns **replacement transaction params** for a stuck EVM transaction (same nonce, same to/value/data, higher gas). Client signs the replacement and broadcasts via POST /api/wallet/non-custodial/broadcast. Address must be registered for your organization. Use when a tx has been pending >5 min (stuck). EVM chains only. 
+         * @summary Get replacement tx params for speed-up (stuck EVM tx)
+         * @param {GetSpeedUpParamsRequest} getSpeedUpParamsRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async getSpeedUpParams(getSpeedUpParamsRequest: GetSpeedUpParamsRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetSpeedUpParams200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getSpeedUpParams(getSpeedUpParamsRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.getSpeedUpParams']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns the list of **platform-supported cryptocurrencies and chains** for non-custodial wallets, broadcast, and multi-chain use. Custodial wallet is no longer used in production; this endpoint is the source of truth for supported chains and currencies. **Supported:** BTC, LTC, DOGE, ETH, ETC, CELO, SOL, TRX, TON, Polygon (MATIC), Arbitrum, Optimism, Base, BSC/BNB, Avalanche (AVAX), Cardano (ADA), USDT. Each item includes **code** (currency symbol), **name** (display name), **chain** (chain id for API calls). USDT includes **networks** (ETH, BSC, TRX, SOL, POLYGON). Use **chain** with non-custodial endpoints (register-address, broadcast, estimate-gas). Use **code** for display and fee/currency selection. This is a public endpoint - no authentication required. 
+         * @summary Get supported currencies and chains
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async getSupportedCurrencies(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetSupportedCurrencies200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getSupportedCurrencies(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.getSupportedCurrencies']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Get transaction details
+         * @param {string} transactionId 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async getTransaction(transactionId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetTransaction200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getTransaction(transactionId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.getTransaction']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns transaction history for custodial wallets. Transactions are stored and monitored the same way as non-custodial (WalletTransaction); status updates (pending, broadcast, confirmed, failed) and stuck detection apply to both. 
+         * @summary Get transaction history (custodial wallets; same monitoring as non-custodial)
+         * @param {string} [walletId] 
+         * @param {number} [limit] 
+         * @param {number} [page] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async getTransactionHistory(walletId?: string, limit?: number, page?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetTransactionHistory200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getTransactionHistory(walletId, limit, page, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.getTransactionHistory']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Get user wallets
+         * @param {string} [projectId] 
+         * @param {string} [currency] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async getUserWallets(projectId?: string, currency?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetUserWallets200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getUserWallets(projectId, currency, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.getUserWallets']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Get project-level fee settings (enabled flag and fee percentage). **For non-custodial / external users** — e.g. when your app charges a fee on payouts or transfers. Custodial wallet is no longer used in production. Applies to all supported chains/currencies for that project. 
+         * @summary Get project fee configuration (for non-custodial / external users)
+         * @param {string} projectId Project ID
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async getWalletFeeConfig(projectId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetWalletFeeConfig200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getWalletFeeConfig(projectId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.getWalletFeeConfig']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns the wallet private key. **For testing non-custodial only:** use this key to sign a transaction locally, then register the wallet address via POST /api/wallet/non-custodial/register-address and broadcast the signed tx via POST /api/wallet/non-custodial/broadcast. 
+         * @summary Get wallet private key (WARNING: Sensitive data; for testing non-custodial)
+         * @param {string} walletId 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async getWalletPrivateKey(walletId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetWalletPrivateKey200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getWalletPrivateKey(walletId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.getWalletPrivateKey']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Get webhook delivery logs
+         * @param {string} webhookId 
+         * @param {number} [limit] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async getWalletWebhookLogs(webhookId: string, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetWalletWebhookLogs200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getWalletWebhookLogs(webhookId, limit, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.getWalletWebhookLogs']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary List registered non-custodial addresses
+         * @param {ListNonCustodialAddressesChainEnum} [chain] Filter by chain (optional)
+         * @param {string} [projectId] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async listNonCustodialAddresses(chain?: ListNonCustodialAddressesChainEnum, projectId?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ListNonCustodialAddresses200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listNonCustodialAddresses(chain, projectId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.listNonCustodialAddresses']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary List wallet webhooks
+         * @param {string} [projectId] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async listWalletWebhooks(projectId?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ListWalletWebhooks200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listWalletWebhooks(projectId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.listWalletWebhooks']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Register a public wallet address for monitoring and indexing. All key operations (generation, signing) occur client-side only. 
+         * @summary Register a non-custodial wallet address
+         * @param {RegisterNonCustodialAddressRequest} registerNonCustodialAddressRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async registerNonCustodialAddress(registerNonCustodialAddressRequest: RegisterNonCustodialAddressRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<NonCustodialAddressResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.registerNonCustodialAddress(registerNonCustodialAddressRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.registerNonCustodialAddress']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Test a webhook delivery (sends a single test payload)
+         * @param {TestWalletWebhookRequest} testWalletWebhookRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async testWalletWebhook(testWalletWebhookRequest: TestWalletWebhookRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TestWalletWebhook200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.testWalletWebhook(testWalletWebhookRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.testWalletWebhook']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Update metadata for a registered non-custodial address. Only **label** and **derivationPath** can be updated; address and chain are immutable. 
+         * @summary Update a monitored wallet address
+         * @param {string} addressId 
+         * @param {UpdateNonCustodialAddressRequest} [updateNonCustodialAddressRequest] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async updateNonCustodialAddress(addressId: string, updateNonCustodialAddressRequest?: UpdateNonCustodialAddressRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UpdateNonCustodialAddress200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateNonCustodialAddress(addressId, updateNonCustodialAddressRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.updateNonCustodialAddress']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Update project-level fee settings. **For non-custodial / external users** — e.g. fee charged on payouts or transfers. Custodial wallet is no longer used in production. Applies to **all supported currencies** (BTC, ETH, BNB, LTC, SOL, TRX, USDT). **feePercentage** is a decimal: use `0.01` for 1%, `0.005` for 0.5%, etc. (min 0, max 1). 
+         * @summary Update project fee configuration (for non-custodial / external users)
+         * @param {string} projectId Project ID
+         * @param {UpdateWalletFeeConfigRequest} [updateWalletFeeConfigRequest] 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async updateWalletFeeConfig(projectId: string, updateWalletFeeConfigRequest?: UpdateWalletFeeConfigRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UpdateWalletFeeConfig200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateWalletFeeConfig(projectId, updateWalletFeeConfigRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.updateWalletFeeConfig']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Update a wallet webhook
+         * @param {string} webhookId 
+         * @param {UpdateWalletWebhookRequest} updateWalletWebhookRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async updateWalletWebhook(webhookId: string, updateWalletWebhookRequest: UpdateWalletWebhookRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UpdateWalletWebhook200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateWalletWebhook(webhookId, updateWalletWebhookRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.updateWalletWebhook']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Validate cryptocurrency address
+         * @param {ValidateAddressRequest} validateAddressRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async validateAddress(validateAddressRequest: ValidateAddressRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ValidateAddress200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.validateAddress(validateAddressRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.validateAddress']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * **Semi-transaction:** Builds and signs the withdrawal but does **not** broadcast. Returns `signedTx`, `chain`, and `fromAddress` so the client can broadcast via POST /api/wallet/non-custodial/broadcast. The wallet address must be registered for your organization before broadcasting. Supports all platform chains/currencies (EVM, UTXO, Tron, Solana, USDT on ETH/BSC/TRX/SOL/POLYGON). Use for testing the non-custodial flow: create custodial wallet, get private key, register address, then call withdraw to get signed tx and broadcast it manually. 
+         * @summary Prepare withdrawal (semi-transaction; broadcast via non-custodial)
+         * @param {string} walletId 
+         * @param {WithdrawRequest} withdrawRequest 
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        async withdraw(walletId: string, withdrawRequest: WithdrawRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Withdraw200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.withdraw(walletId, withdrawRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WalletApi.withdraw']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * WalletApi - factory interface
+ */
+export const WalletApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = WalletApiFp(configuration)
+    return {
+        /**
+         * Broadcast a transaction that has been signed client-side. The transaction must be fully signed before sending. The fromAddress must be registered and belong to your organization (POST /api/wallet/non-custodial/register-address). **Supported chains:** EVM (ethereum, polygon, arbitrum, optimism, base, bsc, binance, avalanche, celo), UTXO (bitcoin, litecoin, dogecoin), and chain-specific (tron, solana, ton, cardano). Use `binance` or `bsc` for BNB Smart Chain. **Testing with custodial:** You can create a wallet via POST /api/wallet/create, get its private key via GET /api/wallet/{walletId}/private-key, register that address with POST /api/wallet/non-custodial/register-address, then build a signed tx (using POST /api/wallet/estimate-network-fee or estimate-gas for fees) and broadcast it here to test the non-custodial flow end-to-end. 
+         * @summary Broadcast a client-signed transaction
+         * @param {WalletApiBroadcastNonCustodialTransactionRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        broadcastNonCustodialTransaction(requestParameters: WalletApiBroadcastNonCustodialTransactionRequest, options?: RawAxiosRequestConfig): AxiosPromise<BroadcastNonCustodialTransaction200Response> {
+            return localVarFp.broadcastNonCustodialTransaction(requestParameters.broadcastNonCustodialTransactionRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns **network fee only**, estimated from the blockchain (RPC / fee APIs). No platform fee or project fee. **Same as POST /api/wallet/estimate-network-fee.** Prefer estimate-network-fee for clarity. Supported currencies: BTC, ETH, BNB, LTC, SOL, TRX, USDT, MATIC, AVAX, CELO, DOGE, TON, ADA. For USDT, `network` is required (ETH, BSC, TRX, SOL, POLYGON). Use `?fresh=1` or header `X-Fee-Fresh: true` for a fresh estimate (bypass cache) right before building the transaction for broadcast. 
+         * @summary Get network fee only (alias for POST /api/wallet/estimate-network-fee)
+         * @param {WalletApiCalculateWalletFeeRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        calculateWalletFee(requestParameters: WalletApiCalculateWalletFeeRequest, options?: RawAxiosRequestConfig): AxiosPromise<CalculateWalletFee200Response> {
+            return localVarFp.calculateWalletFee(requestParameters.estimateNetworkFeeRequest, requestParameters.fresh, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Create a custodial wallet. **Custodial is not used in production.** Use this to **test non-custodial flows**: create a wallet, get its private key (GET /api/wallet/{walletId}/private-key), register the same address with POST /api/wallet/non-custodial/register-address, then use estimate-network-fee and POST /api/wallet/non-custodial/broadcast to build and send a signed transaction. Transaction monitoring (pending/confirmed) applies to both custodial and non-custodial WalletTransaction records. 
+         * @summary Create new wallet (for testing non-custodial)
+         * @param {WalletApiCreateWalletRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        createWallet(requestParameters: WalletApiCreateWalletRequest, options?: RawAxiosRequestConfig): AxiosPromise<CreateWallet201Response> {
+            return localVarFp.createWallet(requestParameters.createWalletRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Create a wallet webhook
+         * @param {WalletApiCreateWalletWebhookRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        createWalletWebhook(requestParameters: WalletApiCreateWalletWebhookRequest, options?: RawAxiosRequestConfig): AxiosPromise<CreateWalletWebhook201Response> {
+            return localVarFp.createWalletWebhook(requestParameters.createWalletWebhookRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * **Soft delete (default):** Omit **permanent** or set to false. The address is deactivated (isActive = false); it no longer appears in list or receives monitoring but the record remains for audit. **Permanent delete:** Set query **permanent=true** to remove the address record from the database. Use when you need to fully remove the monitored address. 
+         * @summary Delete or deactivate a monitored wallet address
+         * @param {WalletApiDeleteNonCustodialAddressRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        deleteNonCustodialAddress(requestParameters: WalletApiDeleteNonCustodialAddressRequest, options?: RawAxiosRequestConfig): AxiosPromise<DeleteFunction200Response> {
+            return localVarFp.deleteNonCustodialAddress(requestParameters.addressId, requestParameters.permanent, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Delete a wallet webhook
+         * @param {WalletApiDeleteWalletWebhookRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        deleteWalletWebhook(requestParameters: WalletApiDeleteWalletWebhookRequest, options?: RawAxiosRequestConfig): AxiosPromise<DeleteFunction200Response> {
+            return localVarFp.deleteWalletWebhook(requestParameters.webhookId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns **network fee only** from the blockchain. **Preferred endpoint** for network fee. Uses a fee oracle: fees are polled every 15–20s and cached, so responses are fast and RPC load is minimal (same strategy as large wallets). No platform fee. Request/response identical to POST /api/wallet/calculate-fee (which is an alias). See docs/FEE_ARCHITECTURE.md. Supported currencies: BTC, ETH, BNB, LTC, SOL, TRX, USDT, MATIC, AVAX, CELO, DOGE, TON, ADA. For USDT, `network` is required (ETH, BSC, TRX, SOL, POLYGON). **Fresh fee before broadcast:** To avoid stuck transactions, get a fresh estimate right before building/signing: use query `?fresh=1` or header `X-Fee-Fresh: true` to bypass cache. 
+         * @summary Estimate network fee (preferred; reads from fee oracle cache)
+         * @param {WalletApiEstimateNetworkFeeRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        estimateNetworkFee(requestParameters: WalletApiEstimateNetworkFeeRequest, options?: RawAxiosRequestConfig): AxiosPromise<EstimateNetworkFee200Response> {
+            return localVarFp.estimateNetworkFee(requestParameters.estimateNetworkFeeRequest, requestParameters.fresh, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * **Network fee (from blockchain only).** Returns network fee **estimated directly from the blockchain** via RPC or fee APIs. **Not controlled by Mudbase.** Both POST /api/wallet/estimate-network-fee (or calculate-fee) and this endpoint return network fee only; use either for gas/fee display. This endpoint is chain-oriented and supports full transaction shape for EVM. **EVM chains:** ethereum, polygon, arbitrum, optimism, base, bsc, binance, avalanche, celo — require `transaction` (from, and to/value or tokenAddress/amount). Response includes gasLimit, gasPrice, networkFee, estimatedTime, currency. **Non-EVM chains:** bitcoin, litecoin, dogecoin, solana, tron, ton, cardano — only `chain` is required; `transaction` is optional/ignored. Returns networkFee, estimatedTime, currency (and e.g. satPerVb for UTXO). See docs/FEE_ARCHITECTURE.md. Results cached 15s. 
+         * @summary Estimate network fee from blockchain (all supported chains; not controlled by Mudbase)
+         * @param {WalletApiEstimateNonCustodialGasRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        estimateNonCustodialGas(requestParameters: WalletApiEstimateNonCustodialGasRequest, options?: RawAxiosRequestConfig): AxiosPromise<EstimateNonCustodialGas200Response> {
+            return localVarFp.estimateNonCustodialGas(requestParameters.estimateNonCustodialGasRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Generate private key
+         * @param {WalletApiGeneratePrivateKeyRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        generatePrivateKey(requestParameters: WalletApiGeneratePrivateKeyRequest, options?: RawAxiosRequestConfig): AxiosPromise<GeneratePrivateKey200Response> {
+            return localVarFp.generatePrivateKey(requestParameters.generatePrivateKeyRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns **all chain network fees** in one call. Reads from the fee oracle cache (no RPC during the request). Each chain returns the **full fee object** (networkFee, gasPriceGwei, congestion, estimatedTime, feeTiers for EVM, etc.) for frontend/UX. Use for dashboards or \"current fees\" screens. 
+         * @summary Get all chain network fees (fee oracle snapshot)
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getAllFees(options?: RawAxiosRequestConfig): AxiosPromise<GetAllFees200Response> {
+            return localVarFp.getAllFees(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Get wallet balance
+         * @param {WalletApiGetBalanceRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getBalance(requestParameters: WalletApiGetBalanceRequest, options?: RawAxiosRequestConfig): AxiosPromise<GetBalance200Response> {
+            return localVarFp.getBalance(requestParameters.walletId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns **replacement transaction params** to cancel a stuck EVM transaction (same nonce, to=self, value=0, data=0x, higher gas). Client signs and broadcasts via POST /api/wallet/non-custodial/broadcast. Address must be registered for your organization. EVM chains only. 
+         * @summary Get replacement tx params for cancel (stuck EVM tx)
+         * @param {WalletApiGetCancelParamsRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getCancelParams(requestParameters: WalletApiGetCancelParamsRequest, options?: RawAxiosRequestConfig): AxiosPromise<GetCancelParams200Response> {
+            return localVarFp.getCancelParams(requestParameters.getCancelParamsRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns **network status** per chain (congestion and main fee metric). Use to show network health before sending transactions. Same data as GET /fees but trimmed to congestion + gasPriceGwei (EVM) or satPerVb (UTXO) and networkFee. 
+         * @summary Get network status (congestion + fee metric per chain)
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getNetworkStatus(options?: RawAxiosRequestConfig): AxiosPromise<GetNetworkStatus200Response> {
+            return localVarFp.getNetworkStatus(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Get non-custodial address by ID
+         * @param {WalletApiGetNonCustodialAddressRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getNonCustodialAddress(requestParameters: WalletApiGetNonCustodialAddressRequest, options?: RawAxiosRequestConfig): AxiosPromise<NonCustodialAddressResponse> {
+            return localVarFp.getNonCustodialAddress(requestParameters.addressId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Get balance for a non-custodial address
+         * @param {WalletApiGetNonCustodialBalanceRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getNonCustodialBalance(requestParameters: WalletApiGetNonCustodialBalanceRequest, options?: RawAxiosRequestConfig): AxiosPromise<GetNonCustodialBalance200Response> {
+            return localVarFp.getNonCustodialBalance(requestParameters.addressId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns a transaction by its hash. The **chain** query parameter is required because the same hash format can exist on different chains (e.g. 0x-style on EVM chains). 
+         * @summary Get transaction by hash
+         * @param {WalletApiGetNonCustodialTransactionByHashRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getNonCustodialTransactionByHash(requestParameters: WalletApiGetNonCustodialTransactionByHashRequest, options?: RawAxiosRequestConfig): AxiosPromise<GetNonCustodialTransactionByHash200Response> {
+            return localVarFp.getNonCustodialTransactionByHash(requestParameters.txHash, requestParameters.chain, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Get transaction history for a non-custodial address
+         * @param {WalletApiGetNonCustodialTransactionsRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getNonCustodialTransactions(requestParameters: WalletApiGetNonCustodialTransactionsRequest, options?: RawAxiosRequestConfig): AxiosPromise<GetNonCustodialTransactions200Response> {
+            return localVarFp.getNonCustodialTransactions(requestParameters.addressId, requestParameters.limit, requestParameters.page, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns **replacement transaction params** for a stuck EVM transaction (same nonce, same to/value/data, higher gas). Client signs the replacement and broadcasts via POST /api/wallet/non-custodial/broadcast. Address must be registered for your organization. Use when a tx has been pending >5 min (stuck). EVM chains only. 
+         * @summary Get replacement tx params for speed-up (stuck EVM tx)
+         * @param {WalletApiGetSpeedUpParamsRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getSpeedUpParams(requestParameters: WalletApiGetSpeedUpParamsRequest, options?: RawAxiosRequestConfig): AxiosPromise<GetSpeedUpParams200Response> {
+            return localVarFp.getSpeedUpParams(requestParameters.getSpeedUpParamsRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns the list of **platform-supported cryptocurrencies and chains** for non-custodial wallets, broadcast, and multi-chain use. Custodial wallet is no longer used in production; this endpoint is the source of truth for supported chains and currencies. **Supported:** BTC, LTC, DOGE, ETH, ETC, CELO, SOL, TRX, TON, Polygon (MATIC), Arbitrum, Optimism, Base, BSC/BNB, Avalanche (AVAX), Cardano (ADA), USDT. Each item includes **code** (currency symbol), **name** (display name), **chain** (chain id for API calls). USDT includes **networks** (ETH, BSC, TRX, SOL, POLYGON). Use **chain** with non-custodial endpoints (register-address, broadcast, estimate-gas). Use **code** for display and fee/currency selection. This is a public endpoint - no authentication required. 
+         * @summary Get supported currencies and chains
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getSupportedCurrencies(options?: RawAxiosRequestConfig): AxiosPromise<GetSupportedCurrencies200Response> {
+            return localVarFp.getSupportedCurrencies(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Get transaction details
+         * @param {WalletApiGetTransactionRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getTransaction(requestParameters: WalletApiGetTransactionRequest, options?: RawAxiosRequestConfig): AxiosPromise<GetTransaction200Response> {
+            return localVarFp.getTransaction(requestParameters.transactionId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns transaction history for custodial wallets. Transactions are stored and monitored the same way as non-custodial (WalletTransaction); status updates (pending, broadcast, confirmed, failed) and stuck detection apply to both. 
+         * @summary Get transaction history (custodial wallets; same monitoring as non-custodial)
+         * @param {WalletApiGetTransactionHistoryRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getTransactionHistory(requestParameters: WalletApiGetTransactionHistoryRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<GetTransactionHistory200Response> {
+            return localVarFp.getTransactionHistory(requestParameters.walletId, requestParameters.limit, requestParameters.page, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Get user wallets
+         * @param {WalletApiGetUserWalletsRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getUserWallets(requestParameters: WalletApiGetUserWalletsRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<GetUserWallets200Response> {
+            return localVarFp.getUserWallets(requestParameters.projectId, requestParameters.currency, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get project-level fee settings (enabled flag and fee percentage). **For non-custodial / external users** — e.g. when your app charges a fee on payouts or transfers. Custodial wallet is no longer used in production. Applies to all supported chains/currencies for that project. 
+         * @summary Get project fee configuration (for non-custodial / external users)
+         * @param {WalletApiGetWalletFeeConfigRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getWalletFeeConfig(requestParameters: WalletApiGetWalletFeeConfigRequest, options?: RawAxiosRequestConfig): AxiosPromise<GetWalletFeeConfig200Response> {
+            return localVarFp.getWalletFeeConfig(requestParameters.projectId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns the wallet private key. **For testing non-custodial only:** use this key to sign a transaction locally, then register the wallet address via POST /api/wallet/non-custodial/register-address and broadcast the signed tx via POST /api/wallet/non-custodial/broadcast. 
+         * @summary Get wallet private key (WARNING: Sensitive data; for testing non-custodial)
+         * @param {WalletApiGetWalletPrivateKeyRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getWalletPrivateKey(requestParameters: WalletApiGetWalletPrivateKeyRequest, options?: RawAxiosRequestConfig): AxiosPromise<GetWalletPrivateKey200Response> {
+            return localVarFp.getWalletPrivateKey(requestParameters.walletId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Get webhook delivery logs
+         * @param {WalletApiGetWalletWebhookLogsRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        getWalletWebhookLogs(requestParameters: WalletApiGetWalletWebhookLogsRequest, options?: RawAxiosRequestConfig): AxiosPromise<GetWalletWebhookLogs200Response> {
+            return localVarFp.getWalletWebhookLogs(requestParameters.webhookId, requestParameters.limit, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary List registered non-custodial addresses
+         * @param {WalletApiListNonCustodialAddressesRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        listNonCustodialAddresses(requestParameters: WalletApiListNonCustodialAddressesRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<ListNonCustodialAddresses200Response> {
+            return localVarFp.listNonCustodialAddresses(requestParameters.chain, requestParameters.projectId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary List wallet webhooks
+         * @param {WalletApiListWalletWebhooksRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        listWalletWebhooks(requestParameters: WalletApiListWalletWebhooksRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<ListWalletWebhooks200Response> {
+            return localVarFp.listWalletWebhooks(requestParameters.projectId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Register a public wallet address for monitoring and indexing. All key operations (generation, signing) occur client-side only. 
+         * @summary Register a non-custodial wallet address
+         * @param {WalletApiRegisterNonCustodialAddressRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        registerNonCustodialAddress(requestParameters: WalletApiRegisterNonCustodialAddressRequest, options?: RawAxiosRequestConfig): AxiosPromise<NonCustodialAddressResponse> {
+            return localVarFp.registerNonCustodialAddress(requestParameters.registerNonCustodialAddressRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Test a webhook delivery (sends a single test payload)
+         * @param {WalletApiTestWalletWebhookRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        testWalletWebhook(requestParameters: WalletApiTestWalletWebhookRequest, options?: RawAxiosRequestConfig): AxiosPromise<TestWalletWebhook200Response> {
+            return localVarFp.testWalletWebhook(requestParameters.testWalletWebhookRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Update metadata for a registered non-custodial address. Only **label** and **derivationPath** can be updated; address and chain are immutable. 
+         * @summary Update a monitored wallet address
+         * @param {WalletApiUpdateNonCustodialAddressRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        updateNonCustodialAddress(requestParameters: WalletApiUpdateNonCustodialAddressRequest, options?: RawAxiosRequestConfig): AxiosPromise<UpdateNonCustodialAddress200Response> {
+            return localVarFp.updateNonCustodialAddress(requestParameters.addressId, requestParameters.updateNonCustodialAddressRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Update project-level fee settings. **For non-custodial / external users** — e.g. fee charged on payouts or transfers. Custodial wallet is no longer used in production. Applies to **all supported currencies** (BTC, ETH, BNB, LTC, SOL, TRX, USDT). **feePercentage** is a decimal: use `0.01` for 1%, `0.005` for 0.5%, etc. (min 0, max 1). 
+         * @summary Update project fee configuration (for non-custodial / external users)
+         * @param {WalletApiUpdateWalletFeeConfigRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        updateWalletFeeConfig(requestParameters: WalletApiUpdateWalletFeeConfigRequest, options?: RawAxiosRequestConfig): AxiosPromise<UpdateWalletFeeConfig200Response> {
+            return localVarFp.updateWalletFeeConfig(requestParameters.projectId, requestParameters.updateWalletFeeConfigRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Update a wallet webhook
+         * @param {WalletApiUpdateWalletWebhookRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        updateWalletWebhook(requestParameters: WalletApiUpdateWalletWebhookRequest, options?: RawAxiosRequestConfig): AxiosPromise<UpdateWalletWebhook200Response> {
+            return localVarFp.updateWalletWebhook(requestParameters.webhookId, requestParameters.updateWalletWebhookRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Validate cryptocurrency address
+         * @param {WalletApiValidateAddressRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        validateAddress(requestParameters: WalletApiValidateAddressRequest, options?: RawAxiosRequestConfig): AxiosPromise<ValidateAddress200Response> {
+            return localVarFp.validateAddress(requestParameters.validateAddressRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * **Semi-transaction:** Builds and signs the withdrawal but does **not** broadcast. Returns `signedTx`, `chain`, and `fromAddress` so the client can broadcast via POST /api/wallet/non-custodial/broadcast. The wallet address must be registered for your organization before broadcasting. Supports all platform chains/currencies (EVM, UTXO, Tron, Solana, USDT on ETH/BSC/TRX/SOL/POLYGON). Use for testing the non-custodial flow: create custodial wallet, get private key, register address, then call withdraw to get signed tx and broadcast it manually. 
+         * @summary Prepare withdrawal (semi-transaction; broadcast via non-custodial)
+         * @param {WalletApiWithdrawRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @deprecated
+         * @throws {RequiredError}
+         */
+        withdraw(requestParameters: WalletApiWithdrawRequest, options?: RawAxiosRequestConfig): AxiosPromise<Withdraw200Response> {
+            return localVarFp.withdraw(requestParameters.walletId, requestParameters.withdrawRequest, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * Request parameters for broadcastNonCustodialTransaction operation in WalletApi.
+ */
+export interface WalletApiBroadcastNonCustodialTransactionRequest {
+    readonly broadcastNonCustodialTransactionRequest: BroadcastNonCustodialTransactionRequest
+}
+
+/**
+ * Request parameters for calculateWalletFee operation in WalletApi.
+ */
+export interface WalletApiCalculateWalletFeeRequest {
+    readonly estimateNetworkFeeRequest: EstimateNetworkFeeRequest
+
+    /**
+     * Bypass cache and fetch current fee (use right before building tx for broadcast)
+     */
+    readonly fresh?: CalculateWalletFeeFreshEnum
+}
+
+/**
+ * Request parameters for createWallet operation in WalletApi.
+ */
+export interface WalletApiCreateWalletRequest {
+    readonly createWalletRequest: CreateWalletRequest
+}
+
+/**
+ * Request parameters for createWalletWebhook operation in WalletApi.
+ */
+export interface WalletApiCreateWalletWebhookRequest {
+    readonly createWalletWebhookRequest: CreateWalletWebhookRequest
+}
+
+/**
+ * Request parameters for deleteNonCustodialAddress operation in WalletApi.
+ */
+export interface WalletApiDeleteNonCustodialAddressRequest {
+    readonly addressId: string
+
+    /**
+     * If true, permanently delete the address from the database; if false or omitted, only deactivate (soft delete)
+     */
+    readonly permanent?: boolean
+}
+
+/**
+ * Request parameters for deleteWalletWebhook operation in WalletApi.
+ */
+export interface WalletApiDeleteWalletWebhookRequest {
+    readonly webhookId: string
+}
+
+/**
+ * Request parameters for estimateNetworkFee operation in WalletApi.
+ */
+export interface WalletApiEstimateNetworkFeeRequest {
+    readonly estimateNetworkFeeRequest: EstimateNetworkFeeRequest
+
+    /**
+     * Bypass cache and fetch current fee from RPC/fee API (use right before building tx for broadcast)
+     */
+    readonly fresh?: EstimateNetworkFeeFreshEnum
+}
+
+/**
+ * Request parameters for estimateNonCustodialGas operation in WalletApi.
+ */
+export interface WalletApiEstimateNonCustodialGasRequest {
+    readonly estimateNonCustodialGasRequest: EstimateNonCustodialGasRequest
+}
+
+/**
+ * Request parameters for generatePrivateKey operation in WalletApi.
+ */
+export interface WalletApiGeneratePrivateKeyRequest {
+    readonly generatePrivateKeyRequest: GeneratePrivateKeyRequest
+}
+
+/**
+ * Request parameters for getBalance operation in WalletApi.
+ */
+export interface WalletApiGetBalanceRequest {
+    readonly walletId: string
+}
+
+/**
+ * Request parameters for getCancelParams operation in WalletApi.
+ */
+export interface WalletApiGetCancelParamsRequest {
+    readonly getCancelParamsRequest: GetCancelParamsRequest
+}
+
+/**
+ * Request parameters for getNonCustodialAddress operation in WalletApi.
+ */
+export interface WalletApiGetNonCustodialAddressRequest {
+    readonly addressId: string
+}
+
+/**
+ * Request parameters for getNonCustodialBalance operation in WalletApi.
+ */
+export interface WalletApiGetNonCustodialBalanceRequest {
+    readonly addressId: string
+}
+
+/**
+ * Request parameters for getNonCustodialTransactionByHash operation in WalletApi.
+ */
+export interface WalletApiGetNonCustodialTransactionByHashRequest {
+    /**
+     * Transaction hash (e.g. 0x... for EVM, or block explorer format for UTXO)
+     */
+    readonly txHash: string
+
+    /**
+     * Chain the transaction belongs to (required for lookup)
+     */
+    readonly chain: GetNonCustodialTransactionByHashChainEnum
+}
+
+/**
+ * Request parameters for getNonCustodialTransactions operation in WalletApi.
+ */
+export interface WalletApiGetNonCustodialTransactionsRequest {
+    readonly addressId: string
+
+    readonly limit?: number
+
+    readonly page?: number
+}
+
+/**
+ * Request parameters for getSpeedUpParams operation in WalletApi.
+ */
+export interface WalletApiGetSpeedUpParamsRequest {
+    readonly getSpeedUpParamsRequest: GetSpeedUpParamsRequest
+}
+
+/**
+ * Request parameters for getTransaction operation in WalletApi.
+ */
+export interface WalletApiGetTransactionRequest {
+    readonly transactionId: string
+}
+
+/**
+ * Request parameters for getTransactionHistory operation in WalletApi.
+ */
+export interface WalletApiGetTransactionHistoryRequest {
+    readonly walletId?: string
+
+    readonly limit?: number
+
+    readonly page?: number
+}
+
+/**
+ * Request parameters for getUserWallets operation in WalletApi.
+ */
+export interface WalletApiGetUserWalletsRequest {
+    readonly projectId?: string
+
+    readonly currency?: string
+}
+
+/**
+ * Request parameters for getWalletFeeConfig operation in WalletApi.
+ */
+export interface WalletApiGetWalletFeeConfigRequest {
+    /**
+     * Project ID
+     */
+    readonly projectId: string
+}
+
+/**
+ * Request parameters for getWalletPrivateKey operation in WalletApi.
+ */
+export interface WalletApiGetWalletPrivateKeyRequest {
+    readonly walletId: string
+}
+
+/**
+ * Request parameters for getWalletWebhookLogs operation in WalletApi.
+ */
+export interface WalletApiGetWalletWebhookLogsRequest {
+    readonly webhookId: string
+
+    readonly limit?: number
+}
+
+/**
+ * Request parameters for listNonCustodialAddresses operation in WalletApi.
+ */
+export interface WalletApiListNonCustodialAddressesRequest {
+    /**
+     * Filter by chain (optional)
+     */
+    readonly chain?: ListNonCustodialAddressesChainEnum
+
+    readonly projectId?: string
+}
+
+/**
+ * Request parameters for listWalletWebhooks operation in WalletApi.
+ */
+export interface WalletApiListWalletWebhooksRequest {
+    readonly projectId?: string
+}
+
+/**
+ * Request parameters for registerNonCustodialAddress operation in WalletApi.
+ */
+export interface WalletApiRegisterNonCustodialAddressRequest {
+    readonly registerNonCustodialAddressRequest: RegisterNonCustodialAddressRequest
+}
+
+/**
+ * Request parameters for testWalletWebhook operation in WalletApi.
+ */
+export interface WalletApiTestWalletWebhookRequest {
+    readonly testWalletWebhookRequest: TestWalletWebhookRequest
+}
+
+/**
+ * Request parameters for updateNonCustodialAddress operation in WalletApi.
+ */
+export interface WalletApiUpdateNonCustodialAddressRequest {
+    readonly addressId: string
+
+    readonly updateNonCustodialAddressRequest?: UpdateNonCustodialAddressRequest
+}
+
+/**
+ * Request parameters for updateWalletFeeConfig operation in WalletApi.
+ */
+export interface WalletApiUpdateWalletFeeConfigRequest {
+    /**
+     * Project ID
+     */
+    readonly projectId: string
+
+    readonly updateWalletFeeConfigRequest?: UpdateWalletFeeConfigRequest
+}
+
+/**
+ * Request parameters for updateWalletWebhook operation in WalletApi.
+ */
+export interface WalletApiUpdateWalletWebhookRequest {
+    readonly webhookId: string
+
+    readonly updateWalletWebhookRequest: UpdateWalletWebhookRequest
+}
+
+/**
+ * Request parameters for validateAddress operation in WalletApi.
+ */
+export interface WalletApiValidateAddressRequest {
+    readonly validateAddressRequest: ValidateAddressRequest
+}
+
+/**
+ * Request parameters for withdraw operation in WalletApi.
+ */
+export interface WalletApiWithdrawRequest {
+    readonly walletId: string
+
+    readonly withdrawRequest: WithdrawRequest
+}
+
+/**
+ * WalletApi - object-oriented interface
+ */
+export class WalletApi extends BaseAPI {
+    /**
+     * Broadcast a transaction that has been signed client-side. The transaction must be fully signed before sending. The fromAddress must be registered and belong to your organization (POST /api/wallet/non-custodial/register-address). **Supported chains:** EVM (ethereum, polygon, arbitrum, optimism, base, bsc, binance, avalanche, celo), UTXO (bitcoin, litecoin, dogecoin), and chain-specific (tron, solana, ton, cardano). Use `binance` or `bsc` for BNB Smart Chain. **Testing with custodial:** You can create a wallet via POST /api/wallet/create, get its private key via GET /api/wallet/{walletId}/private-key, register that address with POST /api/wallet/non-custodial/register-address, then build a signed tx (using POST /api/wallet/estimate-network-fee or estimate-gas for fees) and broadcast it here to test the non-custodial flow end-to-end. 
+     * @summary Broadcast a client-signed transaction
+     * @param {WalletApiBroadcastNonCustodialTransactionRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public broadcastNonCustodialTransaction(requestParameters: WalletApiBroadcastNonCustodialTransactionRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).broadcastNonCustodialTransaction(requestParameters.broadcastNonCustodialTransactionRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns **network fee only**, estimated from the blockchain (RPC / fee APIs). No platform fee or project fee. **Same as POST /api/wallet/estimate-network-fee.** Prefer estimate-network-fee for clarity. Supported currencies: BTC, ETH, BNB, LTC, SOL, TRX, USDT, MATIC, AVAX, CELO, DOGE, TON, ADA. For USDT, `network` is required (ETH, BSC, TRX, SOL, POLYGON). Use `?fresh=1` or header `X-Fee-Fresh: true` for a fresh estimate (bypass cache) right before building the transaction for broadcast. 
+     * @summary Get network fee only (alias for POST /api/wallet/estimate-network-fee)
+     * @param {WalletApiCalculateWalletFeeRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public calculateWalletFee(requestParameters: WalletApiCalculateWalletFeeRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).calculateWalletFee(requestParameters.estimateNetworkFeeRequest, requestParameters.fresh, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Create a custodial wallet. **Custodial is not used in production.** Use this to **test non-custodial flows**: create a wallet, get its private key (GET /api/wallet/{walletId}/private-key), register the same address with POST /api/wallet/non-custodial/register-address, then use estimate-network-fee and POST /api/wallet/non-custodial/broadcast to build and send a signed transaction. Transaction monitoring (pending/confirmed) applies to both custodial and non-custodial WalletTransaction records. 
+     * @summary Create new wallet (for testing non-custodial)
+     * @param {WalletApiCreateWalletRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public createWallet(requestParameters: WalletApiCreateWalletRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).createWallet(requestParameters.createWalletRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Create a wallet webhook
+     * @param {WalletApiCreateWalletWebhookRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public createWalletWebhook(requestParameters: WalletApiCreateWalletWebhookRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).createWalletWebhook(requestParameters.createWalletWebhookRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * **Soft delete (default):** Omit **permanent** or set to false. The address is deactivated (isActive = false); it no longer appears in list or receives monitoring but the record remains for audit. **Permanent delete:** Set query **permanent=true** to remove the address record from the database. Use when you need to fully remove the monitored address. 
+     * @summary Delete or deactivate a monitored wallet address
+     * @param {WalletApiDeleteNonCustodialAddressRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public deleteNonCustodialAddress(requestParameters: WalletApiDeleteNonCustodialAddressRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).deleteNonCustodialAddress(requestParameters.addressId, requestParameters.permanent, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Delete a wallet webhook
+     * @param {WalletApiDeleteWalletWebhookRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public deleteWalletWebhook(requestParameters: WalletApiDeleteWalletWebhookRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).deleteWalletWebhook(requestParameters.webhookId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns **network fee only** from the blockchain. **Preferred endpoint** for network fee. Uses a fee oracle: fees are polled every 15–20s and cached, so responses are fast and RPC load is minimal (same strategy as large wallets). No platform fee. Request/response identical to POST /api/wallet/calculate-fee (which is an alias). See docs/FEE_ARCHITECTURE.md. Supported currencies: BTC, ETH, BNB, LTC, SOL, TRX, USDT, MATIC, AVAX, CELO, DOGE, TON, ADA. For USDT, `network` is required (ETH, BSC, TRX, SOL, POLYGON). **Fresh fee before broadcast:** To avoid stuck transactions, get a fresh estimate right before building/signing: use query `?fresh=1` or header `X-Fee-Fresh: true` to bypass cache. 
+     * @summary Estimate network fee (preferred; reads from fee oracle cache)
+     * @param {WalletApiEstimateNetworkFeeRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public estimateNetworkFee(requestParameters: WalletApiEstimateNetworkFeeRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).estimateNetworkFee(requestParameters.estimateNetworkFeeRequest, requestParameters.fresh, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * **Network fee (from blockchain only).** Returns network fee **estimated directly from the blockchain** via RPC or fee APIs. **Not controlled by Mudbase.** Both POST /api/wallet/estimate-network-fee (or calculate-fee) and this endpoint return network fee only; use either for gas/fee display. This endpoint is chain-oriented and supports full transaction shape for EVM. **EVM chains:** ethereum, polygon, arbitrum, optimism, base, bsc, binance, avalanche, celo — require `transaction` (from, and to/value or tokenAddress/amount). Response includes gasLimit, gasPrice, networkFee, estimatedTime, currency. **Non-EVM chains:** bitcoin, litecoin, dogecoin, solana, tron, ton, cardano — only `chain` is required; `transaction` is optional/ignored. Returns networkFee, estimatedTime, currency (and e.g. satPerVb for UTXO). See docs/FEE_ARCHITECTURE.md. Results cached 15s. 
+     * @summary Estimate network fee from blockchain (all supported chains; not controlled by Mudbase)
+     * @param {WalletApiEstimateNonCustodialGasRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public estimateNonCustodialGas(requestParameters: WalletApiEstimateNonCustodialGasRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).estimateNonCustodialGas(requestParameters.estimateNonCustodialGasRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Generate private key
+     * @param {WalletApiGeneratePrivateKeyRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public generatePrivateKey(requestParameters: WalletApiGeneratePrivateKeyRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).generatePrivateKey(requestParameters.generatePrivateKeyRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns **all chain network fees** in one call. Reads from the fee oracle cache (no RPC during the request). Each chain returns the **full fee object** (networkFee, gasPriceGwei, congestion, estimatedTime, feeTiers for EVM, etc.) for frontend/UX. Use for dashboards or \"current fees\" screens. 
+     * @summary Get all chain network fees (fee oracle snapshot)
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public getAllFees(options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).getAllFees(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Get wallet balance
+     * @param {WalletApiGetBalanceRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public getBalance(requestParameters: WalletApiGetBalanceRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).getBalance(requestParameters.walletId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns **replacement transaction params** to cancel a stuck EVM transaction (same nonce, to=self, value=0, data=0x, higher gas). Client signs and broadcasts via POST /api/wallet/non-custodial/broadcast. Address must be registered for your organization. EVM chains only. 
+     * @summary Get replacement tx params for cancel (stuck EVM tx)
+     * @param {WalletApiGetCancelParamsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public getCancelParams(requestParameters: WalletApiGetCancelParamsRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).getCancelParams(requestParameters.getCancelParamsRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns **network status** per chain (congestion and main fee metric). Use to show network health before sending transactions. Same data as GET /fees but trimmed to congestion + gasPriceGwei (EVM) or satPerVb (UTXO) and networkFee. 
+     * @summary Get network status (congestion + fee metric per chain)
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public getNetworkStatus(options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).getNetworkStatus(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Get non-custodial address by ID
+     * @param {WalletApiGetNonCustodialAddressRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public getNonCustodialAddress(requestParameters: WalletApiGetNonCustodialAddressRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).getNonCustodialAddress(requestParameters.addressId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Get balance for a non-custodial address
+     * @param {WalletApiGetNonCustodialBalanceRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public getNonCustodialBalance(requestParameters: WalletApiGetNonCustodialBalanceRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).getNonCustodialBalance(requestParameters.addressId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns a transaction by its hash. The **chain** query parameter is required because the same hash format can exist on different chains (e.g. 0x-style on EVM chains). 
+     * @summary Get transaction by hash
+     * @param {WalletApiGetNonCustodialTransactionByHashRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public getNonCustodialTransactionByHash(requestParameters: WalletApiGetNonCustodialTransactionByHashRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).getNonCustodialTransactionByHash(requestParameters.txHash, requestParameters.chain, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Get transaction history for a non-custodial address
+     * @param {WalletApiGetNonCustodialTransactionsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public getNonCustodialTransactions(requestParameters: WalletApiGetNonCustodialTransactionsRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).getNonCustodialTransactions(requestParameters.addressId, requestParameters.limit, requestParameters.page, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns **replacement transaction params** for a stuck EVM transaction (same nonce, same to/value/data, higher gas). Client signs the replacement and broadcasts via POST /api/wallet/non-custodial/broadcast. Address must be registered for your organization. Use when a tx has been pending >5 min (stuck). EVM chains only. 
+     * @summary Get replacement tx params for speed-up (stuck EVM tx)
+     * @param {WalletApiGetSpeedUpParamsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public getSpeedUpParams(requestParameters: WalletApiGetSpeedUpParamsRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).getSpeedUpParams(requestParameters.getSpeedUpParamsRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns the list of **platform-supported cryptocurrencies and chains** for non-custodial wallets, broadcast, and multi-chain use. Custodial wallet is no longer used in production; this endpoint is the source of truth for supported chains and currencies. **Supported:** BTC, LTC, DOGE, ETH, ETC, CELO, SOL, TRX, TON, Polygon (MATIC), Arbitrum, Optimism, Base, BSC/BNB, Avalanche (AVAX), Cardano (ADA), USDT. Each item includes **code** (currency symbol), **name** (display name), **chain** (chain id for API calls). USDT includes **networks** (ETH, BSC, TRX, SOL, POLYGON). Use **chain** with non-custodial endpoints (register-address, broadcast, estimate-gas). Use **code** for display and fee/currency selection. This is a public endpoint - no authentication required. 
+     * @summary Get supported currencies and chains
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public getSupportedCurrencies(options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).getSupportedCurrencies(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Get transaction details
+     * @param {WalletApiGetTransactionRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public getTransaction(requestParameters: WalletApiGetTransactionRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).getTransaction(requestParameters.transactionId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns transaction history for custodial wallets. Transactions are stored and monitored the same way as non-custodial (WalletTransaction); status updates (pending, broadcast, confirmed, failed) and stuck detection apply to both. 
+     * @summary Get transaction history (custodial wallets; same monitoring as non-custodial)
+     * @param {WalletApiGetTransactionHistoryRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public getTransactionHistory(requestParameters: WalletApiGetTransactionHistoryRequest = {}, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).getTransactionHistory(requestParameters.walletId, requestParameters.limit, requestParameters.page, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Get user wallets
+     * @param {WalletApiGetUserWalletsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public getUserWallets(requestParameters: WalletApiGetUserWalletsRequest = {}, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).getUserWallets(requestParameters.projectId, requestParameters.currency, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get project-level fee settings (enabled flag and fee percentage). **For non-custodial / external users** — e.g. when your app charges a fee on payouts or transfers. Custodial wallet is no longer used in production. Applies to all supported chains/currencies for that project. 
+     * @summary Get project fee configuration (for non-custodial / external users)
+     * @param {WalletApiGetWalletFeeConfigRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public getWalletFeeConfig(requestParameters: WalletApiGetWalletFeeConfigRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).getWalletFeeConfig(requestParameters.projectId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns the wallet private key. **For testing non-custodial only:** use this key to sign a transaction locally, then register the wallet address via POST /api/wallet/non-custodial/register-address and broadcast the signed tx via POST /api/wallet/non-custodial/broadcast. 
+     * @summary Get wallet private key (WARNING: Sensitive data; for testing non-custodial)
+     * @param {WalletApiGetWalletPrivateKeyRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public getWalletPrivateKey(requestParameters: WalletApiGetWalletPrivateKeyRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).getWalletPrivateKey(requestParameters.walletId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Get webhook delivery logs
+     * @param {WalletApiGetWalletWebhookLogsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public getWalletWebhookLogs(requestParameters: WalletApiGetWalletWebhookLogsRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).getWalletWebhookLogs(requestParameters.webhookId, requestParameters.limit, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary List registered non-custodial addresses
+     * @param {WalletApiListNonCustodialAddressesRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public listNonCustodialAddresses(requestParameters: WalletApiListNonCustodialAddressesRequest = {}, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).listNonCustodialAddresses(requestParameters.chain, requestParameters.projectId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary List wallet webhooks
+     * @param {WalletApiListWalletWebhooksRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public listWalletWebhooks(requestParameters: WalletApiListWalletWebhooksRequest = {}, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).listWalletWebhooks(requestParameters.projectId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Register a public wallet address for monitoring and indexing. All key operations (generation, signing) occur client-side only. 
+     * @summary Register a non-custodial wallet address
+     * @param {WalletApiRegisterNonCustodialAddressRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public registerNonCustodialAddress(requestParameters: WalletApiRegisterNonCustodialAddressRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).registerNonCustodialAddress(requestParameters.registerNonCustodialAddressRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Test a webhook delivery (sends a single test payload)
+     * @param {WalletApiTestWalletWebhookRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public testWalletWebhook(requestParameters: WalletApiTestWalletWebhookRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).testWalletWebhook(requestParameters.testWalletWebhookRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Update metadata for a registered non-custodial address. Only **label** and **derivationPath** can be updated; address and chain are immutable. 
+     * @summary Update a monitored wallet address
+     * @param {WalletApiUpdateNonCustodialAddressRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public updateNonCustodialAddress(requestParameters: WalletApiUpdateNonCustodialAddressRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).updateNonCustodialAddress(requestParameters.addressId, requestParameters.updateNonCustodialAddressRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Update project-level fee settings. **For non-custodial / external users** — e.g. fee charged on payouts or transfers. Custodial wallet is no longer used in production. Applies to **all supported currencies** (BTC, ETH, BNB, LTC, SOL, TRX, USDT). **feePercentage** is a decimal: use `0.01` for 1%, `0.005` for 0.5%, etc. (min 0, max 1). 
+     * @summary Update project fee configuration (for non-custodial / external users)
+     * @param {WalletApiUpdateWalletFeeConfigRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public updateWalletFeeConfig(requestParameters: WalletApiUpdateWalletFeeConfigRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).updateWalletFeeConfig(requestParameters.projectId, requestParameters.updateWalletFeeConfigRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Update a wallet webhook
+     * @param {WalletApiUpdateWalletWebhookRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public updateWalletWebhook(requestParameters: WalletApiUpdateWalletWebhookRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).updateWalletWebhook(requestParameters.webhookId, requestParameters.updateWalletWebhookRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Validate cryptocurrency address
+     * @param {WalletApiValidateAddressRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public validateAddress(requestParameters: WalletApiValidateAddressRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).validateAddress(requestParameters.validateAddressRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * **Semi-transaction:** Builds and signs the withdrawal but does **not** broadcast. Returns `signedTx`, `chain`, and `fromAddress` so the client can broadcast via POST /api/wallet/non-custodial/broadcast. The wallet address must be registered for your organization before broadcasting. Supports all platform chains/currencies (EVM, UTXO, Tron, Solana, USDT on ETH/BSC/TRX/SOL/POLYGON). Use for testing the non-custodial flow: create custodial wallet, get private key, register address, then call withdraw to get signed tx and broadcast it manually. 
+     * @summary Prepare withdrawal (semi-transaction; broadcast via non-custodial)
+     * @param {WalletApiWithdrawRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @deprecated
+     * @throws {RequiredError}
+     */
+    public withdraw(requestParameters: WalletApiWithdrawRequest, options?: RawAxiosRequestConfig) {
+        return WalletApiFp(this.configuration).withdraw(requestParameters.walletId, requestParameters.withdrawRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+export const CalculateWalletFeeFreshEnum = {
+    _1: '1',
+} as const;
+export type CalculateWalletFeeFreshEnum = typeof CalculateWalletFeeFreshEnum[keyof typeof CalculateWalletFeeFreshEnum];
+export const EstimateNetworkFeeFreshEnum = {
+    _1: '1',
+} as const;
+export type EstimateNetworkFeeFreshEnum = typeof EstimateNetworkFeeFreshEnum[keyof typeof EstimateNetworkFeeFreshEnum];
+export const GetNonCustodialTransactionByHashChainEnum = {
+    Ethereum: 'ethereum',
+    Binance: 'binance',
+    Polygon: 'polygon',
+    Celo: 'celo',
+    Bitcoin: 'bitcoin',
+    Litecoin: 'litecoin',
+    Solana: 'solana',
+    Tron: 'tron',
+    Ripple: 'ripple',
+    Cardano: 'cardano',
+    Dogecoin: 'dogecoin',
+    Ton: 'ton',
+} as const;
+export type GetNonCustodialTransactionByHashChainEnum = typeof GetNonCustodialTransactionByHashChainEnum[keyof typeof GetNonCustodialTransactionByHashChainEnum];
+export const ListNonCustodialAddressesChainEnum = {
+    Ethereum: 'ethereum',
+    Binance: 'binance',
+    Bsc: 'bsc',
+    Polygon: 'polygon',
+    Arbitrum: 'arbitrum',
+    Optimism: 'optimism',
+    Base: 'base',
+    Avalanche: 'avalanche',
+    Celo: 'celo',
+    Bitcoin: 'bitcoin',
+    Litecoin: 'litecoin',
+    Dogecoin: 'dogecoin',
+    Solana: 'solana',
+    Tron: 'tron',
+    Ripple: 'ripple',
+    Cardano: 'cardano',
+    Ton: 'ton',
+} as const;
+export type ListNonCustodialAddressesChainEnum = typeof ListNonCustodialAddressesChainEnum[keyof typeof ListNonCustodialAddressesChainEnum];
 
 
 /**

@@ -45,9 +45,9 @@ test("DataApi.listData with a single populate string produces ?populate=author",
   assert.equal(url.searchParams.get("populate"), "author");
 });
 
-test("DataApi.listData with an array of populate keys comma-joins them", async () => {
+test("DataApi.listData with a comma-joined populate string sends both fields", async () => {
   const { api, calls } = makeDataApi({ data: [], pagination: {} });
-  await api.listData({ projectId: "proj_1", collectionId: "posts", populate: ["author", "comments"] });
+  await api.listData({ projectId: "proj_1", collectionId: "posts", populate: "author,comments" });
   const url = new URL(calls[0].url);
   assert.equal(url.searchParams.get("populate"), "author,comments");
 });
