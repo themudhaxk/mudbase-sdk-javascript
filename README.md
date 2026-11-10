@@ -18,6 +18,69 @@
 > and device-token changes belong in `mudbase-docs` (spec + `sdk-extras/`), not here.
 <!-- /SUPERSEDED-REPO NOTICE -->
 
+## Quickstart
+
+Sign up a user, insert and query a record, and upload a file in about five minutes. You need a project ID and a project API key from your Mudbase dashboard. Node.js 20 or newer is required (the sample uses the global `File`).
+
+```bash
+npm install mudbase-sdk
+```
+
+Save this as `quickstart.mjs` and replace the placeholders. If the project requires email verification, step 1 returns `requireVerification: true` and no token, and step 2 needs the token from the email. Run the file in two passes. Pass 1: run steps 1 and 2 with the token left as a placeholder (step 2 fails), then check your inbox. Pass 2: paste the token into step 2, delete step 1 (signing up twice with the same email fails), and run the whole file again.
+
+```js
+import { AuthenticationApi, BucketsApi, Configuration, DataApi, FilesApi } from 'mudbase-sdk';
+
+const PROJECT_ID = 'YOUR_PROJECT_ID';
+let userToken = ''; // set at step 3; while empty, no Authorization header is sent
+const config = new Configuration({
+  basePath: 'https://cloud.mudbase.dev',
+  apiKey: 'YOUR_PROJECT_KEY', // sent as the X-API-Key header on the bucket and file calls
+  accessToken: () => userToken, // sent as Authorization: Bearer once logged in
+});
+const auth = new AuthenticationApi(config);
+const data = new DataApi(config);
+const buckets = new BucketsApi(config);
+const files = new FilesApi(config);
+
+const email = 'you@your-inbox.example'; // an address you can read
+const password = 'a-strong-password-123';
+
+// 1. Sign up. If the project requires verification, the response has requireVerification: true and no token.
+const signup = await auth.registerLocalUser({
+  registerLocalUserRequest: { email, password, firstName: 'Ada', lastName: 'Lovelace', projectId: PROJECT_ID },
+});
+console.log('requireVerification:', signup.requireVerification);
+
+// 2. Verify with the token from the email link. Lost the email? Call auth.resendVerificationAuth({ resendVerificationAuthRequest: { email, projectId: PROJECT_ID } }).
+await auth.verifyEmailAuth({ verifyEmailAuthRequest: { token: 'TOKEN_FROM_EMAIL_LINK', projectId: PROJECT_ID } });
+
+// 3. Log in. Later calls send the user's token together with the project key.
+const login = await auth.loginLocalUser({ loginLocalUserRequest: { email, password, projectId: PROJECT_ID } });
+userToken = login.token ?? '';
+
+// 4. Insert and query one record. The collection must already exist, so create it in the dashboard first.
+const COLLECTION_ID = 'YOUR_COLLECTION_ID';
+await data.createData({ projectId: PROJECT_ID, collectionId: COLLECTION_ID, body: { title: 'Hello from the SDK' } });
+const found = await data.listData({ projectId: PROJECT_ID, collectionId: COLLECTION_ID, filter: JSON.stringify({ title: 'Hello from the SDK' }), limit: 5 });
+console.log('documents:', found.data);
+
+// 5. Create a bucket and upload one file into it.
+const bucket = await buckets.createBucket({ projectId: PROJECT_ID, createBucketRequest: { name: `quickstart-${Date.now()}` } });
+const bucketId = bucket.bucket?.id;
+if (!bucketId) throw new Error('bucket was not created');
+const file = new File(['hello world'], 'hello.txt', { type: 'text/plain' });
+const uploaded = await files.uploadFiles({ projectId: PROJECT_ID, bucketId, files: [file] });
+console.log('uploaded:', uploaded.file);
+```
+
+Full docs: [docs.mudbase.dev](https://docs.mudbase.dev).
+
+The Quickstart above uses the maintained fetch client from `npm install mudbase-sdk`. The reference below describes this repository's axios client, which is superseded.
+
+<!-- TODO(quickstart, unverified live): not run against a live project. Unproven: sign-up, verification, login, insert, query and upload calls; the listData JSON filter form; the token name in the verification link. Offline only: strict type-check and a mocked-fetch run against mudbase-sdk@1.3.14. -->
+
+
 ## mudbase-sdk@2.0.0
 
 This generator creates TypeScript/JavaScript client that utilizes [axios](https://github.com/axios/axios). The generated Node module can be used in the following environments:
