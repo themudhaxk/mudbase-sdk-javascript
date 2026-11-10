@@ -18,6 +18,64 @@
 > and device-token changes belong in `mudbase-docs` (spec + `sdk-extras/`), not here.
 <!-- /SUPERSEDED-REPO NOTICE -->
 
+## Quickstart
+
+Sign up a user, insert and query a record, and upload a file in about five minutes. You need a project ID and a project API key from your Mudbase dashboard. Node.js 20 or newer is required (the sample uses the global `File`).
+
+```bash
+npm install github:themudhaxk/mudbase-sdk-javascript
+```
+
+Save this as `quickstart.mjs` and replace the placeholders. Email verification is required by default, so run it in two passes. Pass 1: run steps 1 and 2 with the token left as a placeholder (step 2 will fail), and check your inbox for the verification email. Pass 2: paste the token from the link into step 2, delete step 1 (signing up twice with the same email fails), and run the whole file again.
+
+```js
+import { AuthenticationApi, BucketsApi, Configuration, DataApi, FilesApi } from 'mudbase-sdk';
+
+const PROJECT_ID = 'YOUR_PROJECT_ID';
+const config = new Configuration({
+  basePath: 'https://cloud.mudbase.dev',
+  apiKey: 'YOUR_PROJECT_KEY', // sent as the X-API-Key header
+});
+const auth = new AuthenticationApi(config);
+const data = new DataApi(config);
+const buckets = new BucketsApi(config);
+const files = new FilesApi(config);
+
+const email = 'you@your-inbox.example'; // an address you can read
+const password = 'a-strong-password-123';
+
+// 1. Sign up. With verification on, the response has requireVerification: true and no token.
+const signup = await auth.registerLocalUser({
+  registerLocalUserRequest: { email, password, firstName: 'Ada', lastName: 'Lovelace', projectId: PROJECT_ID },
+});
+console.log('requireVerification:', signup.data.requireVerification);
+
+// 2. Verify with the token from the email link. Lost the email? Call auth.resendVerificationAuth({ resendVerificationAuthRequest: { email, projectId: PROJECT_ID } }).
+await auth.verifyEmailAuth({ verifyEmailAuthRequest: { token: 'TOKEN_FROM_EMAIL_LINK', projectId: PROJECT_ID } });
+
+// 3. Log in. Later calls send the user's token together with the project key.
+const login = await auth.loginLocalUser({ loginLocalUserRequest: { email, password, projectId: PROJECT_ID } });
+config.accessToken = login.data.token;
+
+// 4. Insert and query one record. The collection must already exist, so create it in the dashboard first.
+const COLLECTION_ID = 'YOUR_COLLECTION_ID';
+await data.createData({ projectId: PROJECT_ID, collectionId: COLLECTION_ID, body: { title: 'Hello from the SDK' } });
+const found = await data.listData({ projectId: PROJECT_ID, collectionId: COLLECTION_ID, filter: JSON.stringify({ title: 'Hello from the SDK' }), limit: 5 });
+console.log('documents:', found.data);
+
+// 5. Create a bucket and upload one file into it.
+const bucket = await buckets.createBucket({ projectId: PROJECT_ID, createBucketRequest: { name: `quickstart-${Date.now()}` } });
+const bucketId = bucket.data.bucket?._id;
+if (!bucketId) throw new Error('bucket was not created');
+const file = new File(['hello world'], 'hello.txt', { type: 'text/plain' });
+const uploaded = await files.uploadFiles({ projectId: PROJECT_ID, bucketId, files: [file] });
+console.log('uploaded:', uploaded.data.file);
+```
+
+Full docs: [docs.mudbase.dev](https://docs.mudbase.dev).
+
+<!-- TODO(quickstart, unverified): this client is the axios mirror that the notice above calls retired. The notice says `npm install mudbase-sdk` installs the maintained fetch client, which this sample does not target. Confirm which client this Quickstart should document before merging. Not run against a live project. -->
+
 ## mudbase-sdk@2.0.0
 
 This generator creates TypeScript/JavaScript client that utilizes [axios](https://github.com/axios/axios). The generated Node module can be used in the following environments:
